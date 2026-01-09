@@ -8,6 +8,8 @@ import java.util.List;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, String> {
+// 여기서 JPA 실행
+
 
     // 이름 포함 검색 (LIKE %name%)
     List<User> findByNameContaining(String name);
