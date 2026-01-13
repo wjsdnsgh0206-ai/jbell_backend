@@ -4,24 +4,31 @@
 <mapper namespace="jbell.auth.mapper.UserMapper"> 
 
 
-<insert id="insertUser" parameterType="jbell.auth.dto.SignupRequest">
-    INSERT INTO user (
-        user_id, user_password, user_name, user_birth_date, user_email, 
-        user_gender, user_status, user_grade, user_residence_area
-    ) VALUES (
-        #{userId}, 
-        #{userPw}, 
-        #{name},        #{birthDate},   #{email},       #{userGender}, 
-        TRUE, 
-        'USER', 
-        #{residenceArea}
+	<insert id="insertUser" parameterType="jbell.auth.dto.SignupRequest">
+	    INSERT INTO user (
+	        user_id, user_password, user_name, user_birth_date, user_email, 
+	        user_gender, user_status, user_grade, user_residence_area
+	    ) VALUES (
+	        #{userId}, 
+	        #{userPw}, 
+	        #{name},        
+	        #{birthDate},   
+	        #{email},       
+	        #{userGender}, 
+	        TRUE, 
+	        'USER', 
+	        #{residenceArea}
+	    )
+	</insert>
+
+
+
+    <select id="existsByUserId" parameterType="string" resultType="boolean">
+    SELECT EXISTS (
+        SELECT 1 
+        FROM user 
+        WHERE user_id = #{userId}
     )
-</insert>
-
-
-
-    <select id="existsByUserId" parameterType="string" resultType="int">
-        SELECT COUNT(*) FROM user WHERE user_id = #{userId}
-    </select>
+	</select>
 
 </mapper>

@@ -17,12 +17,16 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public void registerUser(SignupRequest request) {
-        // 1. 아이디 중복 체크
-        if (userMapper.existsByUserId(request.getUserId()) > 0) {
-            throw new RuntimeException("이미 존재하는 아이디입니다.");
-        }
 
         // 2. DB 저장 (암호화 없이 request에 담긴 userPw 그대로 저장)
         userMapper.insertUser(request);
+    }
+    
+    
+    @Override
+    @Transactional(readOnly = true)
+    public boolean isUserIdDuplicated(String userId) {
+        // Mapper에서 개수를 조회하여 0보다 크면 중복으로 판단
+        return userMapper.existsByUserId(userId);
     }
 }
