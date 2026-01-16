@@ -2,6 +2,7 @@ package jbell.facility.service.impl;
 
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -12,10 +13,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import jbell.common.dto.SafetyDataResponse;
-import jbell.facility.dto.SheltersDTO;
+import jbell.facility.dto.FacilityDTO;
 import jbell.facility.eunm.ApiType;
-import jbell.facility.mapper.SheltersMapper;
-import jbell.facility.service.SheltersService;
+import jbell.facility.mapper.FacilityMapper;
+import jbell.facility.service.FacilityService;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -24,10 +25,17 @@ import reactor.util.retry.Retry;
 
 @Service
 @Slf4j
-public class SheltersServiceImpl implements SheltersService {
+public class FacilityServiceImpl implements FacilityService {
 
-    private final SheltersMapper sheltersMapper;
+    private final FacilityMapper sheltersMapper;
     private final WebClient safetyDataWebClient;
+    
+    public FacilityServiceImpl(FacilityMapper sheltersMapper, 
+            @Qualifier("safetyDataWebClient") WebClient safetyDataWebClient) {
+		this.sheltersMapper = sheltersMapper;
+		this.safetyDataWebClient = safetyDataWebClient;
+	}
+    
 
     @Value("${VITE_API_SHELTER_TEMPORARY_HOUSING_KEY}") private String imsiKey;
     @Value("${VITE_API_SHELTER_HEAT_KEY}") private String heatKey;
@@ -35,15 +43,37 @@ public class SheltersServiceImpl implements SheltersService {
     @Value("${VITE_API_SHELTER_EARTHQUAKE1}") private String quakeKey;
     @Value("${VITE_API_SHELTER_CIVIL_DEFENSE_NUCLEAR}") private String nuclearKey;
     @Value("${VITE_API_SHELTER_CIVIL_DEFENSE_DISASTER}") private String civilKey;
+    
+    
+    
+    // 검색
+    @Override
+    public Mono<Map<String, Object>> getFacilityListData(
+            String ctpvNm, String sggNm, String fcltNm, String roadNmAddr, 
+            int page, String sortKey, String sortOrder) {
+        
+        int limit = 30;
+        int offset = (page - 1) * limit;
 
-    public SheltersServiceImpl(SheltersMapper sheltersMapper, 
-                               @Qualifier("safetyDataWebClient") WebClient safetyDataWebClient) {
-        this.sheltersMapper = sheltersMapper;
-        this.safetyDataWebClient = safetyDataWebClient;
+        return Mono.fromCallable(() -> {
+            // XML 쿼리에 모든 파라미터를 전달
+            List<FacilityDTO> list = sheltersMapper.getFacilityList(
+                ctpvNm, sggNm, fcltNm, roadNmAddr, offset, limit, sortKey, sortOrder
+            );
+            int totalCount = sheltersMapper.getFacilityCount(ctpvNm, sggNm, fcltNm, roadNmAddr);
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("list", list);
+            result.put("totalCount", totalCount);
+            return result;
+        }).subscribeOn(Schedulers.boundedElastic());
     }
 
+
+    
+
     @Override
-    public void syncAllShelters() {
+    public void syncAllFacility() {
         log.info("▶▶▶ 대피소 통합 동기화 프로세스 시작 (전체 페이지 순회)");
         
         Flux.fromIterable(Arrays.asList(ApiType.values()))
@@ -105,7 +135,7 @@ public class SheltersServiceImpl implements SheltersService {
 
         return Mono.fromRunnable(() -> {
             try {
-                List<SheltersDTO> dtoList = items.stream()
+                List<FacilityDTO> dtoList = items.stream()
                     .map(item -> {
                         String fullAddr = safeString(item.get(type.addrField));
                         if(fullAddr.isEmpty()) fullAddr = safeString(item.get("DTL_ADRES"));
@@ -120,7 +150,7 @@ public class SheltersServiceImpl implements SheltersService {
                     .collect(Collectors.toList());
 
                 if (!dtoList.isEmpty()) {
-                    sheltersMapper.upsertShelters(dtoList);
+                    sheltersMapper.upsertFacility(dtoList);
                     log.info("[{}] {}페이지: 전북 데이터 {}건 저장", type.apiId, pageNo, dtoList.size());
                 }
             } catch (Exception e) {
@@ -129,7 +159,7 @@ public class SheltersServiceImpl implements SheltersService {
         }).subscribeOn(Schedulers.boundedElastic()).then();
     }
 
-    private SheltersDTO convertToDto(Map<String, Object> item, String fullAddr, ApiType type) {
+    private FacilityDTO convertToDto(Map<String, Object> item, String fullAddr, ApiType type) {
         String[] addrParts = fullAddr.split(" ");
         Double lat, lon;
         if ("DMS".equals(type.latField)) {
@@ -140,7 +170,7 @@ public class SheltersServiceImpl implements SheltersService {
             lon = safeDouble(item.get(type.lonField));
         }
 
-        return SheltersDTO.builder()
+        return FacilityDTO.builder()
             .fcltNm(safeString(item.get(type.nameField)))
             .fcltSeCd(type.apiId)
             .ctpvNm(addrParts.length > 0 ? addrParts[0] : "")
