@@ -1,4 +1,4 @@
-package jbell.shelters.dto;
+package jbell.facility.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,7 +13,7 @@ import lombok.ToString;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SheltersDTO {
+public class FacilityDTO {
     // DB 컬럼 매핑
     private Long fcltId;       // fclt_id (자동증가지만 API ID와 매핑 필요시 사용)
     private String fcltNm;     // fclt_nm
@@ -25,4 +25,5 @@ public class SheltersDTO {
     private Double lot;        // lot
     private String opnYn;      // opn_yn
     private String useYn;      // use_yn
+    private String regDt;      // 날짜
 }

@@ -1,4 +1,4 @@
-package jbell.shelters.eunm;
+package jbell.facility.eunm;
 
 public enum ApiType {
     SHELTER_IMSI("DSSP-IF-10945", "VT_ACMDFCLTY_NM", "RN_DTL_ADDR", "LA", "LO"), // 주소 필드 확인 필요
