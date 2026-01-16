@@ -1,6 +1,6 @@
-package jbell.shelters.service;
+package jbell.facility.service;
 
-import jbell.shelters.eunm.ApiType;
+import jbell.facility.eunm.ApiType;
 
 public interface SheltersService {
     /**

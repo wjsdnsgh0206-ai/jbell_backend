@@ -13,6 +13,7 @@ import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.util.DefaultUriBuilderFactory;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -111,7 +112,7 @@ public class WebClientConfig {
         
         ExchangeStrategies exchangeStrategies = ExchangeStrategies.builder()
                 .codecs(configurer -> {
-                    configurer.defaultCodecs().maxInMemorySize(2 * 1024 * 1024); // 2MB
+                    configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024); // 10MB
                     
                     // JSON 코덱
                     configurer.defaultCodecs().jackson2JsonEncoder(
@@ -144,42 +145,37 @@ public class WebClientConfig {
             @Qualifier("objectMapper") ObjectMapper objectMapper,
             @Qualifier("xmlMapper") XmlMapper xmlMapper) {
         
+        // 1. 인코딩 문제 방지를 위한 설정 (첫 번째 코드의 장점)
+        DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory("https://www.safetydata.go.kr/V2/api");
+        factory.setEncodingMode(DefaultUriBuilderFactory.EncodingMode.NONE);
+
+        // 2. 커넥션 풀 설정 (두 번째 코드의 장점)
         ConnectionProvider connectionProvider = ConnectionProvider.builder("safety-data-pool")
-                .maxConnections(10)
-                .maxIdleTime(Duration.ofSeconds(10))
-                .maxLifeTime(Duration.ofSeconds(30))
+                .maxConnections(20) 
                 .pendingAcquireTimeout(Duration.ofSeconds(30))
-                .evictInBackground(Duration.ofSeconds(60))
                 .build();
         
         HttpClient httpClient = HttpClient.create(connectionProvider)
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000)
-                .option(ChannelOption.SO_KEEPALIVE, false)
-                .responseTimeout(Duration.ofMillis(15000))
+                .responseTimeout(Duration.ofSeconds(15))
                 .doOnConnected(conn -> conn
-                        .addHandlerLast(new ReadTimeoutHandler(15000, TimeUnit.MILLISECONDS))
-                        .addHandlerLast(new WriteTimeoutHandler(15000, TimeUnit.MILLISECONDS)));
-        
+                        .addHandlerLast(new ReadTimeoutHandler(15, TimeUnit.SECONDS)));
+
+        // 3. 상세 코덱 및 메모리 설정
         ExchangeStrategies exchangeStrategies = ExchangeStrategies.builder()
                 .codecs(configurer -> {
-                    configurer.defaultCodecs().maxInMemorySize(2 * 1024 * 1024); // 2MB
-                    
-                    // JSON 코덱
-                    configurer.defaultCodecs().jackson2JsonEncoder(
-                            new Jackson2JsonEncoder(objectMapper, MediaType.APPLICATION_JSON));
-                    configurer.defaultCodecs().jackson2JsonDecoder(
-                            new Jackson2JsonDecoder(objectMapper, MediaType.APPLICATION_JSON));
-                    
-                    // XML 코덱 (XmlMapper 사용)
+                    configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024); // 대용량 데이터 대비 10MB
+                    configurer.defaultCodecs().jackson2JsonEncoder(new Jackson2JsonEncoder(objectMapper));
+                    configurer.defaultCodecs().jackson2JsonDecoder(new Jackson2JsonDecoder(objectMapper));
                     configurer.customCodecs().register(
-                            new Jackson2JsonEncoder(xmlMapper, MediaType.APPLICATION_XML, MediaType.TEXT_XML));
+                            new Jackson2JsonEncoder(xmlMapper, MediaType.APPLICATION_XML));
                     configurer.customCodecs().register(
-                            new Jackson2JsonDecoder(xmlMapper, MediaType.APPLICATION_XML, MediaType.TEXT_XML));
+                            new Jackson2JsonDecoder(xmlMapper, MediaType.APPLICATION_XML));
                 })
                 .build();
-        
+
         return WebClient.builder()
-                .baseUrl("https://www.safetydata.go.kr/V2/api")
+                .uriBuilderFactory(factory) // 인코딩 설정 적용
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .exchangeStrategies(exchangeStrategies)
                 .build();

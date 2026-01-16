@@ -1,11 +1,11 @@
-package jbell.shelters.mapper;
+package jbell.facility.mapper;
 
 import java.util.List;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.springframework.data.repository.query.Param;
 
-import jbell.shelters.dto.SheltersDTO;
+import jbell.facility.dto.SheltersDTO;
 
 @Mapper
 public interface SheltersMapper {

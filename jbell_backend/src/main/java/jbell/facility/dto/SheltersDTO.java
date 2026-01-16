@@ -1,4 +1,4 @@
-package jbell.shelters.dto;
+package jbell.facility.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
