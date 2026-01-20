@@ -6,7 +6,7 @@ plugins {
 
 group = 'cloud.jbell'
 version = '0.0.1-SNAPSHOT'
-description = 'ksmart57 team project for Spring Boot'
+description = 'ksmart57 project for Spring Boot'
 
 java {
 	toolchain {
@@ -28,15 +28,9 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
-	// Source: https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-webflux
-	implementation 'org.springframework.boot:spring-boot-starter-webflux:3.5.9'
 	implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.5'
 	// Source: https://mvnrepository.com/artifact/org.bgee.log4jdbc-log4j2/log4jdbc-log4j2-jdbc4.1
-	implementation 'org.bgee.log4jdbc-log4j2:log4jdbc-log4j2-jdbc4.1:1.16'
-	// Source: https://mvnrepository.com/artifact/com.fasterxml.jackson.dataformat/jackson-dataformat-xml
-	implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.19.4'
-	// Source: https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-validation
-	implementation 'org.springframework.boot:spring-boot-starter-validation:3.5.9'
+	implementation "org.bgee.log4jdbc-log4j2:log4jdbc-log4j2-jdbc4.1:1.16"
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	runtimeOnly 'com.mysql:mysql-connector-j'
@@ -50,8 +44,3 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 }
-
-	
-	tasks.withType(JavaCompile) {
-	    options.compilerArgs.add("-parameters")
-	}

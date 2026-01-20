@@ -14,13 +14,13 @@
 	<!-- ConsoleAppender -->
 	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
 		<encoder>
-			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</pattern>
+			<pattern>%d{yyyy-HH-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</pattern>
 		</encoder>
 	</appender>
 	<!--Query ConsoleAppender -->
 	<appender name="QSTDOUT" class="ch.qos.logback.core.ConsoleAppender">
 		<encoder>
-			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} %n\t\t %msg%n</pattern>
+			<pattern>%d{yyyy-HH-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} %n\t\t %msg%n</pattern>
 		</encoder>
 	</appender>
 	
