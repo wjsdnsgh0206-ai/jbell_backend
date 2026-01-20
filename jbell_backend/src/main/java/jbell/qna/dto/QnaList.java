@@ -7,11 +7,11 @@ import lombok.Data;
 @Data
 public class QnaList {
 
-	private int qnaId;                      // 문의 ID (inquiry_id)
-    private String qnaCategoryId;           // 카테고리 ID (question_type_id)
-    private String categoryName;            // 카테고리 명칭 (code_item_name) - 추가됨
-    private String title;                   // 제목 (title)
-    private String status;                  // 답변 상태 (answer_status)
-    private String userId;                  // 작성자 ID (user_id)
-    private LocalDateTime createdAt;        // 등록일시 (created_at)
+	private Long qnaId;             // 번호 (inquiry.inquiry_id)
+    private String status;          // 상태 (inquiry.answer_status)
+    private String categoryName;    // 문의유형 (code_item.code_item_name)
+    private String title;           // 제목 (inquiry.title)
+    private String userName;        // 작성자 이름 (user.user_name)
+    private String userId;          // 작성자 ID (상세 조회용, user.user_id)
+    private LocalDateTime createdAt;// 등록일 (inquiry.created_at)
 }

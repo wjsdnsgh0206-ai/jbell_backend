@@ -6,8 +6,8 @@
         <id column="faq_id"                property="faqId" />
         <result column="category"          property="faqCategory"/>
         <result column="title"             property="faqTitle"/>
+        <result column="write_id"			property="faqWrite"/>
         <result column="view_count"        property="faqViewCount"/>
-        <result column="display_order"     property="faqDisplayOrder"/>
         <result column="visible_yn"        property="faqVisibleYn"/>
         <result column="created_at"        property="faqCreatedAt"/>
     </resultMap>
@@ -21,6 +21,7 @@
         <result column="display_order"     property="faqDisplayOrder"/>
         <result column="visible_yn"        property="faqVisibleYn"/>
         <result column="created_at"        property="faqCreatedAt"/>
+        <result column="updated_at"        property="faqUpdatedAt"/>
     </resultMap>
 
     <select id="getFaqList" resultMap="faqResultMap">
@@ -29,8 +30,8 @@
             faq_id          
             , category
             , title
+            , write_id
             , view_count
-            , display_order
             , visible_yn
             , created_at
         FROM 
@@ -48,6 +49,7 @@
             , display_order
             , visible_yn
             , created_at
+            , updated_at
         FROM 
             faq
         WHERE
@@ -67,6 +69,7 @@
             category
             , title
             , content
+            , write_id
             , view_count
             , display_order
             , visible_yn
@@ -74,7 +77,8 @@
         ) VALUES (
             #{faqCategory}
             , #{faqTitle}
-            , #{faqContentJson} 
+            , #{faqContentJson}
+            , #{faqWrite}
             , 0
             , #{faqDisplayOrder}
             , #{faqVisibleYn}
@@ -87,11 +91,9 @@
         UPDATE faq
         SET 
             category = #{faqCategory}
-            , title = #{faqTitle}
             , content = #{faqContentJson}
-            , display_order = #{faqDisplayOrder}
             , visible_yn = #{faqVisibleYn}
-            , updated_at = NOW()
+            , updated_at = now()
         WHERE 
             faq_id = #{faqId}
     </update>

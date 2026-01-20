@@ -15,4 +15,5 @@ public class FaqDetail {
     private Integer faqDisplayOrder;
     private String faqVisibleYn;      // "Y" / "N"
     private LocalDateTime faqCreatedAt;
+    private LocalDateTime faqUpdatedAt;
 }

@@ -19,6 +19,7 @@ public class FaqCreate {
     // DB 매핑(String)을 위한 필드 (요청 JSON에는 포함되지 않음)
     @JsonIgnore
     private String faqContentJson;
+    private String faqWrite;
 
     private Integer faqDisplayOrder;
     private String faqVisibleYn;

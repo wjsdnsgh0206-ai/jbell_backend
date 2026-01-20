@@ -6,6 +6,7 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.http.codec.json.Jackson2JsonDecoder;
@@ -37,6 +38,7 @@ public class WebClientConfig {
 	 * objectMapper 공통설정후 bean생성 json 변환
 	 */
 	@Bean("objectMapper")
+	@Primary
 	ObjectMapper objectMapper() {
 		ObjectMapper objectMapper = new ObjectMapper();
 		// Java 8 날짜/시간 모듈 등록

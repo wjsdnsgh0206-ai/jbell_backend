@@ -10,8 +10,8 @@ public class FaqList {
 	private Long faqId;
     private String faqCategory;
     private String faqTitle;
+    private String faqWrite;
     private Integer faqViewCount;
-    private Integer faqDisplayOrder;
     private String faqVisibleYn;      // "Y" / "N"
     private LocalDateTime faqCreatedAt;
 }
