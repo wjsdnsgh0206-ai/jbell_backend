@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="jbell.qna.mapper.QnaAnswerMapper">
+
+    <resultMap id="QnaAnswerResultMap" type="jbell.qna.dto.QnaAnswer">
+        <id property="qnaAnswerId" column="answer_id"/>
+        <result property="content" column="answer_content"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="deletedYn" column="deleted_yn"/>
+        <result property="userId" column="user_id"/>
+        <result property="qnaId" column="inquiry_id"/>
+    </resultMap>
+
+    <resultMap id="QnaAnswerDetailMap" type="jbell.qna.dto.QnaAnswerDetail">
+        <id property="qnaAnswerId" column="answer_id"/>
+        <result property="qnaId" column="inquiry_id"/>
+        <result property="content" column="answer_content"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="userId" column="user_id"/>
+    </resultMap>
+
+    <insert id="insertAnswer" useGeneratedKeys="true" keyProperty="qnaAnswerId">
+        /* 답변 등록 */
+        INSERT INTO inquiry_answer (
+            inquiry_id,
+            user_id,
+            answer_content,
+            created_at,
+            deleted_yn
+        ) VALUES (
+            #{qnaId},
+            #{userId},
+            #{content},
+            NOW(),
+            'N'
+        )
+    </insert>
+
+    <select id="selectAnswerByQnaId" resultMap="QnaAnswerDetailMap">
+        /* 답변 상세 조회 (문의글 ID 기준) */
+        SELECT
+            answer_id,
+            inquiry_id,
+            answer_content,
+            created_at,
+            user_id
+        FROM inquiry_answer
+        WHERE inquiry_id = #{qnaId}
+          AND deleted_yn = 'N'
+    </select>
+
+    <select id="selectAnswerById" resultMap="QnaAnswerResultMap">
+       /* 답변 단건 조회 (PK 기준) */
+        SELECT *
+        FROM inquiry_answer
+        WHERE answer_id = #{qnaAnswerId}
+    </select>
+
+    <update id="updateAnswer">
+       /* 답변 수정 */
+        UPDATE inquiry_answer
+        SET answer_content = #{content},
+            updated_at = NOW()
+        WHERE answer_id = #{qnaAnswerId}
+    </update>
+
+    <update id="deleteAnswer">
+        /* 답변 논리적 삭제 */
+        UPDATE inquiry_answer
+        SET deleted_yn = 'Y',
+            updated_at = NOW()
+        WHERE answer_id = #{qnaAnswerId}
+    </update>
+
+    <update id="updateInquiryStatus">
+        /* 문의글 상태 변경 (답변대기 | 답변완료) */
+        UPDATE inquiry
+        SET answer_status = #{status}
+        WHERE inquiry_id = #{qnaId}
+    </update>
+
+</mapper>

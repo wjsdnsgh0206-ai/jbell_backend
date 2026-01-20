@@ -44,7 +44,7 @@ public class QnaService {
      * @param qnaId 문의 ID
      */
     @Transactional(readOnly = true)
-    public QnaDetail getQnaDetail(int qnaId) {
+    public QnaDetail getQnaDetail(long qnaId) {
         return qnaMapper.getQnaDetail(qnaId);
     }
     
@@ -54,7 +54,7 @@ public class QnaService {
      * @param userId 요청자 ID (세션에서 검증된 값)
      * @param qnaUpdate 수정할 정보
      */
-    public void updateQna(int qnaId, String userId, QnaUpdate qnaUpdate) {
+    public void updateQna(long qnaId, String userId, QnaUpdate qnaUpdate) {
         // 1. 기존 게시글 조회
         QnaDetail currentQna = qnaMapper.getQnaDetail(qnaId);
         
