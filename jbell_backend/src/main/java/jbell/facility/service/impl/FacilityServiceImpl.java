@@ -1,5 +1,6 @@
 package jbell.facility.service.impl;
 
+
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -11,6 +12,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jbell.common.dto.SafetyDataResponse;
 import jbell.facility.dto.FacilityDTO;
@@ -29,12 +32,15 @@ public class FacilityServiceImpl implements FacilityService {
 
     private final FacilityMapper sheltersMapper;
     private final WebClient safetyDataWebClient;
-    
+    private final ObjectMapper objectMapper;
+
     public FacilityServiceImpl(FacilityMapper sheltersMapper, 
-            @Qualifier("safetyDataWebClient") WebClient safetyDataWebClient) {
-		this.sheltersMapper = sheltersMapper;
-		this.safetyDataWebClient = safetyDataWebClient;
-	}
+                               @Qualifier("safetyDataWebClient") WebClient safetyDataWebClient,
+                               @Qualifier("objectMapper") ObjectMapper objectMapper) {
+        this.sheltersMapper = sheltersMapper;
+        this.safetyDataWebClient = safetyDataWebClient;
+        this.objectMapper = objectMapper;
+    }
     
 
     @Value("${VITE_API_SHELTER_TEMPORARY_HOUSING_KEY}") private String imsiKey;
@@ -116,18 +122,32 @@ public class FacilityServiceImpl implements FacilityService {
 
     private Mono<SafetyDataResponse> fetchPage(ApiType type, int pageNo) {
         String key = getServiceKeyByType(type);
-        // URL 직접 조립 (인코딩 방지)
-        String fullUrl = String.format(
-            "https://www.safetydata.go.kr/V2/api/%s?serviceKey=%s&numOfRows=1000&pageNo=%d&returnType=json",
-            type.apiId, key, pageNo
-        );
-
+        
         return safetyDataWebClient.get()
-            .uri(fullUrl)
+            .uri(uriBuilder -> uriBuilder
+                .path("/{apiId}")
+                .queryParam("serviceKey", key)
+                .queryParam("numOfRows", 1000)
+                .queryParam("pageNo", pageNo)
+                .queryParam("returnType", "json")
+                .build(type.apiId))
             .retrieve()
-            .bodyToMono(SafetyDataResponse.class)
+            // 바로 객체로 받지 않고 String으로 받아서 분석 로직 거침
+            .bodyToMono(String.class)
+            .map(responseString -> {
+                try {
+                    // 수동 파싱: 응답 데이터의 무결성을 확인하기 위함
+                    return objectMapper.readValue(responseString, SafetyDataResponse.class);
+                } catch (Exception e) {
+                    log.error("[{}] {}페이지 파싱 실패: {}", type.apiId, pageNo, e.getMessage());
+                    // 파싱 실패 시 빈 응답 객체 반환하여 전체 프로세스 중단 방지
+                    return new SafetyDataResponse(); 
+                }
+            })
             .timeout(Duration.ofSeconds(30))
-            .retryWhen(Retry.backoff(2, Duration.ofSeconds(2)));
+            .retryWhen(Retry.backoff(2, Duration.ofSeconds(2))
+                .filter(throwable -> !(throwable instanceof com.fasterxml.jackson.core.JsonProcessingException)))
+            .doOnNext(res -> log.info("[{}] {}페이지 수신 완료", type.apiId, pageNo));
     }
 
     private Mono<Void> processAndSave(List<Map<String, Object>> items, ApiType type, int pageNo) {
