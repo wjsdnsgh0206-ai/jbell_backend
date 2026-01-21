@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="jbell.facility.mapper.FacilityMapper">
+
+	<!-- 시설 검색및 조회 -->
+	<select id="getFacilityList"
+		resultType="jbell.facility.dto.FacilityDTO">
+		SELECT
+			fclt_id as fcltId,
+			fclt_nm as fcltNm,
+			fclt_se_cd as fcltSeCd,
+			ctpv_nm as ctpvNm,
+			sgg_nm as sggNm,
+			road_nm_addr as roadNmAddr,
+			lat,
+			lot,
+			opn_yn as opnYn,
+			use_yn as useYn,
+			reg_dt as regDt
+		FROM ofsafe_facility
+		<where>
+			<if test="roadNmAddr != null and roadNmAddr != ''">
+				AND road_nm_addr LIKE CONCAT('%', #{roadNmAddr}, '%')
+			</if>
+			<if test="sggNm != null and sggNm != ''">
+				AND sgg_nm LIKE CONCAT('%', #{sggNm}, '%')
+			</if>
+			<if test="fcltNm != null and fcltNm != ''">
+				AND fclt_nm LIKE CONCAT('%', #{fcltNm}, '%')
+			</if>
+		</where>
+		ORDER BY ${sortKey} ${sortOrder}
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+
+	<select id="getFacilityCount" resultType="int">
+		SELECT COUNT(*)
+		FROM ofsafe_facility
+		<where>
+			<if test="roadNmAddr != null and roadNmAddr != ''">
+				AND road_nm_addr LIKE CONCAT('%', #{roadNmAddr}, '%')
+			</if>
+			<if test="sggNm != null and sggNm != ''">
+				AND sgg_nm LIKE CONCAT('%', #{sggNm}, '%')
+			</if>
+			<if test="fcltNm != null and fcltNm != ''">
+				AND fclt_nm LIKE CONCAT('%', #{fcltNm}, '%')
+			</if>
+		</where>
+	</select>
+
+
+
+
+
+
+
+	<!-- api 자동 등록및 업데이트 -->
+	<insert id="upsertFacility" parameterType="java.util.List">
+		INSERT INTO ofsafe_facility (
+		fclt_nm, fclt_se_cd, ctpv_nm, sgg_nm, road_nm_addr, lat, lot, opn_yn, use_yn,
+		reg_dt
+		) VALUES
+		<foreach collection="list" item="item" separator=",">
+			(
+			#{item.fcltNm}, #{item.fcltSeCd}, #{item.ctpvNm}, #{item.sggNm},
+			#{item.roadNmAddr}, #{item.lat}, #{item.lot},
+			COALESCE(#{item.opnYn}, 'Y'), 'Y', NOW()
+			)
+		</foreach>
+		ON DUPLICATE KEY UPDATE
+		fclt_se_cd = VALUES(fclt_se_cd),
+		ctpv_nm = VALUES(ctpv_nm),
+		sgg_nm = VALUES(sgg_nm),
+		road_nm_addr = VALUES(road_nm_addr),
+		lat = VALUES(lat),
+		lot = VALUES(lot),
+		opn_yn = VALUES(opn_yn),
+		reg_dt = NOW()
+	</insert>
+</mapper>
