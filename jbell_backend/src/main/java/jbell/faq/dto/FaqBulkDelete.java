@@ -7,5 +7,5 @@ import lombok.Data;
 @Data
 public class FaqBulkDelete {
 
-	private List<Integer> faqId;
+	private List<Integer> faqIds;
 }

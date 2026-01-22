@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jbell.exception.CustomException;
 import jbell.exception.ErrorCode;
+import jbell.faq.dto.FaqBulkVisibility;
 import jbell.faq.dto.FaqCreate;
 import jbell.faq.dto.FaqDetail;
 import jbell.faq.dto.FaqList;
@@ -89,6 +90,27 @@ public class FaqService {
         int result = faqMapper.updateFaq(faqUpdate);
 
         // 예외 처리: 대상이 없어서 업데이트되지 않은 경우
+        if (result == 0) {
+            throw new CustomException(ErrorCode.NOT_FOUND);
+        }
+    }
+    
+	// FAQ 공개/비공개 일괄 변경
+    public void updateFaqVisibility(FaqBulkVisibility faqBulkVisibility) {
+    	// 1. 유효성 검사
+        if (faqBulkVisibility.getFaqIds() == null || faqBulkVisibility.getFaqIds().isEmpty()) {
+            throw new RuntimeException("상태를 변경할 FAQ가 선택되지 않았습니다."); // 또는 CustomException 사용
+        }
+        
+        if (faqBulkVisibility.getVisibleYn() == null || 
+           (!faqBulkVisibility.getVisibleYn().equals("Y") && !faqBulkVisibility.getVisibleYn().equals("N"))) {
+            throw new RuntimeException("유효하지 않은 상태값입니다. (Y 또는 N만 가능)");
+        }
+
+        // 2. 업데이트 실행
+        int result = faqMapper.updateFaqVisibility(faqBulkVisibility);
+        
+        // 3. 결과 확인 (선택사항: 대상이 없으면 예외 처리)
         if (result == 0) {
             throw new CustomException(ErrorCode.NOT_FOUND);
         }

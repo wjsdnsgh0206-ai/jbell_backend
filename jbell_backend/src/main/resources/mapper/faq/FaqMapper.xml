@@ -98,6 +98,19 @@
             faq_id = #{faqId}
     </update>
     
+    <update id="updateFaqVisibility" parameterType="jbell.faq.dto.FaqBulkVisibility">
+        /* FAQ 공개/비공개 일괄 변경 */
+        UPDATE faq
+        SET 
+            visible_yn = #{visibleYn}
+            , updated_at = NOW()
+        WHERE 
+            faq_id IN
+        <foreach item="id" collection="faqIds" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+    
     <delete id="deleteFaq" parameterType="java.util.List">
         /* FAQ 삭제 (단일 및 일괄) */
         DELETE FROM faq
