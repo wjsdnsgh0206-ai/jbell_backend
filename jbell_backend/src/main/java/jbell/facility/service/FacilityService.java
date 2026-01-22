@@ -1,19 +1,21 @@
 package jbell.facility.service;
 
-import java.util.Map;
+import java.util.List;
 
 import jbell.facility.dto.FacilityDTO;
+import jbell.facility.dto.FacilityListRequest;
+import jbell.facility.dto.FacilityListResponse;
 import jbell.facility.eunm.ApiType;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public interface FacilityService {
+    Mono<FacilityDTO> getFacilityDetail(Long fcltId); // 상세
+    Mono<Void> insertFacility(FacilityDTO dto);       // 등록
+    Mono<Void> updateFacility(FacilityDTO dto);       // 수정
+    Mono<Void> deleteFacilities(List<Long> ids);      // 삭제
 	
-	
-	Mono<Map<String, Object>> getFacilityListData(
-		    String ctpvNm, String sggNm, String fcltNm, String roadNmAddr, // 추가
-		    int page, String sortKey, String sortOrder
-		);
+	// 파라미터를 객체(Request)로 변경하고, 리턴 타입을 명확한 DTO(Response)로 변경
+    Mono<FacilityListResponse> getFacilityListData(FacilityListRequest request);
 	
 	
 	
