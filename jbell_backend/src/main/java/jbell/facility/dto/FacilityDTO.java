@@ -1,29 +1,31 @@
 package jbell.facility.dto;
 
+import java.time.LocalDateTime;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
 
-@Getter
-@Setter
-@ToString
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@Data
+@NoArgsConstructor  // 기본 생성자
+@AllArgsConstructor // 전체 인자 생성자 (Builder 사용 시 필수)
+@Builder            // 빌더 패턴 활성화
 public class FacilityDTO {
-    // DB 컬럼 매핑
-    private Long fcltId;       // fclt_id (자동증가지만 API ID와 매핑 필요시 사용)
-    private String fcltNm;     // fclt_nm
-    private String fcltSeCd;   // fclt_se_cd (대피소 코드)
-    private String ctpvNm;     // ctpv_nm (시도)
-    private String sggNm;      // sgg_nm (시군구)
-    private String roadNmAddr; // road_nm_addr
-    private Double lat;        // lat
-    private Double lot;        // lot
-    private String opnYn;      // opn_yn
-    private String useYn;      // use_yn
-    private String regDt;      // 날짜
+    private Long fcltId;
+    private String fcltNm;
+    private String fcltSeCd;
+    private String ctpvNm;
+    private String sggNm;
+    private String roadNmAddr;
+    
+    // 추가된 컬럼
+    private Double lat; 
+    private Double lot;
+    
+    private String opnYn;
+    private String useYn;
+    private Integer fcltArea;
+    private Integer fcltCapacity; // 컬럼명 변경 대응 (rcvCapacity -> fcltCapacity)
+    private LocalDateTime regDt;
 }
