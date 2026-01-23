@@ -11,8 +11,7 @@ public class FacilityListRequest {
     private String fcltNm;     // 시설 명
     private String fcltSeCd;	// 추가: DSSP-IF- 로직 검색용 필드
     private String roadNmAddr; // 도로명 주소
-    
-    // 사용자가 검색한 위치 (기존 lat, lot와 별개로 추가)
+
     private Double userLat;
     private Double userLot;
 

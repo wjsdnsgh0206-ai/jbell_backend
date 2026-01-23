@@ -88,10 +88,10 @@ public class FacilityServiceImpl implements FacilityService {
                 request.getCtpvNm(), 
                 request.getSggNm(), 
                 request.getFcltNm(), 
-                request.getRoadNmAddr(), 
+                request.getRoadNmAddr(),
                 request.getFcltSeCd(),
-                request.getUserLat(), // Request에서 꺼내서 전달
-                request.getUserLot(), // Request에서 꺼내서 전달
+                request.getUserLat(), // Request 객체에서 꺼내서 전달
+                request.getUserLot(), // Request 객체에서 꺼내서 전달
                 offset, 
                 limit, 
                 request.getSortKey(), 
