@@ -14,13 +14,13 @@
 	<!-- ConsoleAppender -->
 	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
 		<encoder>
-			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</pattern>
+			<pattern>%d{yyyy-HH-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</pattern>
 		</encoder>
 	</appender>
 	<!--Query ConsoleAppender -->
 	<appender name="QSTDOUT" class="ch.qos.logback.core.ConsoleAppender">
 		<encoder>
-			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} %n\t\t %msg%n</pattern>
+			<pattern>%d{yyyy-HH-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} %n\t\t %msg%n</pattern>
 		</encoder>
 	</appender>
 	
@@ -28,11 +28,11 @@
     <appender name="ROLLING_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         	파일 경로
         <file>${LOG_PATH_NAME}</file>
-        	출력패턴 
+        	출력패턴
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <pattern>%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
-         Rolling 정책 
+         Rolling 정책
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <fileNamePattern>${LOG_DIR}/application_%d{yyyy-MM-dd}_%i.log</fileNamePattern>
             <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFileNamingAndTriggeringPolicy">
