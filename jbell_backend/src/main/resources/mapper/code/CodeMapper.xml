@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="jbell.common.code.mapper.CodeMapper">
+
+    <select id="selectCodeGroupList" resultType="jbell.common.code.domain.CodeGroup">
+        SELECT 
+            code_group_id AS codeGroupId, 
+            code_group_name AS codeGroupName, 
+            code_desc AS codeDesc, 
+            sort_order AS sortOrder, 
+            visible_yn AS visibleYn, 
+            created_at AS createdAt, 
+            updated_at AS updatedAt
+        FROM code_group
+        ORDER BY sort_order ASC
+    </select>
+
+    <select id="selectCodeItemListByGroupId" parameterType="String" resultType="jbell.common.code.domain.CodeItem">
+        SELECT 
+            code_item_id AS codeItem, 
+            code_group_id AS codeGroupId, 
+            code_item_name AS codeItemName, 
+            description AS description, 
+            sort_order AS sortOrder, 
+            visible_yn AS visibleYn, 
+            created_at AS createdAt, 
+            updated_at AS updatedAt
+        FROM code_item
+        WHERE code_group_id = #{codeGroupId}
+        ORDER BY sort_order ASC
+    </select>
+    
+    <insert id="insertCodeGroup" parameterType="jbell.common.code.domain.CodeGroup">
+    INSERT INTO code_group (
+        code_group_id,
+        code_group_name,
+        code_desc,
+        sort_order,
+        visible_yn,
+        created_at,
+        updated_at
+    ) VALUES (
+        #{codeGroupId},
+        #{codeGroupName},
+        #{codeDesc},
+        #{sortOrder},
+        #{visibleYn},
+        NOW(),
+        NOW()
+    )
+</insert>
+
+<delete id="deleteCodeGroup" parameterType="String">
+    DELETE FROM code_group 
+    WHERE code_group_id = #{codeGroupId}
+</delete>
+
+<update id="updateCodeGroup" parameterType="jbell.common.code.domain.CodeGroup">
+    UPDATE code_group
+    SET 
+        code_group_name = #{codeGroupName},
+        code_desc = #{codeDesc},
+        sort_order = #{sortOrder},
+        visible_yn = #{visibleYn},
+        updated_at = NOW()
+    WHERE code_group_id = #{codeGroupId}
+</update>
+
+
+</mapper>
