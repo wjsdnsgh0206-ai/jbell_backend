@@ -4,8 +4,8 @@ import lombok.Getter;
 
 @Getter
 public class BaseException extends RuntimeException{
-	
-	private static final long serialversionUID = 1L;
+
+	private static final long serialVersionUID = 1L;
 	
 	private final ErrorCode errorCode;
 	
@@ -13,6 +13,4 @@ public class BaseException extends RuntimeException{
 		super(errorCode.message());
 		this.errorCode = errorCode;
 	}
-
-
 }

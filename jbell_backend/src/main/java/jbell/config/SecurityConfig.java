@@ -18,43 +18,56 @@ import lombok.RequiredArgsConstructor;
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-	
-	private static String[] RermIT_REQEST_URL = {
-			"/api/**"
-			,"/oauth2/login"
+
+	private static String[] RERMIT_REQUEST_URI = {
+		 "/api/**"
+		,"/oauth2/login"
 	};
 	
 	private final CorsConfigurationSource corsConfigurationSource;
-	
 	@Bean
 	SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-		http 
-			// csrk, formlogin, httpBasic 비활성화
+		http
+			// csrf, formLogin, httpBasic 비활성화
 			.csrf(csrf -> csrf.disable())
 			.formLogin(form -> form.disable())
 			.httpBasic(basic -> basic.disable())
 			// 세션비활성화
 			.sessionManagement(session -> session
 											.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-			
 			)
-			//CORS 설정
+			// CORS 설정
 			.cors(cors -> cors.configurationSource(corsConfigurationSource))
 			// 주소
 			.authorizeHttpRequests(auth -> auth
-											.requestMatchers("/**").permitAll()
+											.requestMatchers(RERMIT_REQUEST_URI).permitAll()
 											.anyRequest().authenticated()
 			);
 		return http.build();
+			
 	}
-	
 	/**
-	 * 정적 리소스 제외설정
-	 * 설정된 주소는 securtiy filter를 거치지 않는다.
+	 * 정적 리소스 제외 설정
+	 * 설정된 주소는 Security Filter를 거치지 않는다.
 	 */
+	@Bean
 	WebSecurityCustomizer webSecurityCustomizer() {
 		return (web) -> web.ignoring()
-							.requestMatchers(PathRequest.toStaticResources().atCommonLocations())
-							.requestMatchers("/favicon.*","/resources/**","/error");
+						   .requestMatchers(PathRequest.toStaticResources().atCommonLocations())
+						   .requestMatchers("/favicon.*", "/resources/**", "/error");
 	}
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
