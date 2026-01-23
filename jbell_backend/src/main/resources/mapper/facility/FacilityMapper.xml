@@ -5,97 +5,133 @@
 
 
 	<!-- 시설 상세조회 -->
-    <select id="getFacilityById" resultType="jbell.facility.dto.FacilityDTO">
-    SELECT 
-        fclt_id AS fcltId, 
-        fclt_nm AS fcltNm, 
-        fclt_se_cd AS fcltSeCd, 
-        ctpv_nm AS ctpvNm, 
-        sgg_nm AS sggNm, 
-        road_nm_addr AS roadNmAddr, 
-        lat, 
-        lot, 
-        opn_yn AS opnYn, 
-        use_yn AS useYn, 
-        fclt_area AS fcltArea, 
-        fclt_capacity AS fcltCapacity, 
-        reg_dt AS regDt
-    FROM ofsafe_facility
-    WHERE fclt_id = #{fcltId}
-</select>
-	
+	<select id="getFacilityById"
+		resultType="jbell.facility.dto.FacilityDTO">
+		SELECT
+		fclt_id AS fcltId,
+		fclt_nm AS fcltNm,
+		fclt_se_cd AS fcltSeCd,
+		ctpv_nm AS ctpvNm,
+		sgg_nm AS sggNm,
+		road_nm_addr AS roadNmAddr,
+		lat,
+		lot,
+		opn_yn AS opnYn,
+		use_yn AS useYn,
+		fclt_area AS fcltArea,
+		fclt_capacity AS fcltCapacity,
+		reg_dt AS regDt
+		FROM ofsafe_facility
+		WHERE fclt_id = #{fcltId}
+	</select>
+
 	<!-- 시설 등록 -->
-    <insert id="insertFacility" parameterType="jbell.facility.dto.FacilityDTO">
-        INSERT INTO ofsafe_facility (
-            fclt_nm, fclt_se_cd, ctpv_nm, sgg_nm, 
-            road_nm_addr, lat, lot, opn_yn, use_yn, 
-            fclt_area, fclt_capacity
-        ) VALUES (
-            #{fcltNm}, #{fcltSeCd}, #{ctpvNm}, #{sggNm}, 
-            #{roadNmAddr}, #{lat}, #{lot}, #{opnYn}, #{useYn}, 
-            #{fcltArea}, #{fcltCapacity}
-        )
-    </insert>
-	
+	<insert id="insertFacility"
+		parameterType="jbell.facility.dto.FacilityDTO">
+		INSERT INTO ofsafe_facility (
+		fclt_nm, fclt_se_cd, ctpv_nm, sgg_nm,
+		road_nm_addr, lat, lot, opn_yn, use_yn,
+		fclt_area, fclt_capacity
+		) VALUES (
+		#{fcltNm}, #{fcltSeCd}, #{ctpvNm}, #{sggNm},
+		#{roadNmAddr}, #{lat}, #{lot}, #{opnYn}, #{useYn},
+		#{fcltArea}, #{fcltCapacity}
+		)
+	</insert>
+
 	<!-- 시설 상세수정 -->
-    <update id="updateFacility" parameterType="jbell.facility.dto.FacilityDTO">
-        UPDATE ofsafe_facility
-        SET 
-            fclt_nm = #{fcltNm},
-            fclt_se_cd = #{fcltSeCd},
-            ctpv_nm = #{ctpvNm},
-            sgg_nm = #{sggNm},
-            road_nm_addr = #{roadNmAddr},
-            lat = #{lat},
-            lot = #{lot},
-            opn_yn = #{opnYn},
-            use_yn = #{useYn},
-            fclt_area = #{fcltArea},
-            fclt_capacity = #{fcltCapacity}
-        WHERE fclt_id = #{fcltId}
-    </update>
+	<update id="updateFacility"
+		parameterType="jbell.facility.dto.FacilityDTO">
+		UPDATE ofsafe_facility
+		SET
+		fclt_nm = #{fcltNm},
+		fclt_se_cd = #{fcltSeCd},
+		ctpv_nm = #{ctpvNm},
+		sgg_nm = #{sggNm},
+		road_nm_addr = #{roadNmAddr},
+		lat = #{lat},
+		lot = #{lot},
+		opn_yn = #{opnYn},
+		use_yn = #{useYn},
+		fclt_area = #{fcltArea},
+		fclt_capacity = #{fcltCapacity}
+		WHERE fclt_id = #{fcltId}
+	</update>
 
 	<!-- 시설 삭제 -->
-    <delete id="deleteFacilities" parameterType="list">
-    DELETE FROM ofsafe_facility
-    WHERE fclt_id IN
-    <foreach item="id" collection="list" open="(" separator="," close=")">
-        #{id}
-    </foreach>
-</delete>
+	<delete id="deleteFacilities" parameterType="list">
+		DELETE FROM ofsafe_facility
+		WHERE fclt_id IN
+		<foreach item="id" collection="list" open="(" separator=","
+			close=")">
+			#{id}
+		</foreach>
+	</delete>
 
 
 
 	<!-- 시설 검색및 조회 -->
-	<select id="getFacilityList"
-		resultType="jbell.facility.dto.FacilityDTO">
-		SELECT
-			fclt_id as fcltId,
-			fclt_nm as fcltNm,
-			fclt_se_cd as fcltSeCd,
-			ctpv_nm as ctpvNm,
-			sgg_nm as sggNm,
-			road_nm_addr as roadNmAddr,
-			lat,
-			lot,
-			opn_yn as opnYn,
-			use_yn as useYn,
-			reg_dt as regDt
-		FROM ofsafe_facility
-		<where>
-			<if test="roadNmAddr != null and roadNmAddr != ''">
-				AND road_nm_addr LIKE CONCAT('%', #{roadNmAddr}, '%')
-			</if>
-			<if test="sggNm != null and sggNm != ''">
-				AND sgg_nm LIKE CONCAT('%', #{sggNm}, '%')
-			</if>
-			<if test="fcltNm != null and fcltNm != ''">
-				AND fclt_nm LIKE CONCAT('%', #{fcltNm}, '%')
-			</if>
-		</where>
-		ORDER BY ${sortKey} ${sortOrder}
-		LIMIT #{limit} OFFSET #{offset}
-	</select>
+	<select id="getFacilityList" resultType="jbell.facility.dto.FacilityDTO">
+    SELECT
+        fclt_id as fcltId,
+        fclt_nm as fcltNm,
+        fclt_se_cd as fcltSeCd,
+        ctpv_nm as ctpvNm,
+        sgg_nm as sggNm,
+        road_nm_addr as roadNmAddr,
+        lat,
+        lot,
+        fclt_area as fcltArea,
+        fclt_capacity as fcltCapacity,
+        opn_yn as opnYn,
+        use_yn as useYn,
+        reg_dt as regDt,
+        <choose>
+            <when test="userLat != null and userLot != null">
+                (6371 * acos(cos(radians(#{userLat})) * cos(radians(lat)) * cos(radians(lot) - radians(#{userLot})) + sin(radians(#{userLat})) * sin(radians(lat))))
+            </when>
+            <otherwise>0</otherwise>
+        </choose> AS distance
+    FROM ofsafe_facility
+    <where>
+        <if test="sggNm != null and sggNm != ''">
+            AND sgg_nm LIKE CONCAT('%', #{sggNm}, '%')
+        </if>
+        <if test="fcltSeCd != null and fcltSeCd != ''">
+            AND fclt_se_cd = #{fcltSeCd}
+        </if>
+        <if test="(roadNmAddr != null and roadNmAddr != '') or (fcltNm != null and fcltNm != '')">
+            AND (
+                <if test="roadNmAddr != null and roadNmAddr != ''">
+                    road_nm_addr LIKE CONCAT('%', #{roadNmAddr}, '%')
+                </if>
+                <if test="(roadNmAddr != null and roadNmAddr != '') and (fcltNm != null and fcltNm != '')">
+                    OR
+                </if>
+                <if test="fcltNm != null and fcltNm != ''">
+                    fclt_nm LIKE CONCAT('%', #{fcltNm}, '%')
+                </if>
+            )
+        </if>
+    </where>
+    
+    ORDER BY 
+    <choose>
+        <when test="userLat != null and userLot != null">
+            distance ASC
+        </when>
+        <otherwise>
+            <if test="sortKey != null and sortKey != ''">
+                ${sortKey} ${sortOrder}
+            </if>
+            <if test="sortKey == null or sortKey == ''">
+                fclt_id DESC
+            </if>
+        </otherwise>
+    </choose>
+    
+    LIMIT #{limit} OFFSET #{offset}
+</select>
 
 
 	<select id="getFacilityCount" resultType="int">
@@ -122,46 +158,46 @@
 
 	<!-- api 자동 등록및 업데이트 -->
 	<insert id="upsertFacility" parameterType="java.util.List">
-    INSERT INTO ofsafe_facility (
-        fclt_nm, 
-        fclt_se_cd, 
-        ctpv_nm, 
-        sgg_nm, 
-        road_nm_addr, 
-        lat, 
-        lot, 
-        opn_yn, 
-        use_yn,
-        fclt_area, 
-        fclt_capacity,
-        reg_dt
-    ) VALUES
-    <foreach collection="list" item="item" separator=",">
-        (
-            #{item.fcltNm}, 
-            #{item.fcltSeCd}, 
-            #{item.ctpvNm}, 
-            #{item.sggNm},
-            #{item.roadNmAddr}, 
-            #{item.lat}, 
-            #{item.lot},
-            COALESCE(#{item.opnYn}, 'Y'), 
-            'Y',
-            #{item.fcltArea},
-            #{item.fcltCapacity},
-            NOW()
-        )
-    </foreach>
-    ON DUPLICATE KEY UPDATE
-        fclt_se_cd    = VALUES(fclt_se_cd),
-        ctpv_nm       = VALUES(ctpv_nm),
-        sgg_nm        = VALUES(sgg_nm),
-        road_nm_addr  = VALUES(road_nm_addr),
-        lat           = VALUES(lat),
-        lot           = VALUES(lot),
-        opn_yn        = VALUES(opn_yn),
-        fclt_area     = VALUES(fclt_area),
-        fclt_capacity = VALUES(fclt_capacity),
-        reg_dt        = NOW()
-</insert>
+		INSERT INTO ofsafe_facility (
+		fclt_nm,
+		fclt_se_cd,
+		ctpv_nm,
+		sgg_nm,
+		road_nm_addr,
+		lat,
+		lot,
+		opn_yn,
+		use_yn,
+		fclt_area,
+		fclt_capacity,
+		reg_dt
+		) VALUES
+		<foreach collection="list" item="item" separator=",">
+			(
+			#{item.fcltNm},
+			#{item.fcltSeCd},
+			#{item.ctpvNm},
+			#{item.sggNm},
+			#{item.roadNmAddr},
+			#{item.lat},
+			#{item.lot},
+			COALESCE(#{item.opnYn}, 'Y'),
+			'Y',
+			#{item.fcltArea},
+			#{item.fcltCapacity},
+			NOW()
+			)
+		</foreach>
+		ON DUPLICATE KEY UPDATE
+		fclt_se_cd = VALUES(fclt_se_cd),
+		ctpv_nm = VALUES(ctpv_nm),
+		sgg_nm = VALUES(sgg_nm),
+		road_nm_addr = VALUES(road_nm_addr),
+		lat = VALUES(lat),
+		lot = VALUES(lot),
+		opn_yn = VALUES(opn_yn),
+		fclt_area = VALUES(fclt_area),
+		fclt_capacity = VALUES(fclt_capacity),
+		reg_dt = NOW()
+	</insert>
 </mapper>
