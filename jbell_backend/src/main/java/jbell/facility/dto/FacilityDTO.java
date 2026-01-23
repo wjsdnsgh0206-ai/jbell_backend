@@ -19,7 +19,6 @@ public class FacilityDTO {
     private String sggNm;
     private String roadNmAddr;
     
-    // 추가된 컬럼
     private Double lat; 
     private Double lot;
     
@@ -28,4 +27,7 @@ public class FacilityDTO {
     private Integer fcltArea;
     private Integer fcltCapacity; // 컬럼명 변경 대응 (rcvCapacity -> fcltCapacity)
     private LocalDateTime regDt;
+    
+    
+    
 }
