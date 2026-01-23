@@ -17,32 +17,27 @@ import lombok.extern.slf4j.Slf4j;
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
-	
-	
 	/**
 	 * 사용자 정의 예외처리
 	 * @param ex
 	 * @param request
-	 * @return
+	 * @return ResponseEntity<ApiResponse> 에러필드명, 에러메시지
 	 */
-	public ResponseEntity<ApiResponse<?>> handleCustomException(BaseException ex, HttpServletRequest request){
+	@ExceptionHandler(CustomException.class)
+	public ResponseEntity<ApiResponse<?>> handleCustomException(CustomException ex, HttpServletRequest request){
 		StackTraceElement[] stackTrace = ex.getStackTrace();
 		StackTraceElement origin = stackTrace[0];
-		log.error( "[Exception] {}\n[Method]:{} ({}:{}) - message={}"
+		log.error( "\n[Exception] {}\n[Method]:{} ({}:{}) - message={}"
 					, origin.getClassName()
 					, origin.getMethodName()
 					, origin.getFileName()
 					, origin.getLineNumber()
 					, ex.getMessage()
 				 );
-
 		ErrorCode errorCode = ex.getErrorCode();
 		ApiResponse<String> response = ApiResponse.error(errorCode.status().value(), ex.getMessage());
 		return ResponseEntity.status(errorCode.status().value()).body(response);
-		
 	}
-	
-	
 	
 	/**
 	 * 유효성검사(spring boot validation) 예외처리
@@ -55,7 +50,7 @@ public class GlobalExceptionHandler {
 										(MethodArgumentNotValidException ex, HttpServletRequest request){
 		StackTraceElement[] stackTrace = ex.getStackTrace();
 		StackTraceElement origin = stackTrace[0];
-		log.error( "[Exception] {}\n[Method]:{} ({}:{}) - message={}"
+		log.error( "\n[Exception] {}\n[Method]:{} ({}:{}) - message={}"
 					, origin.getClassName()
 					, origin.getMethodName()
 					, origin.getFileName()
@@ -88,7 +83,7 @@ public class GlobalExceptionHandler {
 		
 		StackTraceElement[] stackTrace = ex.getStackTrace();
 		StackTraceElement origin = stackTrace[0];
-		log.error( "[Exception] {}\n[Method]:{} ({}:{}) - message={}"
+		log.error( "\n[Exception] {}\n[Method]:{} ({}:{}) - message={}"
 					, origin.getClassName()
 					, origin.getMethodName()
 					, origin.getFileName()
@@ -101,12 +96,6 @@ public class GlobalExceptionHandler {
 														);
 		return ResponseEntity.internalServerError().body(response);
 	}
-	
-	
-	
-	
-	
-	
 }
 
 

@@ -109,12 +109,14 @@ public class FacilityServiceImpl implements FacilityService {
         }).subscribeOn(Schedulers.boundedElastic());
     }
 
+    
     @Value("${VITE_API_SHELTER_TEMPORARY_HOUSING_KEY}") private String imsiKey;
     @Value("${VITE_API_SHELTER_HEAT_KEY}") private String heatKey;
     @Value("${VITE_API_SHELTER_COLD_WAVE}") private String coldKey;
     @Value("${VITE_API_SHELTER_EARTHQUAKE1}") private String quakeKey;
     @Value("${VITE_API_SHELTER_CIVIL_DEFENSE_NUCLEAR}") private String nuclearKey;
     @Value("${VITE_API_SHELTER_CIVIL_DEFENSE_DISASTER}") private String civilKey;
+
 
     @Override
     public void syncAllFacility() {

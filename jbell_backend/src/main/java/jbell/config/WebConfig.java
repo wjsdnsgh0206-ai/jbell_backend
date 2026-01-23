@@ -10,7 +10,7 @@ import lombok.RequiredArgsConstructor;
 @Configuration
 @RequiredArgsConstructor
 public class WebConfig implements WebMvcConfigurer{
-
+	
 	private final LogInterceptor logInterceptor;
 	
 	@Override
@@ -18,13 +18,9 @@ public class WebConfig implements WebMvcConfigurer{
 		
 		registry.addInterceptor(logInterceptor)
 				.addPathPatterns("/**")
-//				.excludePathPatterns("/manage/**")
 				.excludePathPatterns("/favicon.*")
 				.excludePathPatterns("/error");
 		
 		WebMvcConfigurer.super.addInterceptors(registry);
 	}
-	
 }
-
-

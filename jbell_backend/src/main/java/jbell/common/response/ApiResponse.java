@@ -2,9 +2,11 @@ package jbell.common.response;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import lombok.Getter;
+
 /**
  * API 공통 응답 클래스
  * @param <T> 응답데이터 타입 (성공시) 또는 오류 상세 (실패시)
@@ -12,6 +14,7 @@ import lombok.Getter;
 @Getter
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApiResponse<T> {
+	
 	private final LocalDateTime localDateTime;		// 서버응답시 시간
 	private final String status;					// HTTP 요청 "SUCCESS", "ERROR"
 	private final int httpCode;						// HTTP 상태코드 (예 : 2xx, 3xx, 4xx, 500 etc)
@@ -65,25 +68,4 @@ public class ApiResponse<T> {
 		return new ApiResponse<T>("ERROR", httpCode, message, data);
 	}
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
