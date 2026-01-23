@@ -1,6 +1,8 @@
 package jbell.externapi.service;
 
 import java.time.Duration;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -107,7 +109,13 @@ public class IntegrationService {
 							            		.retrieve()
 							            		.bodyToMono(JsonNode.class)
 							            		.timeout(Duration.ofMillis(timeout))
-							            		.doOnSuccess(firstResponse -> log.info("Successfully fetched page {}", firstResponse))
+							            		.doOnSuccess(firstResponse -> {
+							            			log.info("Successfully fetched page {}", firstResponse.get("earthqueakNoti").get("info"));
+							            			JsonNode info = firstResponse.get("earthqueakNoti").get("info");
+							            			var list = StreamSupport.stream(info.spliterator(), false)
+							            						 			.collect(Collectors.toList());
+							            			log.info("list: {}", list);
+							            		})
 							            		.doOnError(error -> log.error("Error fetching", error.getMessage()))
 							            		.onErrorResume(CustomException.class, e -> {
 												    log.error("WebClient error : Status={}",  e.getMessage());

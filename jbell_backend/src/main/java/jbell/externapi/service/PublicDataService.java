@@ -124,7 +124,7 @@ public class PublicDataService {
      * @return PublicDataResponse 공공데이터응답객체
      */
     private <T> PublicDataResponse<T> parseResponse(String responseString, String type, Class<T> responseType) {
-    
+    	System.out.println(responseString);
         try {
             if ("xml".equalsIgnoreCase(type)) {
                 return xmlMapper.readValue(
