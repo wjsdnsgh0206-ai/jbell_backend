@@ -14,7 +14,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @Configuration
 public class CorsConfig {
 
-	private static final List<String> ALLOW_ORIGINS = List.of(
+	private static final List<String> ALLOW_ORIGIN = List.of(
 			 "http://localhost:5173"
 			,"https://localhost:5173"
 			,"http://jbell.cloud"
@@ -32,7 +32,7 @@ public class CorsConfig {
 	@Primary
 	CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration corsConfiguration = new CorsConfiguration();
-		corsConfiguration.setAllowedOrigins(ALLOW_ORIGINS);
+		corsConfiguration.setAllowedOrigins(ALLOW_ORIGIN);
 		corsConfiguration.setAllowedMethods(ALLOW_METHOD);
 		corsConfiguration.setAllowedHeaders(Arrays.asList("*"));
 		corsConfiguration.setAllowCredentials(true);

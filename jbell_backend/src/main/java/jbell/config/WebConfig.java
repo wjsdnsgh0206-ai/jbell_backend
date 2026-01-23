@@ -6,10 +6,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import jbell.common.interceptor.LogInterceptor;
 import lombok.RequiredArgsConstructor;
-
 @Configuration
 @RequiredArgsConstructor
-public class WebConfig implements WebMvcConfigurer{
+public class WebConfig  implements WebMvcConfigurer{
 	
 	private final LogInterceptor logInterceptor;
 	
@@ -23,4 +22,5 @@ public class WebConfig implements WebMvcConfigurer{
 		
 		WebMvcConfigurer.super.addInterceptors(registry);
 	}
+
 }

@@ -18,19 +18,17 @@ import lombok.RequiredArgsConstructor;
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-	
-	private static String[] RERMIT_REQEUST_URI = {
-			 "/api/auth/**"
-			,"/api/**"
-			,"/oauth2/login"
+
+	private static String[] RERMIT_REQUEST_URI = {
+		 "/api/**"
+		,"/oauth2/login"
 	};
 	
 	private final CorsConfigurationSource corsConfigurationSource;
-
 	@Bean
 	SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 		http
-			// csrf, formlogin, httpBasic 비활성화
+			// csrf, formLogin, httpBasic 비활성화
 			.csrf(csrf -> csrf.disable())
 			.formLogin(form -> form.disable())
 			.httpBasic(basic -> basic.disable())
@@ -42,12 +40,12 @@ public class SecurityConfig {
 			.cors(cors -> cors.configurationSource(corsConfigurationSource))
 			// 주소
 			.authorizeHttpRequests(auth -> auth
-											 .requestMatchers(RERMIT_REQEUST_URI).permitAll()
-											 .anyRequest().authenticated()
+											.requestMatchers(RERMIT_REQUEST_URI).permitAll()
+											.anyRequest().authenticated()
 			);
 		return http.build();
+			
 	}
-	
 	/**
 	 * 정적 리소스 제외 설정
 	 * 설정된 주소는 Security Filter를 거치지 않는다.
