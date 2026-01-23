@@ -32,27 +32,6 @@
             i.created_at DESC
     </select>
     
-    <insert id="insertQna" parameterType="jbell.qna.dto.QnaCreate">
-    	/* QnA 등록 */
-        INSERT INTO inquiry (
-            question_type_id      
-            , title
-            , question_content
-            , user_id             
-            , visible_yn          
-            , answer_status       
-            , created_at
-        ) VALUES (
-            #{qnaCategoryId}      
-            , #{title}
-            , #{content}
-            , #{userId}
-            , #{isVisible}
-            , '답변대기'          
-            , NOW()
-        )
-    </insert>
-    
     <select id="getQnaDetail" parameterType="Long" resultType="jbell.qna.dto.QnaDetail">
     	/* QnA 상세 조회 (카테고리명, 답변 포함) */
        SELECT 
@@ -73,8 +52,12 @@
             , u.user_name         AS userName
             
             /* 4. 답변 테이블 (inquiry_answer) */
+            , ia.answer_id		  AS qnaAnswerId
             , ia.answer_content   AS answerContent
             , ia.created_at       AS answerCreatedAt
+            , ia.user_id          AS answerUserId
+            
+            , admin_u.user_name   AS answerUserName
             
         FROM 
             inquiry i
@@ -90,31 +73,14 @@
         /* 답변 정보 조회 */
         LEFT JOIN inquiry_answer ia
             ON i.inquiry_id = ia.inquiry_id
+           
+        /* 답변자 정보 조인 (답변이 있을 때만 이름 가져오기) */
+    	LEFT JOIN user admin_u
+        ON ia.user_id = admin_u.user_id
             
         WHERE
             i.inquiry_id = #{qnaId}
     </select>
-    
-    <update id="updateQna">
-       /* QnA 정보 수정 */
-        UPDATE inquiry
-        <set>
-            <if test="update.qnaCategoryId != null and update.qnaCategoryId != ''">
-                question_type_id = #{update.qnaCategoryId},
-            </if>
-            <if test="update.title != null and update.title != ''">
-                title = #{update.title},
-            </if>
-            <if test="update.content != null and update.content != ''">
-                question_content = #{update.content},
-            </if>
-            <if test="update.isVisible != null and update.isVisible != ''">
-                visible_yn = #{update.isVisible},
-            </if>
-            </set>
-        WHERE 
-            inquiry_id = #{qnaId}
-    </update>
     
     <delete id="deleteInquiryAnswers" parameterType="java.util.List">
         /* 연결된 답변 삭제 */

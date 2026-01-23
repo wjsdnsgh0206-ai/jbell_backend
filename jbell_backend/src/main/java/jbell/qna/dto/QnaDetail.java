@@ -18,7 +18,10 @@ public class QnaDetail {
 	private String userName;                // user.user_name
 	
 
-
+	private Long qnaAnswerId;				// answer_id (PK)
     private String answerContent;           // 답변 내용 (inquiry_answer.answer_content)
     private LocalDateTime answerCreatedAt;  // 답변 등록 일시 (inquiry_answer.created_at)
+    
+    private String answerUserId;   // 답변자 ID (inquiry_answer.user_id)
+    private String answerUserName; // 답변자 이름 (user.user_name)
 }

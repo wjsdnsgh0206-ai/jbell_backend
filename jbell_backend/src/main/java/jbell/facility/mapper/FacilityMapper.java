@@ -11,6 +11,13 @@ import jbell.facility.dto.FacilityDTO;
 
 @Mapper
 public interface FacilityMapper {
+	
+	FacilityDTO getFacilityById(Long fcltId);
+    void insertFacility(FacilityDTO dto);
+    void updateFacility(FacilityDTO dto);
+    void deleteFacilities(List<Long> ids);
+	
+	
 	// 조건 검색 및 페이징 조회
     // 리스트 조회 (정렬 파라미터 추가)
 	List<FacilityDTO> getFacilityList(
