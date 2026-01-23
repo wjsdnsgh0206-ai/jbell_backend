@@ -89,12 +89,16 @@ public class FacilityServiceImpl implements FacilityService {
                 request.getSggNm(), 
                 request.getFcltNm(), 
                 request.getRoadNmAddr(), 
+                request.getFcltSeCd(),
+                request.getUserLat(), // Request에서 꺼내서 전달
+                request.getUserLot(), // Request에서 꺼내서 전달
                 offset, 
                 limit, 
                 request.getSortKey(), 
                 request.getSortOrder()
             );
             
+            // Count 쿼리에도 필터 조건을 동일하게 적용하는 것이 좋습니다.
             int totalCount = sheltersMapper.getFacilityCount(
                 request.getCtpvNm(), 
                 request.getSggNm(), 
@@ -178,29 +182,29 @@ public class FacilityServiceImpl implements FacilityService {
     private Mono<Void> processAndSave(List<Map<String, Object>> items, ApiType type, int pageNo) {
         if (items == null || items.isEmpty()) return Mono.empty();
 
-        return Mono.fromRunnable(() -> {
-            try {
-                List<FacilityDTO> dtoList = items.stream()
-                    .map(item -> {
-                        String fullAddr = safeString(item.get(type.addrField));
-                        if(fullAddr.isEmpty()) fullAddr = safeString(item.get("DTL_ADRES"));
-                        return new Object[]{item, fullAddr};
-                    })
-                    .filter(obj -> {
-                        String addr = (String) obj[1];
-                        return addr.contains("전북") || addr.contains("전라북도");
-                    })
-                    .map(obj -> convertToDTO((Map<String, Object>) obj[0], (String) obj[1], type))
-                    .collect(Collectors.toList());
+        return Mono.fromCallable(() -> {
+            List<FacilityDTO> dtoList = items.stream()
+                .map(item -> {
+                    String fullAddr = safeString(item.get(type.addrField));
+                    if(fullAddr.isEmpty()) fullAddr = safeString(item.get("DTL_ADRES"));
+                    return new Object[]{item, fullAddr};
+                })
+                .filter(obj -> {
+                    String addr = (String) obj[1];
+                    return addr.contains("전북") || addr.contains("전라북도");
+                })
+                .map(obj -> convertToDTO((Map<String, Object>) obj[0], (String) obj[1], type))
+                .collect(Collectors.toList());
 
-                if (!dtoList.isEmpty()) {
-                    sheltersMapper.upsertFacility(dtoList);
-                    log.info("[{}] {}페이지: 전북 데이터 {}건 저장/갱신", type.apiId, pageNo, dtoList.size());
-                }
-            } catch (Exception e) {
-                log.error("[{}] 저장 중 오류: {}", type.apiId, e.getMessage());
+            if (!dtoList.isEmpty()) {
+                // 핵심: upsert 시 중복을 막으려면 dtoList 내에서도 중복 제거가 필요할 수 있음
+                sheltersMapper.upsertFacility(dtoList);
+                log.info("[{}] {}페이지: {}건 처리 완료", type.apiId, pageNo, dtoList.size());
             }
-        }).subscribeOn(Schedulers.boundedElastic()).then();
+            return true;
+        })
+        .subscribeOn(Schedulers.boundedElastic()) // DB 작업은 전용 스레드 풀에서
+        .then();
     }
 
     private FacilityDTO convertToDTO(Map<String, Object> item, String fullAddr, ApiType type) {
@@ -217,7 +221,7 @@ public class FacilityServiceImpl implements FacilityService {
 
         return FacilityDTO.builder()
             .fcltNm(safeString(item.get(type.nameField)))
-            .fcltSeCd(type.apiId) // ApiType의 apiId가 DB의 code_item_id(DSSP-IF-...)와 일치해야 함
+            .fcltSeCd(type.fcltSeCd) // ApiType의 apiId가 DB의 code_item_id(DSSP-IF-...)와 일치해야 함
             .ctpvNm(addrParts.length > 0 ? addrParts[0] : "")
             .sggNm(addrParts.length > 1 ? addrParts[1] : "")
             .roadNmAddr(fullAddr)

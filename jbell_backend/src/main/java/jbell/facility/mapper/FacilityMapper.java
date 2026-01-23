@@ -21,14 +21,17 @@ public interface FacilityMapper {
 	// 조건 검색 및 페이징 조회
     // 리스트 조회 (정렬 파라미터 추가)
 	List<FacilityDTO> getFacilityList(
-	    @Param("ctpvNm") String ctpvNm, 
-	    @Param("sggNm") String sggNm, 
-	    @Param("fcltNm") String fcltNm, 
-	    @Param("roadNmAddr") String roadNmAddr,
-	    @Param("offset") int offset, 
-	    @Param("limit") int limit,
-	    @Param("sortKey") String sortKey,
-	    @Param("sortOrder") String sortOrder
+			@Param("ctpvNm") String ctpvNm, 
+		    @Param("sggNm") String sggNm, 
+		    @Param("fcltNm") String fcltNm,      // 시설명 검색용 (기존)
+		    @Param("roadNmAddr") String roadNmAddr,
+		    @Param("fcltSeCd") String fcltSeCd,  // 유형 코드 검색용 (추가)
+		    @Param("userLat") Double userLat,  // 검색 기준 위도
+		    @Param("userLot") Double userLot,
+		    @Param("offset") int offset, 
+		    @Param("limit") int limit,
+		    @Param("sortKey") String sortKey,
+		    @Param("sortOrder") String sortOrder
 	);
 	
 	// 전체개수 조회
