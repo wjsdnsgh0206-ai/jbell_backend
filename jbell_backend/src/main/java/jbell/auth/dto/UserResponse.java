@@ -1,5 +1,7 @@
 package jbell.auth.dto;
 
+import java.time.LocalDateTime;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,5 +18,6 @@ public class UserResponse {
     private String userBirthDate;
     private String userGender;
     private String userGrade;
-    private String userResidenceArea;
+    private String userResidenceArea; // 주소
+    private LocalDateTime createdAt;   // 가입일
 }

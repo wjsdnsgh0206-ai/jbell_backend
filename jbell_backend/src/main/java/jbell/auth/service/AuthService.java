@@ -13,8 +13,12 @@ public interface AuthService {
     Map<String, String> login(LoginRequest loginRequest); 
     
     String refreshAccessToken(String refreshToken);
-    String findId(String name, String email);
-    void resetPassword(String userId, String email);
+    String findId(String email);
+    public void resetPassword(String userId, String email, String newPw);
     
     UserResponse getUserInfo(String userId);
+    void updateUserInfo(SignupRequest request); // 기존 SignupRequest를 재사용하거나 UpdateRequest를 새로 생성
+    // 비밀번호 검증
+    boolean checkPassword(String userId, String rawPassword);
+
 }

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="jbell.common.mapper.CommonMapper">
+	<select id="getCodeListByGroupId" resultType="map">
+        SELECT 
+            code_item_id   AS "code", 
+            code_item_name AS "name"
+        FROM code_item
+        <where>
+            <if test="groupId != null and groupId != ''">
+                AND code_group_id = #{groupId}
+            </if>
+        </where>
+        ORDER BY code_item_id ASC
+    </select>
+	
+</mapper>

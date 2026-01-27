@@ -12,6 +12,7 @@ public interface UserMapper {
     boolean existsByUserId(String userId);
     User findByUserId(String userId);
     
+    void updateUser(SignupRequest signupRequest);
     
 
     // 리프레시 토큰 관련 메서드
@@ -19,6 +20,6 @@ public interface UserMapper {
     String getRefreshToken(String userId);
 
     // 아이디/비번 찾기 관련 메서드
-    String findIdByNameAndEmail(@Param("name") String name, @Param("email") String email);
+    String findIdByEmail(@Param("userEmail") String userEmail);
     void updatePassword(@Param("userId") String userId, @Param("newPw") String newPw);
 }

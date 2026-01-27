@@ -31,6 +31,13 @@ public class AuthController {
     private AuthService authService;
     @Autowired
     private EmailService emailService;
+    
+    // 회원 정보 업데이트
+    @PostMapping("/update")
+    public ResponseEntity<?> updateProfile(@Valid @RequestBody SignupRequest updateRequest) {
+        authService.updateUserInfo(updateRequest);
+        return ResponseEntity.ok(ApiResponse.success("회원 정보가 수정되었습니다."));
+    }
 
     // 1. 이메일 인증번호 발송
     @PostMapping("/email-send")
@@ -112,25 +119,50 @@ public class AuthController {
     }
 
     @GetMapping("/userinfo")
-    public ResponseEntity<?> getUserInfo(@RequestParam String userId) {
+    public ResponseEntity<?> getUserInfo(@RequestParam("userId") String userId) { // ("userId") 명시
         UserResponse userResponse = authService.getUserInfo(userId);
         return ResponseEntity.ok(ApiResponse.success(userResponse));
     }
 
     @GetMapping("/find-id")
-    public ResponseEntity<?> findId(@RequestParam String name, @RequestParam String email) {
-        String userId = authService.findId(name, email);
-        return ResponseEntity.ok(ApiResponse.success(userId));
+    public ApiResponse<String> findId(
+        @RequestParam("email") String email
+    ) {
+        String userId = authService.findId(email);
+        return ApiResponse.success(userId);
     }
 
     @PostMapping("/reset-pw")
-    public ResponseEntity<?> resetPw(@RequestParam String userId, @RequestParam String email) {
-        authService.resetPassword(userId, email);
-        return ResponseEntity.ok(ApiResponse.success("임시 비밀번호가 발급되었습니다."));
+    public ResponseEntity<?> resetPw(
+        @RequestParam("userId") String userId, 
+        @RequestParam("email") String email,
+        @RequestParam("newPassword") String newPassword
+    ) {
+        try {
+            authService.resetPassword(userId, email, newPassword);
+            return ResponseEntity.ok(ApiResponse.success("비밀번호가 성공적으로 변경되었습니다."));
+        } catch (RuntimeException e) {
+            // 기존 ApiResponse에 정의된 error 메서드를 호출 (400 에러 처리)
+            return ResponseEntity.badRequest()
+            		.body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), "회원정보가 없습니다."));
+        }
     }
     
-    
-    
+    // 비밀번호 검증
+    @PostMapping("/verify-password")
+    public ResponseEntity<?> verifyPassword(@RequestBody LoginRequest verifyRequest) {
+        // 프론트에서 넘어온 userId와 userPw를 사용합니다.
+        boolean isValid = authService.checkPassword(verifyRequest.getUserId(), verifyRequest.getUserPw());
+        
+        if (isValid) {
+            // 본인 확인 성공
+            return ResponseEntity.ok(ApiResponse.success(true));
+        } else {
+            // 비밀번호가 틀린 경우
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                                 .body(ApiResponse.error(401, "비밀번호가 일치하지 않습니다."));
+        }
+    }
 
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@Valid @RequestBody SignupRequest signupRequest) {

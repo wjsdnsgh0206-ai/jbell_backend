@@ -21,7 +21,9 @@ public class User {
     private String userGender;
     private String userBirthDate;
     private String userEmail;
-
+    private LocalDateTime createdAt;
+    
+    
     @Builder.Default
     private String userGrade = "USER";
 

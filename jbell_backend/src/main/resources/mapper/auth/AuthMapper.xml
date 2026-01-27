@@ -16,7 +16,21 @@
 		    WHERE user_id = #{userId}
 		</update>
 
-	
+	<update id="updateUser" parameterType="jbell.auth.dto.SignupRequest">
+	    UPDATE user
+	    SET 
+	        user_name = #{userName},
+	        user_email = #{userEmail},
+	        user_birth_date = #{userBirthDate},
+	        user_gender = #{userGender},
+	        user_residence_area = #{userResidenceArea},
+	        user_status = #{userStatus} 
+	        <if test="userPw != null and userPw != ''">
+	            , user_password = #{userPw}
+	        </if>
+	    WHERE user_id = #{userId}
+	</update>
+
 
 
 	<select id="findByUserId" resultType="jbell.auth.domain.User">
@@ -28,15 +42,16 @@
 	        user_email AS userEmail,
 	        user_gender AS userGender,
 	        user_grade AS userGrade,
-	        user_residence_area AS userResidenceArea
+	        user_residence_area AS userResidenceArea,
+	        created_at AS createdAt
 	    FROM user
 	    WHERE user_id = #{userId} AND user_status = TRUE
 	</select>
 	
-	<select id="findIdByNameAndEmail" resultType="string">
+	<select id="findIdByEmail" resultType="string">
 	    SELECT user_id
 	    FROM user
-	    WHERE user_name = #{name} AND user_email = #{email}
+	    WHERE user_email = #{userEmail}
 	</select>
 	
 	<update id="updatePassword">

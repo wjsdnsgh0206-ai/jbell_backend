@@ -23,6 +23,17 @@ public class AuthServiceImpl implements AuthService {
 	private final UserMapper userMapper;
     private final BCryptPasswordEncoder passwordEncoder; // SecurityConfig에서 등록한 빈 주입
     private final JwtTokenProvider jwtTokenProvider;
+    
+    // 회원정보 수정
+    @Override
+    @Transactional
+    public void updateUserInfo(SignupRequest request) {
+        // 비밀번호가 입력된 경우에만 암호화하여 업데이트 (이 로직 덕분에 DTO에서 필수를 빼도 안전합니다)
+        if (request.getUserPw() != null && !request.getUserPw().isEmpty()) {
+            request.setUserPw(passwordEncoder.encode(request.getUserPw()));
+        }
+        userMapper.updateUser(request);
+    }
 
     // 로그인
     @Override
@@ -43,6 +54,22 @@ public class AuthServiceImpl implements AuthService {
         tokens.put("accessToken", accessToken);
         tokens.put("refreshToken", refreshToken);
         return tokens;
+    }
+    
+    // 비밀번호 검증
+    @Override
+    @Transactional(readOnly = true)
+    public boolean checkPassword(String userId, String rawPassword) {
+        // 1. 기존에 작성된 findByUserId를 사용하여 유저 정보 조회
+        User user = userMapper.findByUserId(userId);
+        
+        if (user == null) {
+            throw new RuntimeException("사용자를 찾을 수 없습니다.");
+        }
+
+        // 2. 입력된 비밀번호와 DB의 암호화된 비밀번호(userPw) 비교
+        // matches(평문 비밀번호, 암호화된 비밀번호) 순서입니다.
+        return passwordEncoder.matches(rawPassword, user.getUserPw());
     }
 
     // 리프레시 토큰으로 액세스 토큰 재발급
@@ -71,29 +98,30 @@ public class AuthServiceImpl implements AuthService {
 
     // 아이디 찾기
     @Override
-    public String findId(String name, String email) {
-        String userId = userMapper.findIdByNameAndEmail(name, email);
+    public String findId(String email) {
+        String userId = userMapper.findIdByEmail(email);
         if (userId == null) throw new RuntimeException("일치하는 회원 정보가 없습니다.");
         return userId;
     }
-
-    // 비밀번호 찾기 (임시 비밀번호로 초기화)
+    
+    
     @Override
     @Transactional
-    public void resetPassword(String userId, String email) {
+    public void resetPassword(String userId, String email, String newPw) { // newPw 인자 추가
         User user = userMapper.findByUserId(userId);
+        
+        // 1. 유저 존재 여부 및 이메일 일치 확인
         if (user == null || !user.getUserEmail().equals(email)) {
             throw new RuntimeException("정보가 일치하지 않습니다.");
         }
         
-        // 임시 비밀번호 생성 (예: 랜덤 8자리)
-        String tempPw = "temp" + (int)(Math.random() * 10000); 
-        String encodedPw = passwordEncoder.encode(tempPw);
+        // 2. 프론트에서 넘어온 새 비밀번호 암호화
+        String encodedPw = passwordEncoder.encode(newPw);
         
+        // 3. DB 업데이트
         userMapper.updatePassword(userId, encodedPw);
         
-        // 실제로는 여기서 이메일 발송 로직이 들어가야 함 (로그에서는 확인용)
-        System.out.println("임시 비밀번호 발급: " + tempPw);
+        System.out.println("비밀번호 변경 완료: " + userId);
     }
 
     private UserResponse convertToResponse(User user) {
@@ -105,6 +133,7 @@ public class AuthServiceImpl implements AuthService {
                 .userGender(user.getUserGender())
                 .userGrade(user.getUserGrade())
                 .userResidenceArea(user.getUserResidenceArea())
+                .createdAt(user.getCreatedAt())
                 .build();
     }
 

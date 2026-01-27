@@ -44,14 +44,13 @@ public class SecurityConfig {
 	        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 	        .cors(cors -> cors.configurationSource(corsConfigurationSource))
 	        .authorizeHttpRequests(auth -> auth
-	        		.requestMatchers("/api/facility/sync").permitAll() // ★ 이 줄 추가
-	                .requestMatchers("/api/facility/list").permitAll()
-	            // 1. 관리자 전용 API (반드시 ROLE_ 접두사를 제외한 등급명 작성)
-	            .requestMatchers("/api/admin/**").hasRole("ADMIN") 
-	            // 2. 로그인, 회원가입 등 인증이 필요 없는 경로
-	            .requestMatchers("/api/auth/**", "/oauth2/**").permitAll()
-	            // 3. 나머지는 로그인(인증)만 되어 있으면 허용
-	            .anyRequest().authenticated()
+//	            // 1. 관리자 전용 API (반드시 ROLE_ 접두사를 제외한 등급명 작성)
+//	            .requestMatchers("/api/admin/**").hasRole("ADMIN") 
+//	            // 2. 회원 전용 API
+//	            .requestMatchers("/api/admin/**").hasRole("ADMIN") 
+//	            // 3. 나머지는 로그인(인증)만 되어 있으면 허용
+//	            .anyRequest().authenticated()
+	        		.anyRequest().permitAll()
 	        )
 	        .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
 	    return http.build();

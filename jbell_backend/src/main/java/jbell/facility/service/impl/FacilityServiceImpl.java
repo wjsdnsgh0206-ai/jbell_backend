@@ -14,6 +14,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jbell.common.dto.SafetyDataResponse;
+import jbell.common.mapper.CommonMapper;
 import jbell.facility.dto.FacilityDTO;
 import jbell.facility.dto.FacilityListRequest;
 import jbell.facility.dto.FacilityListResponse;
@@ -33,14 +34,19 @@ public class FacilityServiceImpl implements FacilityService {
     private final FacilityMapper sheltersMapper;
     private final WebClient safetyDataWebClient;
     private final ObjectMapper objectMapper;
+    private final CommonMapper commonMapper;
+
+    private Map<String, String> areaCodeMap;
 
     public FacilityServiceImpl(FacilityMapper sheltersMapper, 
-                               @Qualifier("safetyDataWebClient") WebClient safetyDataWebClient,
-                               @Qualifier("objectMapper") ObjectMapper objectMapper) {
-        this.sheltersMapper = sheltersMapper;
-        this.safetyDataWebClient = safetyDataWebClient;
-        this.objectMapper = objectMapper;
-    }
+		            @Qualifier("safetyDataWebClient") WebClient safetyDataWebClient,
+		            @Qualifier("objectMapper") ObjectMapper objectMapper,
+		            CommonMapper commonMapper) { 
+		this.sheltersMapper = sheltersMapper;
+		this.safetyDataWebClient = safetyDataWebClient;
+		this.objectMapper = objectMapper;
+		this.commonMapper = commonMapper;
+    	}
 
     // 상세 조회
     @Override
@@ -120,11 +126,23 @@ public class FacilityServiceImpl implements FacilityService {
     @Value("${VITE_API_SHELTER_EARTHQUAKE1}") private String quakeKey;
     @Value("${VITE_API_SHELTER_CIVIL_DEFENSE_NUCLEAR}") private String nuclearKey;
     @Value("${VITE_API_SHELTER_CIVIL_DEFENSE_DISASTER}") private String civilKey;
+    
+    
+    private void loadAreaCodes() {
+        List<Map<String, String>> codeList = commonMapper.getCodeListByGroupId("AREA_JB");
+        this.areaCodeMap = codeList.stream()
+            .collect(Collectors.toMap(
+                c -> c.get("name"), // "전주"
+                c -> c.get("code"), // "L1061300"
+                (oldVal, newVal) -> oldVal
+            ));
+    }
 
 
     @Override
     public void syncAllFacility() {
         log.info("▶▶▶ 대피소 통합 동기화 프로세스 시작");
+        loadAreaCodes();
         Flux.fromIterable(Arrays.asList(ApiType.values()))
             .flatMap(this::syncOneApiReactive)
             .subscribe(
@@ -224,6 +242,15 @@ public class FacilityServiceImpl implements FacilityService {
         String[] addrParts = fullAddr.split(" ");
         Double lat, lon;
         
+        String sggNm = addrParts.length > 1 ? addrParts[1] : "";
+
+        // 2. "전주시" -> "전주", "고창군" -> "고창" 으로 변환하여 인식
+        // 정규식 (시|군)$ : 문자열 끝에 있는 '시' 또는 '군'을 찾아 제거합니다.
+        String pureSggName = sggNm.replaceAll("(시|군)$", "");
+        
+        // 3. 매칭되는 코드가 있으면 코드값 사용, 없으면 원본(전주시) 그대로 유지
+        String sggValue = areaCodeMap.getOrDefault(pureSggName, sggNm);
+        
         if ("DMS".equals(type.latField)) {
         	lat = calculateDegree(item.get("LAT_PROVIN"), item.get("LAT_MIN"), item.get("LAT_SEC"));
             lon = calculateDegree(item.get("LOT_PROVIN"), item.get("LOT_MIN"), item.get("LOT_SEC"));
@@ -236,7 +263,7 @@ public class FacilityServiceImpl implements FacilityService {
             .fcltNm(safeString(item.get(type.nameField)))
             .fcltSeCd(type.fcltSeCd) // ApiType의 apiId가 DB의 code_item_id(DSSP-IF-...)와 일치해야 함
             .ctpvNm(addrParts.length > 0 ? addrParts[0] : "")
-            .sggNm(addrParts.length > 1 ? addrParts[1] : "")
+            .sggNm(sggValue)
             .roadNmAddr(fullAddr)
             .lat(lat)
             .lot(lon)
