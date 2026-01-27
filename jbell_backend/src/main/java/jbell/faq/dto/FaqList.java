@@ -15,4 +15,5 @@ public class FaqList {
     private Integer faqViewCount;
     private String faqVisibleYn;      // "Y" / "N"
     private LocalDateTime faqCreatedAt;
+    private LocalDateTime faqUpdatedAt;
 }
