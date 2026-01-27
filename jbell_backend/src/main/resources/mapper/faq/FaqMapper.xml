@@ -6,6 +6,7 @@
         <id column="faq_id"                property="faqId" />
         <result column="category"          property="faqCategory"/>
         <result column="title"             property="faqTitle"/>
+        <result column="content"           property="faqContent"/>
         <result column="write_id"			property="faqWrite"/>
         <result column="view_count"        property="faqViewCount"/>
         <result column="visible_yn"        property="faqVisibleYn"/>
@@ -25,7 +26,7 @@
     </resultMap>
 
     <select id="getFaqList" resultMap="faqResultMap">
-        /* FAQ 목록 조회 */
+        /* 관리자용 FAQ 목록 조회 */
         SELECT 
             faq_id          
             , category
@@ -36,7 +37,27 @@
             , created_at
         FROM 
             faq
+		ORDER BY 
+			created_at DESC
     </select>
+    
+    <select id="getPublicFaqList" resultMap="faqResultMap">
+	    /* 사용자용 FAQ 목록 조회 */
+	    SELECT 
+	        faq_id          
+	        , category
+	        , title
+	        , content
+	        , write_id
+	        , view_count
+	        , visible_yn
+	        , created_at
+	    FROM 
+	        faq
+	    WHERE 
+	        visible_yn = 'Y'  ORDER BY 
+	        created_at DESC
+</select>
     
     <select id="getFaqDetail" parameterType="int" resultMap="faqDetailResultMap">
         /* FAQ 상세 조회 */

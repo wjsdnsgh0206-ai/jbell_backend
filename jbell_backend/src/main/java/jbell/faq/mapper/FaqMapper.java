@@ -15,7 +15,7 @@ import jbell.faq.dto.FaqUpdate;
 @Mapper
 public interface FaqMapper {
 	
-	//FAQ 목록 조회
+	// FAQ 목록 조회
 	List<FaqList> getFaqList();
 	
 	// FAQ 상세 조회
@@ -35,4 +35,7 @@ public interface FaqMapper {
     
     // FAQ 삭제
     int deleteFaq(List<Integer> faqIds);
+    
+    // FAQ 사용자용 목록 조회
+    List<FaqList> getPublicFaqList();
 }
