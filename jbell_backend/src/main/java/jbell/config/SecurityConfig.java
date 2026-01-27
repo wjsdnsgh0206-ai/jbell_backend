@@ -50,9 +50,24 @@ public class SecurityConfig {
 	 * 정적 리소스 제외 설정
 	 * 설정된 주소는 Security Filter를 거치지 않는다.
 	 */
+	@Bean
 	WebSecurityCustomizer webSecurityCustomizer() {
 		return (web) -> web.ignoring()
 						   .requestMatchers(PathRequest.toStaticResources().atCommonLocations())
 						   .requestMatchers("/favicon.*", "/resources/**", "/error");
 	}
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+

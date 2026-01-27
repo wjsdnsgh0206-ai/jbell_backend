@@ -26,7 +26,7 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<ApiResponse<?>> handleValidationException(BaseException ex, HttpServletRequest request){
 		StackTraceElement[] stackTrace = ex.getStackTrace();
 		StackTraceElement origin = stackTrace[0];
-		log.error( "[Exception] {}\n[Method]:{} ({}:{}) - message={}"
+		log.error( "\n[Exception] {}\n[Method]:{} ({}:{}) - message={}"
 					, origin.getClassName()
 					, origin.getMethodName()
 					, origin.getFileName()
@@ -49,7 +49,7 @@ public class GlobalExceptionHandler {
 										(MethodArgumentNotValidException ex, HttpServletRequest request){
 		StackTraceElement[] stackTrace = ex.getStackTrace();
 		StackTraceElement origin = stackTrace[0];
-		log.error( "[Exception] {}\n[Method]:{} ({}:{}) - message={}"
+		log.error( "\n[Exception] {}\n[Method]:{} ({}:{}) - message={}"
 					, origin.getClassName()
 					, origin.getMethodName()
 					, origin.getFileName()
@@ -82,7 +82,7 @@ public class GlobalExceptionHandler {
 		
 		StackTraceElement[] stackTrace = ex.getStackTrace();
 		StackTraceElement origin = stackTrace[0];
-		log.error( "[Exception] {}\n[Method]:{} ({}:{}) - message={}"
+		log.error( "\n[Exception] {}\n[Method]:{} ({}:{}) - message={}"
 					, origin.getClassName()
 					, origin.getMethodName()
 					, origin.getFileName()

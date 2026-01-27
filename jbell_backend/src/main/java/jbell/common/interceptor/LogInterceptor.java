@@ -31,6 +31,7 @@ public class LogInterceptor implements HandlerInterceptor{
 		
 		String requestBody = null;
 		if(request instanceof ContentCachingRequestWrapper) {
+			
 			ContentCachingRequestWrapper wrapperRequest = (ContentCachingRequestWrapper) request;
 			
 			byte[] content = wrapperRequest.getContentAsByteArray();
@@ -60,3 +61,10 @@ public class LogInterceptor implements HandlerInterceptor{
 		HandlerInterceptor.super.afterCompletion(request, response, handler, ex);
 	}
 }
+
+
+
+
+
+
+
