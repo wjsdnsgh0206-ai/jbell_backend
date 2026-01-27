@@ -10,6 +10,8 @@
         <result column="user_name"              property="userName"/>
         <result column="user_id"                property="userId"/>
         <result column="created_at"             property="createdAt"/>
+        <result column="visible_yn"             property="isVisible"/>
+        <result column="question_content"       property="content"/>
     </resultMap>
 	
 	<select id="getQnaList" resultMap="qnaResultMap">
@@ -19,9 +21,11 @@
             , i.answer_status
             , c.code_item_name AS category_name  
             , i.title
+            , i.question_content   
             , u.user_name                        
             , i.user_id
             , i.created_at
+            , i.visible_yn        
         FROM 
             inquiry i
         LEFT JOIN code_item c 
@@ -81,6 +85,27 @@
         WHERE
             i.inquiry_id = #{qnaId}
     </select>
+    
+    <insert id="insertQna" parameterType="jbell.qna.dto.QnaCreate">
+    	/* QnA 문의 등록 */
+	    INSERT INTO inquiry (
+	        question_type_id,
+	        title,
+	        question_content,
+	        user_id,
+	        visible_yn,
+	        answer_status,
+	        created_at
+	    ) VALUES (
+	        #{qnaCategoryId},
+	        #{title},
+	        #{content},
+	        #{userId},
+	        #{isVisible},   
+	        '답변대기',
+	        NOW()
+	    )
+	</insert>
     
     <delete id="deleteInquiryAnswers" parameterType="java.util.List">
         /* 연결된 답변 삭제 */
