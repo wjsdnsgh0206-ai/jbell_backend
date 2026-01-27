@@ -33,6 +33,11 @@ public class FaqService {
 		return faqMapper.getFaqList();
 	}
 	
+	 // 사용자용 FAQ 목록 조회
+    public List<FaqList> getPublicFaqList(){
+        return faqMapper.getPublicFaqList();
+    }
+	
 	// FAQ 상세 조회 (조회수 증가 + 예외 처리 포함)
 	public FaqDetail getFaqDetail(int faqId) {
 		// 1. 상세 데이터 조회
