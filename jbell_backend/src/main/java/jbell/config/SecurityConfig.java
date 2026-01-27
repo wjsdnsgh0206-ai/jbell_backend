@@ -22,10 +22,10 @@ import lombok.RequiredArgsConstructor;
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-	
-	private static String[] RermIT_REQEST_URL = {
-			"/api/**"
-			,"/oauth2/login"
+
+	private static String[] RERMIT_REQUEST_URI = {
+		 "/api/**"
+		,"/oauth2/login"
 	};
 	
 	private final CorsConfigurationSource corsConfigurationSource;
@@ -36,8 +36,6 @@ public class SecurityConfig {
 	public BCryptPasswordEncoder passwordEncoder() {
 		return new BCryptPasswordEncoder();
 	}
-	
-	
 	
 	@Bean
 	SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -57,16 +55,30 @@ public class SecurityConfig {
 	        )
 	        .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
 	    return http.build();
+
 	}
-	
 	/**
-	 * 정적 리소스 제외설정
-	 * 설정된 주소는 securtiy filter를 거치지 않는다.
+	 * 정적 리소스 제외 설정
+	 * 설정된 주소는 Security Filter를 거치지 않는다.
 	 */
 	@Bean
 	WebSecurityCustomizer webSecurityCustomizer() {
 		return (web) -> web.ignoring()
-							.requestMatchers(PathRequest.toStaticResources().atCommonLocations())
-							.requestMatchers("/favicon.*","/resources/**","/error");
+						   .requestMatchers(PathRequest.toStaticResources().atCommonLocations())
+						   .requestMatchers("/favicon.*", "/resources/**", "/error");
 	}
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -6,11 +6,10 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import jbell.common.interceptor.LogInterceptor;
 import lombok.RequiredArgsConstructor;
-
 @Configuration
 @RequiredArgsConstructor
-public class WebConfig implements WebMvcConfigurer{
-
+public class WebConfig  implements WebMvcConfigurer{
+	
 	private final LogInterceptor logInterceptor;
 	
 	@Override
@@ -18,13 +17,10 @@ public class WebConfig implements WebMvcConfigurer{
 		
 		registry.addInterceptor(logInterceptor)
 				.addPathPatterns("/**")
-//				.excludePathPatterns("/manage/**")
 				.excludePathPatterns("/favicon.*")
 				.excludePathPatterns("/error");
 		
 		WebMvcConfigurer.super.addInterceptors(registry);
 	}
-	
+
 }
-
-
