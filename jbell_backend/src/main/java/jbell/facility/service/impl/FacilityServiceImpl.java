@@ -183,10 +183,15 @@ public class FacilityServiceImpl implements FacilityService {
         if (items == null || items.isEmpty()) return Mono.empty();
 
         return Mono.fromCallable(() -> {
+            // 1. DTO 변환 및 전북 지역 필터링
             List<FacilityDTO> dtoList = items.stream()
                 .map(item -> {
+                    // ApiType에 정의된 필드 외에 공통 필드도 확인 (방어적 코드)
                     String fullAddr = safeString(item.get(type.addrField));
+                    if(fullAddr.isEmpty()) fullAddr = safeString(item.get("FCLT_ADDR_RONA"));
+                    if(fullAddr.isEmpty()) fullAddr = safeString(item.get("ROAD_NM_ADDR"));
                     if(fullAddr.isEmpty()) fullAddr = safeString(item.get("DTL_ADRES"));
+                    
                     return new Object[]{item, fullAddr};
                 })
                 .filter(obj -> {
@@ -196,14 +201,20 @@ public class FacilityServiceImpl implements FacilityService {
                 .map(obj -> convertToDTO((Map<String, Object>) obj[0], (String) obj[1], type))
                 .collect(Collectors.toList());
 
+            // 2. DB 저장 (이 부분이 확실히 실행되어야 함)
             if (!dtoList.isEmpty()) {
-                // 핵심: upsert 시 중복을 막으려면 dtoList 내에서도 중복 제거가 필요할 수 있음
-                sheltersMapper.upsertFacility(dtoList);
-                log.info("[{}] {}페이지: {}건 처리 완료", type.apiId, pageNo, dtoList.size());
+                try {
+                    sheltersMapper.upsertFacility(dtoList);
+                    log.info("[{}] {}페이지: 전북 데이터 {}건 저장 완료", type.apiId, pageNo, dtoList.size());
+                } catch (Exception e) {
+                    log.error("[{}] 저장 중 오류 발생: {}", type.apiId, e.getMessage());
+                }
+            } else {
+                log.debug("[{}] {}페이지: 전북 지역 데이터 없음", type.apiId, pageNo);
             }
-            return true;
+            return true; // Callable의 리턴값
         })
-        .subscribeOn(Schedulers.boundedElastic()) // DB 작업은 전용 스레드 풀에서
+        .subscribeOn(Schedulers.boundedElastic())
         .then();
     }
 
@@ -212,7 +223,7 @@ public class FacilityServiceImpl implements FacilityService {
         Double lat, lon;
         
         if ("DMS".equals(type.latField)) {
-            lat = calculateDegree(item.get("LAT_PROVIN"), item.get("LAT_MIN"), item.get("LAT_SEC"));
+        	lat = calculateDegree(item.get("LAT_PROVIN"), item.get("LAT_MIN"), item.get("LAT_SEC"));
             lon = calculateDegree(item.get("LOT_PROVIN"), item.get("LOT_MIN"), item.get("LOT_SEC"));
         } else {
             lat = safeDouble(item.get(type.latField));

@@ -8,9 +8,13 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
 
+import jbell.security.jwt.JwtAuthenticationFilter;
+import jbell.security.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 
 @Configuration
@@ -25,33 +29,41 @@ public class SecurityConfig {
 	};
 	
 	private final CorsConfigurationSource corsConfigurationSource;
+	private final JwtTokenProvider jwtTokenProvider;
+	
+	// 비밀번호를 암호화하고 비교할 때 사용할 도구 등록
+	@Bean
+	public BCryptPasswordEncoder passwordEncoder() {
+		return new BCryptPasswordEncoder();
+	}
+	
+	
 	
 	@Bean
 	SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-		http 
-			// csrk, formlogin, httpBasic 비활성화
-			.csrf(csrf -> csrf.disable())
-			.formLogin(form -> form.disable())
-			.httpBasic(basic -> basic.disable())
-			// 세션비활성화
-			.sessionManagement(session -> session
-											.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-			
-			)
-			//CORS 설정
-			.cors(cors -> cors.configurationSource(corsConfigurationSource))
-			// 주소
-			.authorizeHttpRequests(auth -> auth
-											.requestMatchers("/**").permitAll()
-											.anyRequest().authenticated()
-			);
-		return http.build();
+	    http
+	        .csrf(csrf -> csrf.disable())
+	        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+	        .cors(cors -> cors.configurationSource(corsConfigurationSource))
+	        .authorizeHttpRequests(auth -> auth
+	        		.requestMatchers("/api/facility/sync").permitAll() // ★ 이 줄 추가
+	                .requestMatchers("/api/facility/list").permitAll()
+	            // 1. 관리자 전용 API (반드시 ROLE_ 접두사를 제외한 등급명 작성)
+	            .requestMatchers("/api/admin/**").hasRole("ADMIN") 
+	            // 2. 로그인, 회원가입 등 인증이 필요 없는 경로
+	            .requestMatchers("/api/auth/**", "/oauth2/**").permitAll()
+	            // 3. 나머지는 로그인(인증)만 되어 있으면 허용
+	            .anyRequest().authenticated()
+	        )
+	        .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
+	    return http.build();
 	}
 	
 	/**
 	 * 정적 리소스 제외설정
 	 * 설정된 주소는 securtiy filter를 거치지 않는다.
 	 */
+	@Bean
 	WebSecurityCustomizer webSecurityCustomizer() {
 		return (web) -> web.ignoring()
 							.requestMatchers(PathRequest.toStaticResources().atCommonLocations())

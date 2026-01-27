@@ -30,19 +30,20 @@ public class SignupRequest {
 	private String userPw;
 	
 	@NotBlank(message="회원이름은 필수입력항목입니다")
-	private String name;
+	private String userName;
 	
 	@NotNull(message="회원생년월일은 필수입력항목입니다") // LocalDate에는 NotNull을 써야 합니다.
 	@DateTimeFormat(pattern = "yyyy-MM-dd")
-	private LocalDate birthDate;
+	private LocalDate userBirthDate;
 	
 	@NotBlank(message="회원이메일은 필수입력항목입니다")
 	@Email(message="회원이메일을 올바르게 작성해주세요")
-	private String email;
+	private String userEmail;
 	
-	private String residenceArea;
+	private String userResidenceArea;
 	
-	private String userGender;
+	@Builder.Default
+    private String userGrade = "USER";
 	
 	
 		
