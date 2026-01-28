@@ -76,7 +76,8 @@
             
         /* 답변 정보 조회 */
         LEFT JOIN inquiry_answer ia
-            ON i.inquiry_id = ia.inquiry_id
+        ON i.inquiry_id = ia.inquiry_id 
+        AND ia.deleted_yn = 'N'
            
         /* 답변자 정보 조인 (답변이 있을 때만 이름 가져오기) */
     	LEFT JOIN user admin_u
