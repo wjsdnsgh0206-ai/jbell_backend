@@ -44,7 +44,7 @@
         </foreach>
     </insert>
     
-    <!-- 행동요령 조회  -->
+    <!-- 행동요령 목록 조회  -->
     <resultMap id="BehaviorMethodResultMap" type="jbell.behaviorMethod.domain.BehaviorMethodContentVO">
         <id property="contentId" column="content_id" />
         <result property="title" column="title" />
