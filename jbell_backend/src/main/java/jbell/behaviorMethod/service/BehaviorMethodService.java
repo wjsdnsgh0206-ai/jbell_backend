@@ -31,168 +31,174 @@ import reactor.util.retry.Retry;
 // 하지만 WebClient에 @Qualifier가 필요하므로 직접 생성자를 유지하거나, 
 // 아래처럼 Lombok과 직접 생성자를 조합하지 말고 기존 방식을 유지하는 게 낫습니다.
 public class BehaviorMethodService {
-
-    private final ObjectMapper objectMapper;
-    private final BehaviorMethodMapper behaviorMethodMapper; // mapper 생성자 주입
+	
+	private final ObjectMapper objectMapper;
+    private final BehaviorMethodMapper behaviorMethodMapper;
     private final WebClient safetyDataWebClient;
 
-	// 재난안전데이터공유플랫폼 행정안전부_자연재난국민행동요령 서비스키
-	@Value("${safetydata.behaviorMethod.natural.servicekey}")
-	private String safetyDataServiceKey;
-	
-	// timeout 설정값은 application.properties에 있음.(ex.15000)
-	@Value("${external.api.timeout}")
-	private int timeout;
-	
-	// 생성자 주입
-	public BehaviorMethodService(@Qualifier("safetyDataWebClient") WebClient safetyDataWebClient
-						  ,@Qualifier("objectMapper") ObjectMapper objectMapper
-						  ,BehaviorMethodMapper behaviorMethodMapper) {
-		this.safetyDataWebClient = safetyDataWebClient;
-		this.objectMapper = objectMapper;
-		this.behaviorMethodMapper = behaviorMethodMapper;
-	}
-	
-	public Mono<Map<String, String>> safetyDataSave(){
-		Map<String, String> resultMap = new ConcurrentHashMap<>();
-		
-		// 현재 DB에 'BEHAVIOR_METHOD_NATURAL'만 등록되어 있으므로 ontent_type으로 저장한다고 가정.
-        // 만약 카테고리별로 code_item_id가 다르다면 fetchSafetyData에 파라미터로 넘겨야 함.
-        String targetContentType = "BEHAVIOR_METHOD_NATURAL";
-		
-		return Flux.range(1, 6)
-				   .delayElements(Duration.ofMillis(500))
-				   .concatMap(index -> fetchSafetyData(index-1, resultMap, targetContentType))
-				   .then(Mono.just(resultMap));
-	}
-	
-	public Mono<List<BehaviorMethod>> fetchSafetyData(int index, Map<String, String> resultMap, String targetContentType) {
-		var cateList = List.of("01001", "01002", "01003", "01006", "01011", "01014"); // 태풍, 홍수, 호우, 한파, 지진, 산사태
-		String category = cateList.get(index); 
-		log.info("category : {}", category);
-		
-		// 행동요령_자연재난국민행동요령 API 요청 후 DB 동기화
-        return safetyDataWebClient.get()
-			            		.uri(uriBuilder -> uriBuilder
-			            				.path("/DSSP-IF-20588")
-			            				.queryParam("serviceKey", safetyDataServiceKey)
-			            				.queryParam("pageNo", 1)
-			            				.queryParam("numOfRows", 200) // 행동요령 totalCount 최대 110개까지 있는 걸 확인함. 넉넉히 200개.
-			            				.queryParam("safety_cate", category)
-			            				.build())
-			            		.retrieve()
-			            		.bodyToMono(JsonNode.class)
-			            		.timeout(Duration.ofMillis(timeout))
-			            		.map(json -> {
+    /*
+    // 서비스키 늘어날 시 MAP 활용 (예시: 키 관리 맵 활용)
+    private String getServiceKey(String apiPath) {
+        return Map.of(
+            API_PATH_NATURAL, naturalServiceKey,
+            API_PATH_SOCIAL, socialServiceKey,
+            API_PATH_LIFE, lifeServiceKey
+        ).getOrDefault(apiPath, naturalServiceKey);
+    }
+    */
+    @Value("${safetydata.behaviorMethod.natural.servicekey}")
+    private String naturalServiceKey;
 
-			            			// 1. 반환할 리스트를 미리 선언 (추론을 돕기 위해 빈 리스트 등으로 초기화)
-			            		    List<BehaviorMethod> behaviorMethodList = List.of();
-			            		    
-			            		    JsonNode header = json.get("header");
-			            		    if (header != null) {
-			            		        String resultCode = header.has("resultCode") ? header.get("resultCode").asText() : "N/A";
-			            		        if (!"00".equals(resultCode)) {
-			            		            // 에러 시 예외를 던지면 이 경로는 반환 타입 추론에서 제외됨
-			            		            throw new CustomException(ErrorCode.EXTERNAL_API_ERROR);
-			            		        }
-			            		    }
-			            		    
-			            		    // 2. 데이터 추출 로직
-			            		    if (json.has("body") && !json.get("body").isNull()) {
-			            		        JsonNode body = json.get("body");
-			            		        behaviorMethodList = objectMapper.convertValue(
-				            					body, 
-				            					new TypeReference<List<BehaviorMethod>>() {});
-			            		        
-			            		        for (BehaviorMethod item : behaviorMethodList) {
-			            		        	// safetyCate 필드를 받을 변수 선언
-			            		        	String cate2 = item.getSafetyCate2(); 
-				            				String cate3 = item.getSafetyCate3(); // 소분류 (전, 중, 후)
-				            				String cate4 = item.getSafetyCate4(); // 세부 분류 (정렬 순서)
-				            				
-			            		            String finalOrderCode;
-			            		            
-			            		            if ((cate3 == null || cate3.isEmpty()) && (cate4 == null || cate4.isEmpty())) {
-			            		                // 영상 데이터처럼 3, 4번 카테고리가 없는 경우: cate2 + "000"
-			            		                finalOrderCode = (cate2 != null) ? cate2 + "000" : "0";
-			            		            } else {
-			            		                // 일반 행동요령: cate4 우선, 없으면 cate3
-			            		                finalOrderCode = (cate4 != null && !cate4.isEmpty()) ? cate4 : cate3;
-			            		            }
-			            		            
-			            		            try {
-			            		                // 숫자로 변환하여 세팅
-			            		                item.setOrdering(Integer.parseInt(finalOrderCode));
-			            		            } catch (NumberFormatException e) {
-			            		                // 만약 숫자가 아닌 값이 올 경우를 대비한 기본값 설정
-			            		                log.warn("Ordering 변환 실패 (값: {}), 기본값 0으로 설정", finalOrderCode);
-			            		                item.setOrdering(0); 
-			            		            }
-			            		            
-			            		            // 2. Title 및 Body 방어 로직 
-			            		            // 영상 데이터는 safety_cate_nm3이 null인 경우가 많으므로 actRmks 활용
-			            		            if (item.getSafetyCateNm3() == null || item.getSafetyCateNm3().isEmpty()) {
-			            		                if (item.getBody() != null && !item.getBody().isEmpty()) {
-			            		                    item.setSafetyCateNm3(item.getBody()); // 영상 제목을 타이틀로
-			            		                } else {
-			            		                    item.setSafetyCateNm3(item.getSafetyCateNm2() + " 행동요령 관련 자료");
-			            		                }
-			            		            }
-			            		            
-			            		            // Link(URL) 추가 로직
-			            		            // API에서 준 contentsUrl이 있고 비어있지 않다면 DTO의 contentsUrl 필드에 저장
-			            		            String contentsUrl = item.getContentsUrl();
-			            		            if (contentsUrl != null && !contentsUrl.isEmpty()) {
-			            		                item.setContentsUrl(contentsUrl); 
-			            		            }
-			            		        }
-			            		    } else {
-			            		        log.warn("API 응답에 body가 null이거나 존재하지 않습니다.");
-			            		        // body가 없을 경우 빈 리스트 반환을 위해 위에서 초기화한 list(List.of())를 그대로 사용
-			            		    }
-			            			
-			            		    return behaviorMethodList;
-			            		})
-			            		.flatMap(behaviorMethodList -> {
-			            			// 비동기 흐름 안에서 동기 방식인 MyBatis를 실행
-			            			return Mono.fromCallable(() -> {
-			            				log.info("DB 저장 시작: {}건", behaviorMethodList.size());
-			            				/* db 작업공간 */
-			            				
-			            				// 1. 리스트의 첫 번째 항목에서 API 카테고리 코드(예: 01001)를 추출
-			            		        String apiCateCode = behaviorMethodList.get(0).getSafetyCate2();
-			            		        
-			            		        // 2. DB에서 해당 코드와 매핑된 code_item_id(예: NATURAL_TYPHOON) 조회
-			            		        String realContentType = behaviorMethodMapper.findCodeItemIdByDescription(apiCateCode);
-			            		        
-			            		        // 만약 매핑된 코드가 없다면 기본값 사용
-			            		        if (realContentType == null) realContentType = "BEHAVIOR_METHOD_NATURAL";
-			            		        
-			            		        log.info("DB 저장 시작: {}건 -> 카테고리: {}", behaviorMethodList.size(), realContentType);
-			            		       
-			            		        // 3. 찾은 realContentType으로 저장
-			            		        behaviorMethodMapper.insertBehaviorMethodContents(behaviorMethodList, realContentType);
-			            		        
-			            		        return behaviorMethodList;
-			            			})
-			            			// 이 작업을 전용 스레드 풀로 보냄 (Event Loop 보호)
-			            			.subscribeOn(Schedulers.boundedElastic());
-			            		})
-			            		.doOnSuccess(firstResponse -> {
-			            			log.info("Successfully fetched page {}", firstResponse);
-			            			log.info("카테고리 저장 완료");
-			            	        resultMap.put(category, "저장완료 (" + firstResponse.size() + "건)");
-			            		})
-//			            		.doOnError(error -> log.error("Error fetching", error.getMessage()))
-			            		.onErrorResume(CustomException.class, e -> {
-								    log.error("WebClient error : Status={}",  e.getMessage());
-								    resultMap.put(category, "저장실패");
-			            			return Mono.empty(); // 에러나도 다음 카테고리 실행
-			            		})
-			            		.retryWhen(Retry.backoff(2, Duration.ofSeconds(2))  // 재시도 횟수 축소 (3->2)
-			            				.maxBackoff(Duration.ofSeconds(5))
-			            				.doBeforeRetry(retrySignal -> log.warn("Retrying - attempt {}", retrySignal.totalRetries() + 1)));
-	}
+    @Value("${safetydata.behaviorMethod.social.servicekey}")
+    private String socialServiceKey;
+
+    @Value("${safetydata.behaviorMethod.life.servicekey}")
+    private String lifeServiceKey;
+    
+    @Value("${external.api.timeout}")
+    private int timeout;
+
+    // 대분류별 카테고리 코드 정의 (ENUM 대신 List 사용)
+    private static final List<String> NATURAL_CODES = List.of("01001", "01002", "01003", "01006", "01011", "01014");
+    private static final List<String> SOCIAL_CODES = List.of("02007", "02011", "02012", "02013", "02019");
+    private static final List<String> LIFE_CODES = List.of("03002", "03003", "03005", "03006", "03013", "03014");
+
+    // 각 API 서비스 ID (공공데이터포털 상세 명세 확인 필요, 일반적으로 연번으로 부여됨)
+    private static final String API_PATH_NATURAL = "/DSSP-IF-20588"; // 행정안전부_자연재난국민행동요령 ID
+    private static final String API_PATH_SOCIAL = "/DSSP-IF-20589"; // 행정안전부_사회재난국민행동요령 ID
+    private static final String API_PATH_LIFE = "/DSSP-IF-20590";   // 행정안전부_생활안전국민행동요령 ID
+
+    public BehaviorMethodService(@Qualifier("safetyDataWebClient") WebClient safetyDataWebClient,
+                                 @Qualifier("objectMapper") ObjectMapper objectMapper,
+                                 BehaviorMethodMapper behaviorMethodMapper) {
+        this.safetyDataWebClient = safetyDataWebClient;
+        this.objectMapper = objectMapper;
+        this.behaviorMethodMapper = behaviorMethodMapper;
+    }
+    
+    // ================== Public Methods (Controller 연결) ==================
+
+    public Mono<Map<String, String>> syncNatural() {
+        return executeSync(NATURAL_CODES, API_PATH_NATURAL, naturalServiceKey);
+    }
+
+    public Mono<Map<String, String>> syncSocial() {
+        return executeSync(SOCIAL_CODES, API_PATH_SOCIAL, socialServiceKey);
+    }
+
+    public Mono<Map<String, String>> syncLife() {
+        return executeSync(LIFE_CODES, API_PATH_LIFE, lifeServiceKey);
+    }
+
+    // ================== Core Logic (공통 로직) ==================
+
+    /**
+     * 공통 실행 로직: 코드 리스트를 순회하며 fetchSafetyData 호출
+     */
+    private Mono<Map<String, String>> executeSync(List<String> codes, String apiPath, String serviceKey) { // 서비스 키까지 파라미터로 받도록 확장
+        Map<String, String> resultMap = new ConcurrentHashMap<>();
+        
+        return Flux.fromIterable(codes)
+                   .delayElements(Duration.ofMillis(500)) // API 부하 방지
+                   .concatMap(code -> fetchAndSave(code, apiPath, serviceKey, resultMap))
+                   .then(Mono.just(resultMap));
+    }
+
+    /**
+     * 실제 API 호출 및 DB 저장 로직
+     */
+    private Mono<List<BehaviorMethod>> fetchAndSave(String categoryCode, String apiPath, String serviceKey, Map<String, String> resultMap) {
+        return safetyDataWebClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path(apiPath)
+                        .queryParam("serviceKey", serviceKey) // 파라미터로 받은 전용 키 적용
+                        .queryParam("pageNo", 1)
+                        .queryParam("numOfRows", 300)
+                        .queryParam("safety_cate", categoryCode)
+                        .build())
+                .retrieve()
+                .bodyToMono(JsonNode.class)
+                .timeout(Duration.ofMillis(timeout))
+                .map(json -> {
+                    // 1. JSON 파싱 로직 (기존과 동일)
+                    List<BehaviorMethod> behaviorMethodList = List.of();
+                    
+                    JsonNode header = json.get("header");
+                    if (header != null && !"00".equals(header.path("resultCode").asText(""))) {
+                         throw new CustomException(ErrorCode.EXTERNAL_API_ERROR);
+                    }
+
+                    if (json.has("body") && !json.get("body").isNull()) {
+                        behaviorMethodList = objectMapper.convertValue(json.get("body"), new TypeReference<List<BehaviorMethod>>() {});
+                        
+                        // 데이터 가공 (Ordering, Title 등)
+                        for (BehaviorMethod item : behaviorMethodList) {
+                            String cate2 = item.getSafetyCate2(); 
+                            String cate3 = item.getSafetyCate3(); 
+                            String cate4 = item.getSafetyCate4(); 
+                            
+                            String finalOrderCode;
+                            if ((cate3 == null || cate3.isEmpty()) && (cate4 == null || cate4.isEmpty())) {
+                                finalOrderCode = (cate2 != null) ? cate2 + "000" : "0";
+                            } else {
+                                finalOrderCode = (cate4 != null && !cate4.isEmpty()) ? cate4 : cate3;
+                            }
+                            
+                            try {
+                                item.setOrdering(Integer.parseInt(finalOrderCode));
+                            } catch (NumberFormatException e) {
+                                item.setOrdering(0); 
+                            }
+                            
+                            if (item.getSafetyCateNm3() == null || item.getSafetyCateNm3().isEmpty()) {
+                                if (item.getBody() != null && !item.getBody().isEmpty()) {
+                                    item.setSafetyCateNm3(item.getBody());
+                                } else {
+                                    item.setSafetyCateNm3(item.getSafetyCateNm2() + " 행동요령 관련 자료(본문 null)");
+                                }
+                            }
+                            
+                            if (item.getContentsUrl() != null && !item.getContentsUrl().isEmpty()) {
+                                item.setContentsUrl(item.getContentsUrl()); 
+                            }
+                        }
+                    }
+                    return behaviorMethodList;
+                })
+                .flatMap(behaviorMethodList -> {
+                    // 2. DB 저장 로직 (기존 유지)
+                    return Mono.fromCallable(() -> {
+                        if (behaviorMethodList.isEmpty()) return behaviorMethodList;
+
+                        log.info("DB 저장 시작: {}건", behaviorMethodList.size());
+                        
+                        // API 코드(01001 등)로 실제 DB 저장용 ContentType 조회 (매퍼 로직 활용)
+                        String apiCateCode = behaviorMethodList.get(0).getSafetyCate2();
+                        String realContentType = behaviorMethodMapper.findCodeItemIdByDescription(apiCateCode);
+                        
+                        if (realContentType == null) realContentType = "BEHAVIOR_METHOD";
+                        
+                        // 해당 타입 기존 데이터 숨김 처리
+                        behaviorMethodMapper.updateBehaviorMethodContents(realContentType);
+                        // 신규 데이터 저장
+                        behaviorMethodMapper.insertBehaviorMethodContents(behaviorMethodList, realContentType);
+                        
+                        return behaviorMethodList;
+                    })
+                    .subscribeOn(Schedulers.boundedElastic());
+                })
+                .doOnSuccess(list -> {
+                    String msg = list.isEmpty() ? "데이터 없음" : "저장완료 (" + list.size() + "건)";
+                    resultMap.put(categoryCode, msg);
+                    log.info("Category {} : {}", categoryCode, msg);
+                })
+                .onErrorResume(e -> {
+                    log.error("Error processing category {}: {}", categoryCode, e.getMessage());
+                    resultMap.put(categoryCode, "실패: " + e.getMessage());
+                    return Mono.empty(); // 에러 발생 시에도 전체 흐름 중단 없이 다음 카테고리 진행
+                })
+                .retryWhen(Retry.backoff(2, Duration.ofSeconds(2)).maxBackoff(Duration.ofSeconds(5)));
+    }
 	
 	// 행동요령 조회 서비스 로직
 	public List<BehaviorMethodContentVO> getBehaviorList(String contentType) {

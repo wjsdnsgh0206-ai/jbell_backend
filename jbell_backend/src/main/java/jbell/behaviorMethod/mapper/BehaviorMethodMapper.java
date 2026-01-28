@@ -19,6 +19,8 @@ public interface BehaviorMethodMapper {
             @Param("list") List<BehaviorMethod> list, 
             @Param("contentType") String contentType
     );
+
+    void updateBehaviorMethodContents(String realContentType);
     
 	// description에 담긴 '01001' 같은 코드로 'NATURAL_TYPHOON'을 찾아옵니다.
     String findCodeItemIdByDescription(@Param("description") String description);
