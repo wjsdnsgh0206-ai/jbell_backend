@@ -4,12 +4,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import jbell.auth.domain.User;
 import jbell.auth.dto.LoginRequest;
@@ -29,6 +26,24 @@ public class AuthServiceImpl implements AuthService {
 	private final UserMapper userMapper;
     private final BCryptPasswordEncoder passwordEncoder; // SecurityConfig에서 등록한 빈 주입
     private final JwtTokenProvider jwtTokenProvider;
+    
+    
+    // 관리자 수정
+    @Override
+    @Transactional
+    public void updateUserByAdmin(jbell.auth.domain.User user) {
+        // 1. 비밀번호 처리
+        // 프론트에서 새 비밀번호를 입력했을 때만 암호화해서 저장
+        if (user.getUserPw() != null && !user.getUserPw().trim().isEmpty()) {
+            user.setUserPw(passwordEncoder.encode(user.getUserPw()));
+        } else {
+            // 입력이 없으면 null로 두어 MyBatis <if> 문에서 제외되게 함
+            user.setUserPw(null);
+        }
+
+        // 2. Mapper 호출 (수정 실행)
+        userMapper.updateUserByAdmin(user);
+    }
     
     // 관리자용 회원 목록 조회
     @Override
@@ -180,6 +195,7 @@ public class AuthServiceImpl implements AuthService {
                 .userGrade(user.getUserGrade())
                 .userResidenceArea(user.getUserResidenceArea())
                 .createdAt(user.getCreatedAt())
+                .status(user.getStatus())
                 .build();
     }
 

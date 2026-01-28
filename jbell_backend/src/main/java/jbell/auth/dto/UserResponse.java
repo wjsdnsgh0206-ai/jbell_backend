@@ -20,4 +20,5 @@ public class UserResponse {
     private String userGrade;
     private String userResidenceArea; // 주소
     private LocalDateTime createdAt;   // 가입일
+    private Boolean status;
 }

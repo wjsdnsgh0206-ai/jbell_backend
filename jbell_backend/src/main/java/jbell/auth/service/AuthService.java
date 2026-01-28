@@ -25,5 +25,7 @@ public interface AuthService {
     
     public Map<String, Object> getAdminMemberList(Map<String, Object> params);
     void deleteUsers(List<String> ids);
+    
+    public void updateUserByAdmin(jbell.auth.domain.User user);
 
 }

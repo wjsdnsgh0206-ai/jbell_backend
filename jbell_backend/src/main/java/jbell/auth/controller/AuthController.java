@@ -8,7 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -49,12 +51,47 @@ public class AuthController {
     
 
     
+
+	 // 관리자 페이지용 상세 조회 엔드포인트
+	 @GetMapping("/detail/{userId}")
+	 public ResponseEntity<?> getMemberDetail(@PathVariable("userId") String userId) {
+	     UserResponse user = authService.getUserInfo(userId);
+	     
+	     if (user == null) {
+	         return ResponseEntity.status(HttpStatus.NOT_FOUND)
+	                              .body(ApiResponse.error(404, "해당 회원을 찾을 수 없습니다."));
+	     }
+	     
+	     // 로그를 보면 DB 컬럼명 영향으로 필드가 'status'로 내려갈 수 있습니다.
+	     return ResponseEntity.ok(user); 
+	 }
+    
     
     // 회원 정보 업데이트
     @PostMapping("/update")
     public ResponseEntity<?> updateProfile(@Valid @RequestBody SignupRequest updateRequest) {
         authService.updateUserInfo(updateRequest);
         return ResponseEntity.ok(ApiResponse.success("회원 정보가 수정되었습니다."));
+    }
+    
+    // 관리자 회원정보 수정
+    @PutMapping("/update/{userId}")
+    public ResponseEntity<?> updateMemberByAdmin(
+        @PathVariable("userId") String userId,  // 경로의 {userId} 매핑
+        @RequestBody jbell.auth.domain.User user // JSON Body를 User 객체로 변환
+    ) {
+        try {
+            // 보안 및 무결성을 위해 경로로 받은 ID를 객체에 강제 세팅
+            user.setUserId(userId); 
+            
+            // 서비스 계층 호출
+            authService.updateUserByAdmin(user);
+            
+            return ResponseEntity.ok(ApiResponse.success("회원 정보가 수정되었습니다."));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                 .body(ApiResponse.error(500, "수정 실패: " + e.getMessage()));
+        }
     }
 
     // 1. 이메일 인증번호 발송
