@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="jbell.faq.mapper.FaqMapper">
+
+    <resultMap type="jbell.faq.dto.FaqList" id="faqResultMap">
+        <id column="faq_id"                property="faqId" />
+        <result column="category"          property="faqCategory"/>
+        <result column="title"             property="faqTitle"/>
+        <result column="content"           property="faqContent"/>
+        <result column="write_id"			property="faqWrite"/>
+        <result column="view_count"        property="faqViewCount"/>
+        <result column="visible_yn"        property="faqVisibleYn"/>
+        <result column="created_at"        property="faqCreatedAt"/>
+        <result column="updated_at"        property="faqUpdatedAt"/>
+    </resultMap>
+
+    <resultMap type="jbell.faq.dto.FaqDetail" id="faqDetailResultMap">
+        <id column="faq_id"                property="faqId" />
+        <result column="category"          property="faqCategory"/>
+        <result column="title"             property="faqTitle"/>
+        <result column="content"           property="faqContent"/>
+        <result column="write_id"          property="faqWrite"/>
+        <result column="view_count"        property="faqViewCount"/>
+        <result column="display_order"     property="faqDisplayOrder"/>
+        <result column="visible_yn"        property="faqVisibleYn"/>
+        <result column="created_at"        property="faqCreatedAt"/>
+        <result column="updated_at"        property="faqUpdatedAt"/>
+    </resultMap>
+
+    <select id="getFaqList" resultMap="faqResultMap">
+        /* 관리자용 FAQ 목록 조회 */
+        SELECT 
+            faq_id          
+            , category
+            , title
+            , write_id
+            , view_count
+            , visible_yn
+            , created_at
+            , updated_at
+        FROM 
+            faq
+		ORDER BY 
+			created_at DESC
+    </select>
+    
+    <select id="getPublicFaqList" resultMap="faqResultMap">
+	    /* 사용자용 FAQ 목록 조회 */
+	    SELECT 
+	        faq_id          
+	        , category
+	        , title
+	        , content
+	        , write_id
+	        , view_count
+	        , visible_yn
+	        , created_at
+	    FROM 
+	        faq
+	    WHERE 
+	        visible_yn = 'Y'  ORDER BY 
+	        created_at DESC
+</select>
+    
+    <select id="getFaqDetail" parameterType="int" resultMap="faqDetailResultMap">
+        /* FAQ 상세 조회 */
+        SELECT 
+            faq_id          
+            , category
+            , title
+            , content
+            , write_id
+            , view_count
+            , display_order
+            , visible_yn
+            , created_at
+            , updated_at
+        FROM 
+            faq
+        WHERE
+            faq_id = #{faqId}
+    </select>
+    
+    <update id="increaseViewCount" parameterType="int">
+        /* FAQ 조회수 증가 */
+        UPDATE faq
+        SET view_count = view_count + 1
+        WHERE faq_id = #{faqId}
+    </update>
+    
+    <insert id="insertFaq" parameterType="jbell.faq.dto.FaqCreate">
+        /* FAQ 등록 */
+        INSERT INTO faq (
+            category
+            , title
+            , content
+            , write_id
+            , view_count
+            , display_order
+            , visible_yn
+            , created_at
+        ) VALUES (
+            #{faqCategory}
+            , #{faqTitle}
+            , #{faqContentJson}
+            , #{faqWrite}
+            , 0
+            , #{faqDisplayOrder}
+            , #{faqVisibleYn}
+            , NOW()
+        )
+    </insert>
+    
+    <update id="updateFaq" parameterType="jbell.faq.dto.FaqUpdate">
+        /* FAQ 수정 */
+        UPDATE faq
+        SET 
+            category = #{faqCategory}
+            , content = #{faqContentJson}
+            , visible_yn = #{faqVisibleYn}
+            , updated_at = now()
+        WHERE 
+            faq_id = #{faqId}
+    </update>
+    
+    <update id="updateFaqVisibility" parameterType="jbell.faq.dto.FaqBulkVisibility">
+        /* FAQ 공개/비공개 일괄 변경 */
+        UPDATE faq
+        SET 
+            visible_yn = #{visibleYn}
+            , updated_at = NOW()
+        WHERE 
+            faq_id IN
+        <foreach item="id" collection="faqIds" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+    
+    <delete id="deleteFaq" parameterType="java.util.List">
+        /* FAQ 삭제 (단일 및 일괄) */
+        DELETE FROM faq
+        WHERE faq_id IN
+        <foreach item="id" collection="list" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>
