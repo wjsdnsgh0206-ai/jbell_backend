@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="jbell.behavior.mapper.BehaviorMapper">
+<mapper namespace="jbell.behaviorMethod.mapper.BehaviorMethodMapper">
 	
 	<!--  -->
 	<select id="findCodeItemIdByDescription" resultType="string">
@@ -11,7 +11,7 @@
     </select>
     
     <!-- 외부 API 호출 및 가공 데이터 DB에 INSERT -->
-    <insert id="insertBehaviorContents">
+    <insert id="insertBehaviorMethodContents">
         INSERT INTO content (
              title
             ,body
@@ -35,7 +35,7 @@
     </insert>
     
     <!-- 행동요령 조회  -->
-    <resultMap id="BehaviorResultMap" type="jbell.behavior.domain.BehaviorContentVO">
+    <resultMap id="BehaviorMethodResultMap" type="jbell.behaviorMethod.domain.BehaviorMethodContentVO">
         <id property="contentId" column="content_id" />
         <result property="title" column="title" />
         <result property="body" column="body" />
@@ -45,13 +45,13 @@
         <result property="visibleYn" column="visible_yn" />
     </resultMap>
 
-    <select id="selectBehaviorList" parameterType="string" resultMap="BehaviorResultMap">
+    <select id="selectBehaviorMethodList" parameterType="string" resultMap="BehaviorMethodResultMap">
         SELECT 
              content_id
             ,title
             ,body
             ,content_type
-            ,content_link
+            ,REPLACE(content_link, 'http://mepv2.safekorea.go.kr', '') AS content_link
             ,ordering
             ,visible_yn
         FROM content
