@@ -26,21 +26,48 @@ public class BehaviorMethodController {
 	
 	private final BehaviorMethodService behaviorMethodService;
 
-	@PostMapping("/admin/sync")
-	public Mono<ApiResponse<Map<String, String>>> syncSafetyData(){
-		
-		
-		return behaviorMethodService.safetyDataSave()
-							  .map(ApiResponse::success)  // 성공 시 표준 응답으로 래핑 (ApiResponse.success(data)와 동일)
-			                  .onErrorResume(e -> {
-			                    log.error("Error occurred: {}", e.getMessage());
-			                    throw new CustomException(ErrorCode.EXTERNAL_API_ERROR);
-			                  })
-			                  .defaultIfEmpty(ApiResponse.error(
-			                        ErrorCode.NOT_FOUND.code(),
-			                        ErrorCode.NOT_FOUND.message()
-			                  ));
+	@PostMapping("/admin/sync/natural") // 자연재난 행동요령 동기화
+	public Mono<ApiResponse<Map<String, String>>> syncNaturalBehaviorMethod(){
+		return behaviorMethodService.syncNatural()
+									.map(ApiResponse::success) // 에러 처리는 Service 또는 GlobalExceptionHandler에서 관행적으로 처리하거나 기존 유지
+									.onErrorResume(e -> {
+										log.error("Error occurred: {}", e.getMessage());
+										throw new CustomException(ErrorCode.EXTERNAL_API_ERROR);
+									})
+									.defaultIfEmpty(ApiResponse.error(
+										ErrorCode.NOT_FOUND.code(),
+										ErrorCode.NOT_FOUND.message()
+									));
 	}
+
+	@PostMapping("/admin/sync/social") // 사회재난 행동요령 동기화
+	public Mono<ApiResponse<Map<String, String>>> syncSocialBehaviorMethod(){
+		return behaviorMethodService.syncSocial()
+									.map(ApiResponse::success)
+									.onErrorResume(e -> {
+										log.error("Error occurred: {}", e.getMessage());
+										throw new CustomException(ErrorCode.EXTERNAL_API_ERROR);
+									})
+									.defaultIfEmpty(ApiResponse.error(
+										ErrorCode.NOT_FOUND.code(),
+										ErrorCode.NOT_FOUND.message()
+									));
+	}
+
+	@PostMapping("/admin/sync/life") // 생활안전 행동요령 동기화
+	public Mono<ApiResponse<Map<String, String>>> syncLifeBehaviorMethod(){
+		return behaviorMethodService.syncLife()
+									.map(ApiResponse::success) 
+									.onErrorResume(e -> {
+										log.error("Error occurred: {}", e.getMessage());
+										throw new CustomException(ErrorCode.EXTERNAL_API_ERROR);
+									})
+									.defaultIfEmpty(ApiResponse.error(
+										ErrorCode.NOT_FOUND.code(),
+										ErrorCode.NOT_FOUND.message()
+									));
+	}
+	
 	
 	/**
      * 행동요령 조회 API
