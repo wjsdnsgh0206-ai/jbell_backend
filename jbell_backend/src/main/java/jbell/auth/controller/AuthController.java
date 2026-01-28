@@ -104,18 +104,31 @@ public class AuthController {
                 return ResponseEntity.badRequest().body(ApiResponse.error(400, "이메일 주소가 누락되었습니다."));
             }
 
+            // --- 추가된 재요청 방지 로직 (1분 제한) ---
+            Long lastSendTime = (Long) session.getAttribute("lastSendTime");
+            long currentTime = System.currentTimeMillis();
+
+            if (lastSendTime != null && (currentTime - lastSendTime) < 60000) { // 60,000ms = 1분
+                long secondsLeft = (60000 - (currentTime - lastSendTime)) / 1000;
+                return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                                     .body(ApiResponse.error(429, secondsLeft + "초 후에 다시 시도해주세요."));
+            }
+            // ---------------------------------------
+
             String code = emailService.generateCode();
             
+            // 세션 정보 저장
             session.setAttribute("emailCode", code);
             session.setAttribute("targetEmail", email);
+            session.setAttribute("lastSendTime", currentTime); // 발송 시간 기록
             session.setMaxInactiveInterval(180); 
             
             emailService.sendVerificationMail(email, code);
             
             return ResponseEntity.ok(ApiResponse.success("인증번호가 전송되었습니다."));
+            
         } catch (Exception e) {
             e.printStackTrace();
-            // [수정된 부분] .body(...) 앞에 ResponseEntity.status(500)이 있어야 합니다.
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                                  .body(ApiResponse.error(500, "메일 발송에 실패했습니다."));
         }
