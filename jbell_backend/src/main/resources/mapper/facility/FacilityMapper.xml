@@ -8,22 +8,23 @@
 	<select id="getFacilityById"
 		resultType="jbell.facility.dto.FacilityDTO">
 		SELECT
-		fclt_id AS fcltId,
-		fclt_nm AS fcltNm,
-		fclt_se_cd AS fcltSeCd,
-		ctpv_nm AS ctpvNm,
-		sgg_nm AS sggNm,
-		road_nm_addr AS roadNmAddr,
-		lat,
-		lot,
-		opn_yn AS opnYn,
-		use_yn AS useYn,
-		fclt_area AS fcltArea,
-		fclt_capacity AS fcltCapacity,
-		reg_dt AS regDt
-		FROM ofsafe_facility
-		WHERE fclt_id = #{fcltId}
-	</select>
+        f.fclt_id AS fcltId,
+        f.fclt_nm AS fcltNm,
+        f.fclt_se_cd AS fcltSeCd,
+        f.ctpv_nm AS ctpvNm,
+        COALESCE(c.code_item_name, f.sgg_nm) AS sggNm, 
+        f.road_nm_addr AS roadNmAddr,
+        f.lat,
+        f.lot,
+        f.opn_yn AS opnYn,
+        f.use_yn AS useYn,
+        f.fclt_area AS fcltArea,
+        f.fclt_capacity AS fcltCapacity,
+        f.reg_dt AS regDt
+    FROM ofsafe_facility f
+    LEFT JOIN code_item c ON f.sgg_nm = c.code_item_id AND c.code_group_id = 'AREA_JB'
+    WHERE f.fclt_id = #{fcltId}
+</select>
 
 	<!-- 시설 등록 -->
 	<insert id="insertFacility"
@@ -73,48 +74,48 @@
 	<!-- 시설 검색및 조회 -->
 	<select id="getFacilityList" resultType="jbell.facility.dto.FacilityDTO">
     SELECT
-        fclt_id as fcltId,
-        fclt_nm as fcltNm,
-        fclt_se_cd as fcltSeCd,
-        ctpv_nm as ctpvNm,
-        sgg_nm as sggNm,
-        road_nm_addr as roadNmAddr,
-        lat,
-        lot,
-        fclt_area as fcltArea,
-        fclt_capacity as fcltCapacity,
-        opn_yn as opnYn,
-        use_yn as useYn,
-        reg_dt as regDt,
+        f.fclt_id as fcltId,
+        f.fclt_nm as fcltNm,
+        f.fclt_se_cd as fcltSeCd,
+        f.ctpv_nm as ctpvNm,
+        COALESCE(c.code_item_name, f.sgg_nm) AS sggNm, -- 여기서 글자로 변환
+        f.road_nm_addr as roadNmAddr,
+        f.lat,
+        f.lot,
+        f.fclt_area as fcltArea,
+        f.fclt_capacity as fcltCapacity,
+        f.opn_yn as opnYn,
+        f.use_yn as useYn,
+        f.reg_dt as regDt,
         <choose>
             <when test="userLat != null and userLot != null">
-                (6371 * acos(cos(radians(#{userLat})) * cos(radians(lat)) * cos(radians(lot) - radians(#{userLot})) + sin(radians(#{userLat})) * sin(radians(lat))))
+                (6371 * acos(cos(radians(#{userLat})) * cos(radians(f.lat)) * cos(radians(f.lot) - radians(#{userLot})) + sin(radians(#{userLat})) * sin(radians(f.lat))))
             </when>
             <otherwise>0</otherwise>
         </choose> AS distance
-    FROM ofsafe_facility
+    FROM ofsafe_facility f
+    LEFT JOIN code_item c ON f.sgg_nm = c.code_item_id AND c.code_group_id = 'AREA_JB'
     <where>
         <if test="sggNm != null and sggNm != ''">
-            AND sgg_nm LIKE CONCAT('%', #{sggNm}, '%')
+            AND (f.sgg_nm = #{sggNm} OR c.code_item_name LIKE CONCAT('%', #{sggNm}, '%'))
         </if>
         <if test="fcltSeCd != null and fcltSeCd != ''">
-            AND fclt_se_cd = #{fcltSeCd}
+            AND f.fclt_se_cd = #{fcltSeCd}
         </if>
         <if test="(roadNmAddr != null and roadNmAddr != '') or (fcltNm != null and fcltNm != '')">
             AND (
                 <if test="roadNmAddr != null and roadNmAddr != ''">
-                    road_nm_addr LIKE CONCAT('%', #{roadNmAddr}, '%')
+                    f.road_nm_addr LIKE CONCAT('%', #{roadNmAddr}, '%')
                 </if>
                 <if test="(roadNmAddr != null and roadNmAddr != '') and (fcltNm != null and fcltNm != '')">
                     OR
                 </if>
                 <if test="fcltNm != null and fcltNm != ''">
-                    fclt_nm LIKE CONCAT('%', #{fcltNm}, '%')
+                    f.fclt_nm LIKE CONCAT('%', #{fcltNm}, '%')
                 </if>
             )
         </if>
     </where>
-    
     ORDER BY 
     <choose>
         <when test="userLat != null and userLot != null">
@@ -122,14 +123,13 @@
         </when>
         <otherwise>
             <if test="sortKey != null and sortKey != ''">
-                ${sortKey} ${sortOrder}
+                f.${sortKey} ${sortOrder}
             </if>
             <if test="sortKey == null or sortKey == ''">
-                fclt_id DESC
+                f.fclt_id DESC
             </if>
         </otherwise>
     </choose>
-    
     LIMIT #{limit} OFFSET #{offset}
 </select>
 
