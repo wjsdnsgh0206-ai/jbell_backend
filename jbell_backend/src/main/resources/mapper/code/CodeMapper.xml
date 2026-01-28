@@ -3,6 +3,57 @@
 
 <mapper namespace="jbell.common.code.mapper.CodeMapper">
 
+    <select id="countGroupCode" resultType="int">
+        SELECT COUNT(*) FROM code_group WHERE code_group_id = #{groupCode}
+    </select>
+    
+    <select id="countGroupName" resultType="int">
+        SELECT COUNT(*) FROM code_group WHERE code_group_name = #{groupName}
+    </select>
+    
+    <select id="countSubCode" resultType="int">
+        SELECT COUNT(*) FROM code_item 
+        WHERE code_group_id = #{groupCode} AND code_item_id = #{subCode}
+    </select>
+    
+    <select id="countSubName" resultType="int">
+        SELECT COUNT(*) FROM code_item 
+        WHERE code_group_id = #{groupCode} AND code_item_name = #{subName}
+    </select>
+
+    <select id="selectCodeIntegratedList" resultType="jbell.common.code.dto.CodeItemDTO">
+        /* 1. 그룹 정보 행 */
+        SELECT 
+            g.code_group_id   AS groupCode,
+            g.code_group_name AS groupName,
+            '-'               AS subCode,
+            ''                AS subName,
+            g.code_desc       AS `desc`,
+            g.sort_order      AS `order`,
+            IF(g.visible_yn = 'Y', 1, 0) AS visible, /* boolean 매핑을 위해 1,0으로 변환 */
+            DATE_FORMAT(g.created_at, '%Y-%m-%d %H:%i:%s') AS createdAt,
+            DATE_FORMAT(g.updated_at, '%Y-%m-%d %H:%i:%s') AS updatedAt
+        FROM code_group g
+    
+        UNION ALL
+    
+        /* 2. 상세 정보 행 */
+        SELECT 
+            i.code_group_id   AS groupCode,
+            g.code_group_name AS groupName,
+            i.code_item_id    AS subCode,
+            i.code_item_name  AS subName,
+            i.description     AS `desc`,
+            i.sort_order      AS `order`,
+            IF(i.visible_yn = 'Y', 1, 0) AS visible, /* boolean 매핑을 위해 1,0으로 변환 */
+            DATE_FORMAT(i.created_at, '%Y-%m-%d %H:%i:%s') AS createdAt,
+            DATE_FORMAT(i.updated_at, '%Y-%m-%d %H:%i:%s') AS updatedAt
+        FROM code_item i
+        JOIN code_group g ON i.code_group_id = g.code_group_id
+    
+        ORDER BY groupCode ASC, `order` ASC, subCode ASC
+    </select>
+
     <select id="selectCodeGroupList" resultType="jbell.common.code.domain.CodeGroup">
         SELECT 
             code_group_id AS codeGroupId, 
@@ -15,10 +66,23 @@
         FROM code_group
         ORDER BY sort_order ASC
     </select>
+    
+    <select id="selectCodeGroupById" parameterType="String" resultType="jbell.common.code.domain.CodeGroup">
+        SELECT 
+            code_group_id AS codeGroupId, 
+            code_group_name AS codeGroupName, 
+            code_desc AS codeDesc, 
+            sort_order AS sortOrder, 
+            visible_yn AS visibleYn, 
+            created_at AS createdAt, 
+            updated_at AS updatedAt
+        FROM code_group
+        WHERE code_group_id = #{codeGroupId}
+    </select>
 
     <select id="selectCodeItemListByGroupId" parameterType="String" resultType="jbell.common.code.domain.CodeItem">
         SELECT 
-            code_item_id AS codeItem, 
+            code_item_id AS codeItemId, 
             code_group_id AS codeGroupId, 
             code_item_name AS codeItemName, 
             description AS description, 
@@ -31,41 +95,87 @@
         ORDER BY sort_order ASC
     </select>
     
+    <select id="selectCodeItemById" resultType="jbell.common.code.dto.CodeItemDTO">
+        SELECT 
+            i.code_group_id   AS groupCode,
+            g.code_group_name AS groupName,
+            i.code_item_id    AS subCode,
+            i.code_item_name  AS subName,
+            i.description     AS `desc`,
+            i.sort_order      AS `order`,
+            IF(i.visible_yn = 'Y', 1, 0) AS visible, /* boolean 매핑을 위해 1,0으로 변환 */
+            DATE_FORMAT(i.created_at, '%Y-%m-%d %H:%i:%s') AS createdAt,
+            DATE_FORMAT(i.updated_at, '%Y-%m-%d %H:%i:%s') AS updatedAt
+        FROM code_item i
+        JOIN code_group g ON i.code_group_id = g.code_group_id
+        WHERE i.code_group_id = #{codeGroupId}
+          AND i.code_item_id = #{codeItemId}
+    </select>   
+      
     <insert id="insertCodeGroup" parameterType="jbell.common.code.domain.CodeGroup">
-    INSERT INTO code_group (
-        code_group_id,
-        code_group_name,
-        code_desc,
-        sort_order,
-        visible_yn,
-        created_at,
-        updated_at
-    ) VALUES (
-        #{codeGroupId},
-        #{codeGroupName},
-        #{codeDesc},
-        #{sortOrder},
-        #{visibleYn},
-        NOW(),
-        NOW()
-    )
-</insert>
+        INSERT INTO code_group (
+            code_group_id,
+            code_group_name,
+            code_desc,
+            sort_order,
+            visible_yn,
+            created_at,
+            updated_at
+        ) VALUES (
+            #{codeGroupId},
+            #{codeGroupName},
+            #{codeDesc},
+            #{sortOrder},
+            #{visibleYn},
+            NOW(),
+            NOW()
+        )
+    </insert>
 
-<delete id="deleteCodeGroup" parameterType="String">
-    DELETE FROM code_group 
-    WHERE code_group_id = #{codeGroupId}
-</delete>
+    <delete id="deleteCodeGroup" parameterType="String">
+        DELETE FROM code_group 
+        WHERE code_group_id = #{codeGroupId}
+    </delete>
 
-<update id="updateCodeGroup" parameterType="jbell.common.code.domain.CodeGroup">
-    UPDATE code_group
-    SET 
-        code_group_name = #{codeGroupName},
-        code_desc = #{codeDesc},
-        sort_order = #{sortOrder},
-        visible_yn = #{visibleYn},
-        updated_at = NOW()
-    WHERE code_group_id = #{codeGroupId}
-</update>
-
+    <update id="updateCodeGroup" parameterType="jbell.common.code.domain.CodeGroup">
+        UPDATE code_group
+        SET 
+            code_group_name = #{codeGroupName},
+            code_desc = #{codeDesc},
+            sort_order = #{sortOrder},
+            visible_yn = #{visibleYn},
+            updated_at = NOW()
+        WHERE code_group_id = #{codeGroupId}
+    </update>
+    
+    <insert id="insertCodeItem" parameterType="jbell.common.code.domain.CodeItem">
+        INSERT INTO code_item (
+            code_item_id, code_group_id, code_item_name, 
+            description, sort_order, visible_yn, 
+            created_at, updated_at
+        ) VALUES (
+            #{codeItemId}, #{codeGroupId}, #{codeItemName}, 
+            #{description}, #{sortOrder}, #{visibleYn}, 
+            NOW(), NOW()
+        )
+    </insert>
+    
+    <update id="updateCodeItem" parameterType="jbell.common.code.domain.CodeItem">
+        UPDATE code_item
+        SET 
+            code_item_name = #{codeItemName},
+            description = #{description},
+            sort_order = #{sortOrder},
+            visible_yn = #{visibleYn},
+            updated_at = NOW()
+        WHERE code_group_id = #{codeGroupId} 
+          AND code_item_id = #{codeItemId}
+    </update>
+    
+    <delete id="deleteCodeItem">
+        DELETE FROM code_item 
+        WHERE code_group_id = #{codeGroupId} 
+          AND code_item_id = #{codeItemId}
+    </delete>
 
 </mapper>
