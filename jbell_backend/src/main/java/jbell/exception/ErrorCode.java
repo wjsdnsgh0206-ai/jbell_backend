@@ -323,7 +323,7 @@ public enum ErrorCode {
 
 	/** 외부 API 호출 실패 */
 	EXTERNAL_API_ERROR(HttpStatus.BAD_GATEWAY, "외부 API 호출 중 오류가 발생했습니다."),
-
+	
 	/** 결제 게이트웨이 (Toss Payments 등) 오류 */
 	PAYMENT_GATEWAY_ERROR(HttpStatus.BAD_GATEWAY, "결제 게이트웨이 오류가 발생했습니다."),
 
