@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="jbell.disasterAccident.mapper.DisasterAccidentMapper">
+
+    <insert id="insertForestFire" parameterType="jbell.disasterAccident.dto.DisasterAccidentDTO">
+    INSERT INTO forest_fire_information (
+        fire_id,
+        fire_damage_area,
+        fire_end_time,
+        fire_cause,
+        fire_loc_village,
+        fire_start_time,
+        fire_expose_yn
+    ) VALUES (
+        #{fireId},
+        #{fireDamageArea},
+        #{fireEndTime},
+        #{fireCause},
+        #{fireLocVillage},
+        #{fireStartTime},
+        'Y'
+    )
+    ON DUPLICATE KEY UPDATE
+        fire_damage_area = VALUES(fire_damage_area),
+        fire_end_time = VALUES(fire_end_time),
+        fire_cause = VALUES(fire_cause),
+        fire_loc_village = VALUES(fire_loc_village),
+        fire_start_time = VALUES(fire_start_time)
+</insert>
+
+    <insert id="insertEarthquake" parameterType="jbell.disasterAccident.dto.DisasterAccidentDTO">
+        INSERT INTO earthquake_event (
+            seq, lat, lon, loc, rem, tm_fc, msc, mt, expose_yn
+        ) VALUES (
+            #{seq}, #{lat}, #{lon}, #{loc}, #{rem}, #{tmFc}, #{msc}, #{mt}, 'Y'
+        )
+        ON DUPLICATE KEY UPDATE
+            loc = VALUES(loc),
+            mt = VALUES(mt),
+            rem = VALUES(rem);
+    </insert>
+
+    <insert id="insertTyphoonInfo" parameterType="jbell.disasterAccident.dto.DisasterAccidentDTO">
+        INSERT INTO typhoon_info (
+            typhoon_year, typhoon_no, typhoon_name, typhoon_name_desc, 
+            typhoon_active_yn, typhoon_first_location
+        ) VALUES (
+            #{typhoonYear}, #{typhoonNo}, #{typhoonName}, #{typhoonNameDesc}, 
+            #{typhoonActiveYn}, #{typhoonFirstLocation}
+        )
+        ON DUPLICATE KEY UPDATE
+            typhoon_active_yn = VALUES(typhoon_active_yn),
+            typhoon_name_desc = VALUES(typhoon_name_desc);
+    </insert>
+
+    <insert id="insertTyphoonTrack" parameterType="jbell.disasterAccident.dto.DisasterAccidentDTO">
+        INSERT INTO typhoon_track (
+            typhoon_year, typhoon_no, typhoon_analysis_datetime, 
+            typhoon_lat, typhoon_lon, typhoon_move_speed, 
+            typhoon_central_pressure, typhoon_max_wind_speed, 
+            typhoon_radius_15ms, typhoon_radius_25ms, 
+            typhoon_location, typhoon_report_no
+        ) VALUES (
+            #{typhoonYear}, #{typhoonNo}, #{typhoonAnalysisDatetime}, 
+            #{typhoonLat}, #{typhoonLon}, #{typhoonMoveSpeed}, 
+            #{typhoonCentralPressure}, #{typhoonMaxWindSpeed}, 
+            #{typhoonRadius15ms}, #{typhoonRadius25ms}, 
+            #{typhoonLocation}, #{typhoonReportNo}
+        )
+    </insert>
+
+    <insert id="insertLandslide" parameterType="jbell.disasterAccident.dto.DisasterAccidentDTO">
+        INSERT INTO lnld_forecast_info (
+            lnld_frcst_nm, sgg_nm, predc_anls_dt, data_std_dt, use_yn, reg_dt
+        ) VALUES (
+            #{lnldFrcstNm}, #{sggNm}, #{predcAnlsDt}, CURRENT_TIMESTAMP, 'Y', CURRENT_TIMESTAMP
+        )
+    </insert>
+</mapper>
