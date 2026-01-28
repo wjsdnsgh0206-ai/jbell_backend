@@ -1,4 +1,4 @@
-package jbell.behavior.controller;
+package jbell.behaviorMethod.controller;
 
 import java.util.List;
 import java.util.Map;
@@ -9,8 +9,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import jbell.behavior.domain.BehaviorContentVO;
-import jbell.behavior.service.BehaviorService;
+import jbell.behaviorMethod.domain.BehaviorMethodContentVO;
+import jbell.behaviorMethod.service.BehaviorMethodService;
 import jbell.common.response.ApiResponse;
 import jbell.exception.CustomException;
 import jbell.exception.ErrorCode;
@@ -22,15 +22,15 @@ import reactor.core.publisher.Mono;
 @RequestMapping("/api/behaviorMethod")
 @RequiredArgsConstructor
 @Slf4j
-public class BehaviorController {
+public class BehaviorMethodController {
 	
-	private final BehaviorService behaviorService;
+	private final BehaviorMethodService behaviorMethodService;
 
 	@PostMapping("/admin/sync")
 	public Mono<ApiResponse<Map<String, String>>> syncSafetyData(){
 		
 		
-		return behaviorService.safetyDataSave()
+		return behaviorMethodService.safetyDataSave()
 							  .map(ApiResponse::success)  // 성공 시 표준 응답으로 래핑 (ApiResponse.success(data)와 동일)
 			                  .onErrorResume(e -> {
 			                    log.error("Error occurred: {}", e.getMessage());
@@ -48,7 +48,7 @@ public class BehaviorController {
      * @return 행동요령 리스트
      */
     @GetMapping("/list")
-    public List<BehaviorContentVO> getBehaviorList(@RequestParam("contentType") String contentType) {
-        return behaviorService.getBehaviorList(contentType);
+    public List<BehaviorMethodContentVO> getBehaviorList(@RequestParam("contentType") String contentType) {
+        return behaviorMethodService.getBehaviorList(contentType);
     }
 }
