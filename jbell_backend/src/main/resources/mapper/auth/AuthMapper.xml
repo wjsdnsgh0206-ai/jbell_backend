@@ -3,6 +3,31 @@
 
 <mapper namespace="jbell.auth.mapper.UserMapper"> 
 
+		<update id="updateUserByAdmin" parameterType="jbell.auth.domain.User">
+		    UPDATE `user`
+		    <set>
+		        <if test="userName != null">user_name = #{userName},</if>
+		        <if test="userEmail != null">user_email = #{userEmail},</if>
+		        <if test="userResidenceArea != null">user_residence_area = #{userResidenceArea},</if>
+		        <if test="userGrade != null">user_grade = #{userGrade},</if>
+		        <if test="userGender != null">user_gender = #{userGender},</if>
+		        <if test="userBirthDate != null">user_birth_date = #{userBirthDate},</if>
+		        
+		        <if test="status != null">
+		            user_status = #{status},
+		        </if>
+		        
+		        <if test="userPw != null and userPw != ''">
+		            user_password = #{userPw},
+		        </if>
+		        
+		        updated_at = NOW()
+		    </set>
+		    WHERE user_id = #{userId}
+		</update>
+
+
+
 		<select id="selectUserList" resultType="jbell.auth.domain.User">
 	        SELECT 
 	            user_id AS userId,
