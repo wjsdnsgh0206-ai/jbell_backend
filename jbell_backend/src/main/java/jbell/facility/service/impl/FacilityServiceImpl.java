@@ -14,6 +14,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jbell.common.dto.SafetyDataResponse;
+import jbell.common.mapper.CommonMapper;
 import jbell.facility.dto.FacilityDTO;
 import jbell.facility.dto.FacilityListRequest;
 import jbell.facility.dto.FacilityListResponse;
@@ -33,14 +34,19 @@ public class FacilityServiceImpl implements FacilityService {
     private final FacilityMapper sheltersMapper;
     private final WebClient safetyDataWebClient;
     private final ObjectMapper objectMapper;
+    private final CommonMapper commonMapper;
+
+    private Map<String, String> areaCodeMap;
 
     public FacilityServiceImpl(FacilityMapper sheltersMapper, 
-                               @Qualifier("safetyDataWebClient") WebClient safetyDataWebClient,
-                               @Qualifier("objectMapper") ObjectMapper objectMapper) {
-        this.sheltersMapper = sheltersMapper;
-        this.safetyDataWebClient = safetyDataWebClient;
-        this.objectMapper = objectMapper;
-    }
+		            @Qualifier("safetyDataWebClient") WebClient safetyDataWebClient,
+		            @Qualifier("objectMapper") ObjectMapper objectMapper,
+		            CommonMapper commonMapper) { 
+		this.sheltersMapper = sheltersMapper;
+		this.safetyDataWebClient = safetyDataWebClient;
+		this.objectMapper = objectMapper;
+		this.commonMapper = commonMapper;
+    	}
 
     // 상세 조회
     @Override
@@ -120,11 +126,23 @@ public class FacilityServiceImpl implements FacilityService {
     @Value("${VITE_API_SHELTER_EARTHQUAKE1}") private String quakeKey;
     @Value("${VITE_API_SHELTER_CIVIL_DEFENSE_NUCLEAR}") private String nuclearKey;
     @Value("${VITE_API_SHELTER_CIVIL_DEFENSE_DISASTER}") private String civilKey;
+    
+    
+    private void loadAreaCodes() {
+        List<Map<String, String>> codeList = commonMapper.getCodeListByGroupId("AREA_JB");
+        this.areaCodeMap = codeList.stream()
+            .collect(Collectors.toMap(
+                c -> c.get("name"), // "전주"
+                c -> c.get("code"), // "L1061300"
+                (oldVal, newVal) -> oldVal
+            ));
+    }
 
 
     @Override
     public void syncAllFacility() {
         log.info("▶▶▶ 대피소 통합 동기화 프로세스 시작");
+        loadAreaCodes();
         Flux.fromIterable(Arrays.asList(ApiType.values()))
             .flatMap(this::syncOneApiReactive)
             .subscribe(
@@ -185,10 +203,15 @@ public class FacilityServiceImpl implements FacilityService {
         if (items == null || items.isEmpty()) return Mono.empty();
 
         return Mono.fromCallable(() -> {
+            // 1. DTO 변환 및 전북 지역 필터링
             List<FacilityDTO> dtoList = items.stream()
                 .map(item -> {
+                    // ApiType에 정의된 필드 외에 공통 필드도 확인 (방어적 코드)
                     String fullAddr = safeString(item.get(type.addrField));
+                    if(fullAddr.isEmpty()) fullAddr = safeString(item.get("FCLT_ADDR_RONA"));
+                    if(fullAddr.isEmpty()) fullAddr = safeString(item.get("ROAD_NM_ADDR"));
                     if(fullAddr.isEmpty()) fullAddr = safeString(item.get("DTL_ADRES"));
+                    
                     return new Object[]{item, fullAddr};
                 })
                 .filter(obj -> {
@@ -198,14 +221,20 @@ public class FacilityServiceImpl implements FacilityService {
                 .map(obj -> convertToDTO((Map<String, Object>) obj[0], (String) obj[1], type))
                 .collect(Collectors.toList());
 
+            // 2. DB 저장 (이 부분이 확실히 실행되어야 함)
             if (!dtoList.isEmpty()) {
-                // 핵심: upsert 시 중복을 막으려면 dtoList 내에서도 중복 제거가 필요할 수 있음
-                sheltersMapper.upsertFacility(dtoList);
-                log.info("[{}] {}페이지: {}건 처리 완료", type.apiId, pageNo, dtoList.size());
+                try {
+                    sheltersMapper.upsertFacility(dtoList);
+                    log.info("[{}] {}페이지: 전북 데이터 {}건 저장 완료", type.apiId, pageNo, dtoList.size());
+                } catch (Exception e) {
+                    log.error("[{}] 저장 중 오류 발생: {}", type.apiId, e.getMessage());
+                }
+            } else {
+                log.debug("[{}] {}페이지: 전북 지역 데이터 없음", type.apiId, pageNo);
             }
-            return true;
+            return true; // Callable의 리턴값
         })
-        .subscribeOn(Schedulers.boundedElastic()) // DB 작업은 전용 스레드 풀에서
+        .subscribeOn(Schedulers.boundedElastic())
         .then();
     }
 
@@ -213,8 +242,17 @@ public class FacilityServiceImpl implements FacilityService {
         String[] addrParts = fullAddr.split(" ");
         Double lat, lon;
         
+        String sggNm = addrParts.length > 1 ? addrParts[1] : "";
+
+        // 2. "전주시" -> "전주", "고창군" -> "고창" 으로 변환하여 인식
+        // 정규식 (시|군)$ : 문자열 끝에 있는 '시' 또는 '군'을 찾아 제거합니다.
+        String pureSggName = sggNm.replaceAll("(시|군)$", "");
+        
+        // 3. 매칭되는 코드가 있으면 코드값 사용, 없으면 원본(전주시) 그대로 유지
+        String sggValue = areaCodeMap.getOrDefault(pureSggName, sggNm);
+        
         if ("DMS".equals(type.latField)) {
-            lat = calculateDegree(item.get("LAT_PROVIN"), item.get("LAT_MIN"), item.get("LAT_SEC"));
+        	lat = calculateDegree(item.get("LAT_PROVIN"), item.get("LAT_MIN"), item.get("LAT_SEC"));
             lon = calculateDegree(item.get("LOT_PROVIN"), item.get("LOT_MIN"), item.get("LOT_SEC"));
         } else {
             lat = safeDouble(item.get(type.latField));
@@ -225,7 +263,7 @@ public class FacilityServiceImpl implements FacilityService {
             .fcltNm(safeString(item.get(type.nameField)))
             .fcltSeCd(type.fcltSeCd) // ApiType의 apiId가 DB의 code_item_id(DSSP-IF-...)와 일치해야 함
             .ctpvNm(addrParts.length > 0 ? addrParts[0] : "")
-            .sggNm(addrParts.length > 1 ? addrParts[1] : "")
+            .sggNm(sggValue)
             .roadNmAddr(fullAddr)
             .lat(lat)
             .lot(lon)

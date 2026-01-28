@@ -8,7 +8,6 @@ import org.springframework.transaction.annotation.Transactional;
 import jbell.qna.dto.QnaCreate;
 import jbell.qna.dto.QnaDetail;
 import jbell.qna.dto.QnaList;
-import jbell.qna.dto.QnaUpdate;
 import jbell.qna.mapper.QnaMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +29,7 @@ public class QnaService {
     }
     
     /**
-     * QnA 상세 조회
+     * QnA 상세 조회 (관리자용)
      * @param qnaId 문의 ID
      */
     @Transactional(readOnly = true)
@@ -54,5 +53,12 @@ public class QnaService {
         // 2. 문의 내역 삭제
         qnaMapper.deleteInquiries(qnaIds);
     }
-	
+    
+    /**
+     * 사용자용 문의 등록
+     * @param qnaCreate
+     */
+    public void createQna(QnaCreate qnaCreate) {
+        qnaMapper.insertQna(qnaCreate);
+    }	
 }

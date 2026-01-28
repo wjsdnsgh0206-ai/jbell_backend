@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 
 public class Qna {
 
-	private int qnaId;						// 문의 고유 식별자 (PK)
+	private Long qnaId;						// 문의 고유 식별자 (PK)
 	private String qnaCategoryId;			// 문의 카테고리 ID
 	private String title;					// 문의 제목
 	private String content;					// 문의 본문 내용
