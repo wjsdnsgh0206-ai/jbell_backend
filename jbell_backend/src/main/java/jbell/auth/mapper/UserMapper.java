@@ -17,6 +17,7 @@ public interface UserMapper {
     
     void updateUser(SignupRequest signupRequest);
     
+    int updateUserByAdmin(User user);
 
     // 리프레시 토큰 관련 메서드
     void updateRefreshToken(@Param("userId") String userId, @Param("refreshToken") String refreshToken);
