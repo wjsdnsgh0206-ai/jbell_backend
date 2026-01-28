@@ -1,4 +1,4 @@
-package jbell.behavior.service;
+package jbell.behaviorMethod.service;
 
 import java.time.Duration;
 import java.util.List;
@@ -14,9 +14,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import jbell.behavior.domain.BehaviorContentVO;
-import jbell.behavior.dto.BehaviorMethod;
-import jbell.behavior.mapper.BehaviorMapper;
+import jbell.behaviorMethod.domain.BehaviorMethodContentVO;
+import jbell.behaviorMethod.dto.BehaviorMethod;
+import jbell.behaviorMethod.mapper.BehaviorMethodMapper;
 import jbell.exception.CustomException;
 import jbell.exception.ErrorCode;
 import lombok.extern.slf4j.Slf4j;
@@ -30,10 +30,10 @@ import reactor.util.retry.Retry;
 // @RequiredArgsConstructor를 쓰면 final 필드에 대한 생성자를 자동 생성해줍니다.
 // 하지만 WebClient에 @Qualifier가 필요하므로 직접 생성자를 유지하거나, 
 // 아래처럼 Lombok과 직접 생성자를 조합하지 말고 기존 방식을 유지하는 게 낫습니다.
-public class BehaviorService {
+public class BehaviorMethodService {
 
     private final ObjectMapper objectMapper;
-    private final BehaviorMapper behaviorMapper; // mapper 생성자 주입
+    private final BehaviorMethodMapper behaviorMethodMapper; // mapper 생성자 주입
     private final WebClient safetyDataWebClient;
 
 	// 재난안전데이터공유플랫폼 행정안전부_자연재난국민행동요령 서비스키
@@ -45,12 +45,12 @@ public class BehaviorService {
 	private int timeout;
 	
 	// 생성자 주입
-	public BehaviorService(@Qualifier("safetyDataWebClient") WebClient safetyDataWebClient
+	public BehaviorMethodService(@Qualifier("safetyDataWebClient") WebClient safetyDataWebClient
 						  ,@Qualifier("objectMapper") ObjectMapper objectMapper
-						  ,BehaviorMapper behaviorMapper) {
+						  ,BehaviorMethodMapper behaviorMethodMapper) {
 		this.safetyDataWebClient = safetyDataWebClient;
 		this.objectMapper = objectMapper;
-		this.behaviorMapper = behaviorMapper;
+		this.behaviorMethodMapper = behaviorMethodMapper;
 	}
 	
 	public Mono<Map<String, String>> safetyDataSave(){
@@ -163,7 +163,7 @@ public class BehaviorService {
 			            		        String apiCateCode = behaviorMethodList.get(0).getSafetyCate2();
 			            		        
 			            		        // 2. DB에서 해당 코드와 매핑된 code_item_id(예: NATURAL_TYPHOON) 조회
-			            		        String realContentType = behaviorMapper.findCodeItemIdByDescription(apiCateCode);
+			            		        String realContentType = behaviorMethodMapper.findCodeItemIdByDescription(apiCateCode);
 			            		        
 			            		        // 만약 매핑된 코드가 없다면 기본값 사용
 			            		        if (realContentType == null) realContentType = "BEHAVIOR_METHOD_NATURAL";
@@ -171,7 +171,7 @@ public class BehaviorService {
 			            		        log.info("DB 저장 시작: {}건 -> 카테고리: {}", behaviorMethodList.size(), realContentType);
 			            		       
 			            		        // 3. 찾은 realContentType으로 저장
-			            		        behaviorMapper.insertBehaviorContents(behaviorMethodList, realContentType);
+			            		        behaviorMethodMapper.insertBehaviorMethodContents(behaviorMethodList, realContentType);
 			            		        
 			            		        return behaviorMethodList;
 			            			})
@@ -195,8 +195,8 @@ public class BehaviorService {
 	}
 	
 	// 행동요령 조회 서비스 로직
-	public List<BehaviorContentVO> getBehaviorList(String contentType) {
+	public List<BehaviorMethodContentVO> getBehaviorList(String contentType) {
         // 필요하다면 여기서 데이터 가공 로직 추가 (예: body의 줄바꿈 처리 등)
-        return behaviorMapper.selectBehaviorList(contentType);
+        return behaviorMethodMapper.selectBehaviorMethodList(contentType);
     }
 }
