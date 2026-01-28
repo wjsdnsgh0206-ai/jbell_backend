@@ -1,11 +1,15 @@
 package jbell.auth.service.impl;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import jbell.auth.domain.User;
 import jbell.auth.dto.LoginRequest;
@@ -15,14 +19,55 @@ import jbell.auth.mapper.UserMapper;
 import jbell.auth.service.AuthService;
 import jbell.security.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthServiceImpl implements AuthService {
 
 	private final UserMapper userMapper;
     private final BCryptPasswordEncoder passwordEncoder; // SecurityConfig에서 등록한 빈 주입
     private final JwtTokenProvider jwtTokenProvider;
+    
+    // 관리자용 회원 목록 조회
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, Object> getAdminMemberList(Map<String, Object> params) {
+        // String으로 넘어온 값을 안전하게 숫자로 변환
+        int page = Integer.parseInt(String.valueOf(params.getOrDefault("page", "1")));
+        int size = Integer.parseInt(String.valueOf(params.getOrDefault("size", "10")));
+        
+        // MyBatis 계산용 offset 설정
+        params.put("offset", (page - 1) * size);
+        params.put("limit", size);
+
+        List<User> list = userMapper.selectUserList(params);
+        int total = userMapper.countUserList(params);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("list", list);
+        result.put("total", total);
+        return result;
+    }
+
+    @Override
+    @Transactional
+    public void deleteUsers(List<String> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+        
+        try {
+            // 실제 삭제 대신 상태값을 false(0)로 업데이트하여 논리적 삭제 처리
+            userMapper.updateUsersStatus(ids, false);
+            log.info("관리자에 의한 회원 비활성화 완료. 대상: {}명", ids.size());
+        } catch (Exception e) {
+            log.error("회원 상태 업데이트 중 오류 발생: ", e);
+            throw new RuntimeException("삭제 처리 중 오류가 발생했습니다.");
+        }
+    }
+
     
     // 회원정보 수정
     @Override
@@ -41,6 +86,7 @@ public class AuthServiceImpl implements AuthService {
         User user = userMapper.findByUserId(loginRequest.getUserId());
         
         if (user == null || !passwordEncoder.matches(loginRequest.getUserPw(), user.getUserPw())) {
+        	log.info("{}", !passwordEncoder.matches(loginRequest.getUserPw(), user.getUserPw()));
             throw new RuntimeException("아이디 또는 비밀번호가 틀렸습니다.");
         }
 

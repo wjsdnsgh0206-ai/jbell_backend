@@ -2,6 +2,54 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="jbell.auth.mapper.UserMapper"> 
+
+		<select id="selectUserList" resultType="jbell.auth.domain.User">
+	        SELECT 
+	            user_id AS userId,
+	            user_name AS userName,
+	            user_email AS userEmail,
+	            user_residence_area AS userResidenceArea,
+	            user_grade AS userGrade,
+	            user_status AS status,      created_at AS userCreatedAt  FROM `user`
+	        <where>
+	            <if test="memberRegion != null and memberRegion != ''">
+	                AND user_residence_area LIKE CONCAT('%', #{memberRegion}, '%')
+	            </if>
+	            <if test="memberId != null and memberId != ''">
+	                AND user_id LIKE CONCAT('%', #{memberId}, '%')
+	            </if>
+	            <if test="keyword != null and keyword != ''">
+	                AND user_name LIKE CONCAT('%', #{keyword}, '%')
+	            </if>
+	        </where>
+	        ORDER BY 
+	        <choose>
+	            <when test="sortOrder == 'oldest'">created_at ASC</when>
+	            <otherwise>created_at DESC</otherwise>
+	        </choose>
+	        LIMIT #{offset}, #{limit}
+	    </select>
+	
+	    <select id="countUserList" resultType="int">
+	        SELECT COUNT(*) FROM `user`
+	        <where>
+	            <if test="memberRegion != null and memberRegion != ''">AND user_residence_area LIKE CONCAT('%', #{memberRegion}, '%')</if>
+	            <if test="memberId != null and memberId != ''">AND user_id LIKE CONCAT('%', #{memberId}, '%')</if>
+	            <if test="keyword != null and keyword != ''">AND user_name LIKE CONCAT('%', #{keyword}, '%')</if>
+	        </where>
+	    </select>
+	
+		<update id="updateUsersStatus">
+	        UPDATE `user`
+	        SET user_status = false, 
+	            updated_at = NOW()
+	        WHERE user_id IN
+	        <foreach item="id" collection="ids" open="(" separator="," close=")">
+	            #{id}
+	        </foreach>
+	    </update>
+
+
 		
 		<select id="getRefreshToken" resultType="string">
 		    SELECT refresh_token 
@@ -16,37 +64,39 @@
 		    WHERE user_id = #{userId}
 		</update>
 
-	<update id="updateUser" parameterType="jbell.auth.dto.SignupRequest">
-	    UPDATE user
-	    SET 
-	        user_name = #{userName},
-	        user_email = #{userEmail},
-	        user_birth_date = #{userBirthDate},
-	        user_gender = #{userGender},
-	        user_residence_area = #{userResidenceArea},
-	        user_status = #{userStatus} 
-	        <if test="userPw != null and userPw != ''">
-	            , user_password = #{userPw}
-	        </if>
-	    WHERE user_id = #{userId}
-	</update>
+		<update id="updateUser" parameterType="jbell.auth.dto.SignupRequest">
+	        UPDATE `user`
+	        SET 
+	            user_name = #{userName},
+	            user_email = #{userEmail},
+	            user_birth_date = #{userBirthDate},
+	            user_gender = #{userGender},
+	            user_residence_area = #{userResidenceArea},
+	            user_status = #{userStatus},
+	            updated_at = NOW()
+	            <if test="userPw != null and userPw != ''">
+	                , user_password = #{userPw}
+	            </if>
+	        WHERE user_id = #{userId}
+	    </update>
 
 
 
 	<select id="findByUserId" resultType="jbell.auth.domain.User">
-	    SELECT 
-	        user_id AS userId,
-	        user_password AS userPw,
-	        user_name AS userName,
-	        user_birth_date AS userBirthDate,
-	        user_email AS userEmail,
-	        user_gender AS userGender,
-	        user_grade AS userGrade,
-	        user_residence_area AS userResidenceArea,
-	        created_at AS createdAt
-	    FROM user
-	    WHERE user_id = #{userId} AND user_status = TRUE
-	</select>
+        SELECT 
+            user_id AS userId,
+            user_password AS userPw,
+            user_name AS userName,
+            user_birth_date AS userBirthDate,
+            user_email AS userEmail,
+            user_gender AS userGender,
+            user_grade AS userGrade,
+            user_residence_area AS userResidenceArea,
+            created_at AS createdAt,
+            user_status AS status
+        FROM `user`
+        WHERE user_id = #{userId}
+    </select>
 	
 	<select id="findIdByEmail" resultType="string">
 	    SELECT user_id
@@ -82,7 +132,7 @@
         #{userEmail},       
         #{userGender}, 
         TRUE, 
-        #{userGender}, 
+        #{userGrade}, 
         #{userResidenceArea} )
 </insert>
 

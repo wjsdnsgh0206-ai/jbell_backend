@@ -1,6 +1,7 @@
 package jbell.auth.controller;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +32,23 @@ public class AuthController {
     private AuthService authService;
     @Autowired
     private EmailService emailService;
+    
+    // 테스트
+    @GetMapping("/list")
+    public ResponseEntity<Map<String, Object>> getMemberList(
+            @RequestParam Map<String, Object> params) {
+        // params 내부에는 page, size, memberRegion, memberId, keyword, sortOrder가 담김
+        return ResponseEntity.ok(authService.getAdminMemberList(params));
+    }
+
+    @PostMapping("/delete")
+    public ResponseEntity<Void> deleteMembers(@RequestBody Map<String, List<String>> payload) {
+        authService.deleteUsers(payload.get("ids"));
+        return ResponseEntity.ok().build();
+    }
+    
+
+    
     
     // 회원 정보 업데이트
     @PostMapping("/update")

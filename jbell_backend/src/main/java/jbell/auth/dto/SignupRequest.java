@@ -46,8 +46,10 @@ public class SignupRequest {
 	
 	private String userResidenceArea;
 	
+	private String userGender;
+	
 	@Builder.Default
-    private String userGender = "USER";
+    private String userGrade = "USER";
 	
 	private Boolean userStatus;
 	
