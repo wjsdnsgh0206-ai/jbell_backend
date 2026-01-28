@@ -8,7 +8,6 @@ import org.apache.ibatis.annotations.Param;
 import jbell.qna.dto.QnaCreate;
 import jbell.qna.dto.QnaDetail;
 import jbell.qna.dto.QnaList;
-import jbell.qna.dto.QnaUpdate;
 
 @Mapper
 public interface QnaMapper {
@@ -38,5 +37,11 @@ public interface QnaMapper {
      * @param qnaIds 삭제할 문의 ID 리스트
      */
     void deleteInquiries(@Param("qnaIds") List<Long> qnaIds);
+    
+    /**
+     * 사용자용 문의 등록
+     * @param qnaCreate
+     */
+    void insertQna(QnaCreate qnaCreate);
 
 }

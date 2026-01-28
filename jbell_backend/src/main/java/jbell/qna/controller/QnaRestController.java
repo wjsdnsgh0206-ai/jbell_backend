@@ -2,12 +2,9 @@ package jbell.qna.controller;
 
 import java.util.List;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -15,10 +12,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.servlet.http.HttpSession;
 import jbell.qna.dto.QnaBulkDelete;
-import jbell.qna.dto.QnaCreate;
 import jbell.qna.dto.QnaDetail;
 import jbell.qna.dto.QnaList;
-import jbell.qna.dto.QnaUpdate;
 import jbell.qna.service.QnaService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,7 +38,7 @@ public class QnaRestController {
     }
 	 
     /**
-     * QnA 상세 조회 API
+     * 관리자용 QnA 상세 조회 API
      * URL: GET /api/admin/qnadetail?qnaId=3
      */
     @GetMapping("/admin/qnadetail")
@@ -53,7 +48,7 @@ public class QnaRestController {
     }
     
     /**
-     * QnA 삭제 API (단건 및 다건 통합)
+     * 관리자용 QnA 삭제 API (단건 및 다건 통합)
      * URL: DELETE /api/admin/qnadelete
      * Body: { "qnaIds": [1, 2, 3] }
      */

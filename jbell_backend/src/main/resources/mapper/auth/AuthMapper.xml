@@ -3,23 +3,163 @@
 
 <mapper namespace="jbell.auth.mapper.UserMapper"> 
 
+		<update id="updateUserByAdmin" parameterType="jbell.auth.domain.User">
+		    UPDATE `user`
+		    <set>
+		        <if test="userName != null">user_name = #{userName},</if>
+		        <if test="userEmail != null">user_email = #{userEmail},</if>
+		        <if test="userResidenceArea != null">user_residence_area = #{userResidenceArea},</if>
+		        <if test="userGrade != null">user_grade = #{userGrade},</if>
+		        <if test="userGender != null">user_gender = #{userGender},</if>
+		        <if test="userBirthDate != null">user_birth_date = #{userBirthDate},</if>
+		        
+		        <if test="status != null">
+		            user_status = #{status},
+		        </if>
+		        
+		        <if test="userPw != null and userPw != ''">
+		            user_password = #{userPw},
+		        </if>
+		        
+		        updated_at = NOW()
+		    </set>
+		    WHERE user_id = #{userId}
+		</update>
+
+
+
+		<select id="selectUserList" resultType="jbell.auth.domain.User">
+	        SELECT 
+	            user_id AS userId,
+	            user_name AS userName,
+	            user_email AS userEmail,
+	            user_residence_area AS userResidenceArea,
+	            user_grade AS userGrade,
+	            user_status AS status,      created_at AS userCreatedAt  FROM `user`
+	        <where>
+	            <if test="memberRegion != null and memberRegion != ''">
+	                AND user_residence_area LIKE CONCAT('%', #{memberRegion}, '%')
+	            </if>
+	            <if test="memberId != null and memberId != ''">
+	                AND user_id LIKE CONCAT('%', #{memberId}, '%')
+	            </if>
+	            <if test="keyword != null and keyword != ''">
+	                AND user_name LIKE CONCAT('%', #{keyword}, '%')
+	            </if>
+	        </where>
+	        ORDER BY 
+	        <choose>
+	            <when test="sortOrder == 'oldest'">created_at ASC</when>
+	            <otherwise>created_at DESC</otherwise>
+	        </choose>
+	        LIMIT #{offset}, #{limit}
+	    </select>
+	
+	    <select id="countUserList" resultType="int">
+	        SELECT COUNT(*) FROM `user`
+	        <where>
+	            <if test="memberRegion != null and memberRegion != ''">AND user_residence_area LIKE CONCAT('%', #{memberRegion}, '%')</if>
+	            <if test="memberId != null and memberId != ''">AND user_id LIKE CONCAT('%', #{memberId}, '%')</if>
+	            <if test="keyword != null and keyword != ''">AND user_name LIKE CONCAT('%', #{keyword}, '%')</if>
+	        </where>
+	    </select>
+	
+		<update id="updateUsersStatus">
+	        UPDATE `user`
+	        SET user_status = false, 
+	            updated_at = NOW()
+	        WHERE user_id IN
+	        <foreach item="id" collection="ids" open="(" separator="," close=")">
+	            #{id}
+	        </foreach>
+	    </update>
+
+
+		
+		<select id="getRefreshToken" resultType="string">
+		    SELECT refresh_token 
+		    FROM user 
+		    WHERE user_id = #{userId}
+		</select>
+		
+		
+		<update id="updateRefreshToken">
+		    UPDATE user 
+		    SET refresh_token = #{refreshToken} 
+		    WHERE user_id = #{userId}
+		</update>
+
+		<update id="updateUser" parameterType="jbell.auth.dto.SignupRequest">
+	        UPDATE `user`
+	        SET 
+	            user_name = #{userName},
+	            user_email = #{userEmail},
+	            user_birth_date = #{userBirthDate},
+	            user_gender = #{userGender},
+	            user_residence_area = #{userResidenceArea},
+	            user_status = #{userStatus},
+	            updated_at = NOW()
+	            <if test="userPw != null and userPw != ''">
+	                , user_password = #{userPw}
+	            </if>
+	        WHERE user_id = #{userId}
+	    </update>
+
+
+
+	<select id="findByUserId" resultType="jbell.auth.domain.User">
+        SELECT 
+            user_id AS userId,
+            user_password AS userPw,
+            user_name AS userName,
+            user_birth_date AS userBirthDate,
+            user_email AS userEmail,
+            user_gender AS userGender,
+            user_grade AS userGrade,
+            user_residence_area AS userResidenceArea,
+            created_at AS createdAt,
+            user_status AS status
+        FROM `user`
+        WHERE user_id = #{userId}
+    </select>
+	
+	<select id="findIdByEmail" resultType="string">
+	    SELECT user_id
+	    FROM user
+	    WHERE user_email = #{userEmail}
+	</select>
+	
+	<update id="updatePassword">
+	    UPDATE user 
+	    SET user_password = #{newPw} 
+	    WHERE user_id = #{userId}
+	</update>
+
+
+
 
 	<insert id="insertUser" parameterType="jbell.auth.dto.SignupRequest">
-	    INSERT INTO user (
-	        user_id, user_password, user_name, user_birth_date, user_email, 
-	        user_gender, user_status, user_grade, user_residence_area
-	    ) VALUES (
-	        #{userId}, 
-	        #{userPw}, 
-	        #{name},        
-	        #{birthDate},   
-	        #{email},       
-	        #{userGender}, 
-	        TRUE, 
-	        'USER', 
-	        #{residenceArea}
-	    )
-	</insert>
+    INSERT INTO user (
+        user_id, 
+        user_password, 
+        user_name, 
+        user_birth_date, 
+        user_email, 
+        user_gender, 
+        user_status, 
+        user_grade, 
+        user_residence_area
+    ) VALUES (
+        #{userId}, 
+        #{userPw}, 
+        #{userName},        
+        #{userBirthDate},   
+        #{userEmail},       
+        #{userGender}, 
+        TRUE, 
+        #{userGrade}, 
+        #{userResidenceArea} )
+</insert>
 
 
 
