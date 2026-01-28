@@ -16,6 +16,7 @@ public class QnaDetail {
 	private LocalDateTime createdAt;		// 문의 등록 일시{created_at}
 	private String userId;					// 작성자 식별자{user_id}
 	private String userName;                // user.user_name
+	private String isVisible;       		// 공개/비공개 여부
 	
 
 	private Long qnaAnswerId;				// answer_id (PK)

@@ -7,7 +7,7 @@ import lombok.Data;
 @Data
 public class QnaAnswerDetail {
 
-	private int qnaAnswerId;			// 답변 고유 식별자
+	private Long qnaAnswerId;			// 답변 고유 식별자
 	private int qnaId;					// 연결된 문의글의 식별자 (FK)
 	private String content;				// 답변 본문 내용
 	private LocalDateTime createdAt;	// 답변 등록 일시
