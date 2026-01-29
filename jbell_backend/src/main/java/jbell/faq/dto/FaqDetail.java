@@ -11,6 +11,7 @@ public class FaqDetail {
     private String faqCategory;
     private String faqTitle;
     private String faqContent;
+    private String faqWrite;
     private Integer faqViewCount;
     private Integer faqDisplayOrder;
     private String faqVisibleYn;      // "Y" / "N"

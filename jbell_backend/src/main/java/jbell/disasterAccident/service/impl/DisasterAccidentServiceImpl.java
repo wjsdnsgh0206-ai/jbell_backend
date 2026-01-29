@@ -1,147 +1,277 @@
-//package jbell.disasterAccident.service.impl;
-//
-//import java.time.LocalDate;
-//import java.time.LocalDateTime;
-//import java.time.format.DateTimeFormatter;
-//import java.util.List;
-//
-//import org.springframework.beans.factory.annotation.Value;
-//import org.springframework.scheduling.annotation.Scheduled;
-//import org.springframework.stereotype.Service;
-//import org.springframework.web.reactive.function.client.WebClient;
-//
-//import com.fasterxml.jackson.databind.JsonNode;
-//
-//import jbell.disasterAccident.dto.DisasterMessageResponse;
-//import jbell.disasterAccident.mapper.DisasterAccidentMapper;
-//import jbell.disasterAccident.service.DisasterAccidentService;
-//import lombok.RequiredArgsConstructor;
-//import lombok.extern.slf4j.Slf4j;
-//import reactor.core.publisher.Flux; // 💡 추가
-//import reactor.core.publisher.Mono;
-//import reactor.core.scheduler.Schedulers;
-//
-//@Service
-//@RequiredArgsConstructor
-//@Slf4j
-//public class DisasterAccidentServiceImpl implements DisasterAccidentService {
-//
-//	private final DisasterAccidentMapper disasterAccidentMapper;
-//
-//	@Value("${VITE_API_DISATER_TEXT_MESSAGE_KEY}")
-//	private String dmsKey;
-//
-//	// 1. 자동 수집 스케줄러 (매 1시간마다 실행)
-//	@Scheduled(cron = "0 0 * * * *")
-//	// fetchAndSaveDisasterMessage() 메서드를 실행(subscribe)하여 
-//	// 외부 API 데이터를 가져온 뒤 DB에 자동으로 저장
-//	public void scheduledFetch() {
-//		log.info(">>> [스케줄러] 재난문자 자동 수집 시작");
-//		fetchAndSaveDisasterMessage().subscribe();
-//	}
-//
-//	// 2. select로 db데이터 불러오기
-//	@Override
-//	public Mono<List<DisasterMessageResponse>> selectDisasterMessageList() {
-//		// Mono.fromCallable(() -> ...)은 이 작업을 나중에 실행 할 수 있게 Mono라는 비동기작업 보관함에 넣어달라는 의미.
-//		// disasterAccidentMapper.selectDisasterMessageList() : xml의 select쿼리 실행하여 db에 있는 재난문자 불러오기
-//		return Mono.fromCallable(() -> disasterAccidentMapper.selectDisasterMessageList())
-//				// db조회 작업은 별도의 작업실(boundedElastic)가서 하라고 지정. 
-//				.subscribeOn(Schedulers.boundedElastic());
-//	}
-//
-//	// 3. 외부api호출 후, 데이터 수집하는 로직
-//	@Override
-//	public Mono<String> fetchAndSaveDisasterMessage() { 
-//		log.info(">>> 재난문자 수집 시작");
-//		
-//		// 7일치 날짜 리스트 생성 (기존에 작성한 리스트 로직 유지)
-//		List<String> targetDates = java.util.stream.IntStream.range(0, 7)
-//	            .mapToObj(i -> LocalDate.now().minusDays(i).format(DateTimeFormatter.ofPattern("yyyyMMdd")))
-//	            .collect(java.util.stream.Collectors.toList());
-//		
-//		// 공공 api 서버의 기본 주소 설정.
-//		WebClient webClient = WebClient.builder().baseUrl("https://www.safetydata.go.kr").build();
-//		
-//		// Flux.fromIterable을 사용하여 7일간의 날짜를 하나씩 꺼내어 반복 호출함
-//		return Flux.fromIterable(targetDates)
-//				.flatMap(date -> { // 💡 targetDates에서 꺼낸 각 날짜(date)를 사용하여 API 호출
-//					log.info(">>> [{}] 날짜 데이터 수집 시도", date);
-//					
-//					// 어떤 데이터를 가져올지 설정.
-//					return webClient.get()
-//							.uri(uriBuilder -> uriBuilder.path("/V2/api/DSSP-IF-00247")
-//									.queryParam("serviceKey", dmsKey)
-//									.queryParam("returnType", "json")
-//									.queryParam("pageNo", 1) 
-//									.queryParam("crtDt", date) // 💡 루프를 도는 현재 날짜(date) 적용
-//									.queryParam("numOfRows", 100) // 100개씩 긁어오자!
-//									.queryParam("rgnNm", "전북") // "전북"으로 검색
-//									.build())
-//							// 실제 api서버에 신호를 보내서 데이터를 가져오고, 가져온 Json데이터를 JsonNode형태로 변환.
-//							.retrieve().bodyToMono(JsonNode.class).flatMap(response -> {
-//								// response.pah("body"): api응답중, 데이터가 들어있는 body부분만 빼는 작업.
-//								JsonNode dataList = response.path("body");
-//
-//								// 만약, 가져온 데이터가 없거나 형식이 이상하다면 데이터가 없다고 처리하고 종료.
-//								if (!dataList.isArray() || dataList.isEmpty()) {
-//									// Flux 내에서 처리 중이므로 Mono.empty()를 반환하여 다음 날짜로 진행
-//									return Mono.empty();
-//								}
-//								
-//								// 날짜 형식 변환
-//								DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
-//								
-//								// subscribeOn을 사용하여 DB 저장을 별도 스레드에서 실행하고 완료되면 응답 반환
-//								return Mono.fromRunnable(() -> {
-//									// 수집된 데이터를 하나씩 반복하여 꺼냄
-//									for (JsonNode node : dataList) {
-//										
-//										// 루프 시작 직후에 추가
-//										log.info(">>> API 수신 데이터 - SN: {}, 날짜: {}", node.path("SN").asInt(), node.path("CRT_DT").asText());
-//										
-//										// 꺼낸 데이터들을 자바객체변수에 담는다. (ex. dto.setSn())
-//										DisasterMessageResponse dto = new DisasterMessageResponse();
-//										dto.setSn(node.path("SN").asInt());
-//										// crtDt: 문자열을 받아서 LocalDate로 변환
-//										String dateStr = node.path("CRT_DT").asText(); // "2023/09/19 12:22:17"
-//										if (dateStr != null && !dateStr.isEmpty()) {
-//											// 1. 문자열을 일단 시간까지 포함된 LocalDateTime으로 파싱
-//											// 2. 그중에서 날짜 부분만 쏙 빼서(toLocalDate) dto에 저장
-//											LocalDateTime localDateTime = LocalDateTime.parse(dateStr, formatter);
-//											dto.setCrtDt(localDateTime);
-//										}
-//										dto.setMsgCn(node.path("MSG_CN").asText());
-//										dto.setRcptnRgnNm(node.path("RCPTN_RGN_NM").asText());
-//										dto.setEmrgStepNm(node.path("EMRG_STEP_NM").asText());
-//										
-//										// api에서 제공되는 재난구분이름(ex.지진)을 apiSeNm에 저장한다.
-//										String apiSeNm = node.path("DST_SE_NM").asText();
-//										String dbCode = "ITEM_001";
-//
-//										// 한글이름을 DB전용코드로 변환.(DB컬럼에 맞게 변환해야 외래키에러없이 들어감)
-//										if (apiSeNm.contains("태풍"))
-//											dbCode = "NATURAL_TYPHOON";
-//										else if (apiSeNm.contains("홍수"))
-//											dbCode = "NATURAL_FLOOD";
-//										else if (apiSeNm.contains("지진"))
-//											dbCode = "NATURAL_EARTHQUAKE";
-//										else if (apiSeNm.contains("호우"))
-//											dbCode = "NATURAL_HEAVYRAIN";
-//
-//										dto.setDstType(dbCode);
-//										
-//										// 가져온 데이터들을 db에 저장한다. 
-//										try {
-//											disasterAccidentMapper.insertDisasterMessage(dto);
-//										} catch (Exception e) {
-//											log.error(">>> 중복 또는 저장 에러 (SN: {}): {}", dto.getSn(), e.getMessage());
-//										}
-//									}
-//								// 작업들을 스레드에게 맡기고, 모든 작업이 끝나면 성공 메시지 발행한다.
-//								}).subscribeOn(Schedulers.boundedElastic());
-//							});
-//				})
-//				.then(Mono.just("최근 7일 데이터 수집 및 저장 완료!")); // 💡 모든 날짜 처리가 끝나면 결과 메시지 반환
-//	}
-//}
+package jbell.disasterAccident.service.impl;
+
+import java.nio.charset.Charset;
+
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.client.WebClient;
+
+import com.fasterxml.jackson.databind.JsonNode;
+
+import jbell.disasterAccident.dto.DisasterAccidentDTO;
+import jbell.disasterAccident.mapper.DisasterAccidentMapper;
+import jbell.disasterAccident.service.DisasterAccident;
+import lombok.extern.slf4j.Slf4j;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+
+@Service
+@Slf4j
+public class DisasterAccidentServiceImpl implements DisasterAccident {
+
+    private final WebClient publicDataWebClient; // 공공데이터용 (apis.data.go.kr)
+    private final WebClient apihubDataWebClient; // 기상청 API허브용 (apihub.kma.go.kr)
+    private final DisasterAccidentMapper mapper;
+
+    public DisasterAccidentServiceImpl(
+            @Qualifier("publicDataWebClient") WebClient publicDataWebClient, 
+            @Qualifier("apihubDataWebClient") WebClient apihubDataWebClient, 
+            DisasterAccidentMapper disasterAccidentMapper) {
+        this.publicDataWebClient = publicDataWebClient;
+        this.apihubDataWebClient = apihubDataWebClient;
+        this.mapper = disasterAccidentMapper;
+    }
+
+    @Value("${publicdata.servicekey}")
+    private String serviceKey;
+
+    @Value("${apihubdata.servicekey}")
+    private String apiHubKey;
+
+    @Override
+    public Mono<Void> fetchAndSaveForestFireRisk() {
+        return Mono.defer(() -> {
+            java.net.URI uri = org.springframework.web.util.UriComponentsBuilder
+                    .fromHttpUrl("http://apis.data.go.kr/1400377/forestPoint/forestPointListGeongugSearch")
+                    .queryParam("ServiceKey", serviceKey)
+                    .queryParam("pageNo", "1")
+                    .queryParam("numOfRows", "10")
+                    .queryParam("_type", "json")
+                    .queryParam("excludeForecast", "0")
+                    .build(true).toUri();
+
+            return publicDataWebClient.get()
+                .uri(uri)
+                .retrieve()
+                .bodyToMono(JsonNode.class)
+                .flatMapIterable(node -> {
+                    JsonNode items = node.path("response").path("body").path("items").path("item");
+                    if (items.isMissingNode()) return java.util.Collections.emptyList();
+                    return items.isArray() ? (Iterable<JsonNode>) items::elements 
+                                         : java.util.Collections.singletonList(items);
+                })
+                .doOnNext(item -> {
+                    try {
+                        // [기존 테이블 매핑 전략]
+                        // 1. fire_id: 날짜(20260128) + 지역코드 등을 조합하여 숫자형태 생성
+                        String dateStr = item.path("analdate").asText().replaceAll("[^0-9]", "").substring(0, 10);
+                        long virtualId = Long.parseLong(dateStr); 
+
+                        DisasterAccidentDTO dto = DisasterAccidentDTO.builder()
+                            .fireId(virtualId)                             // PK 충족
+                            .fireDamageArea(item.path("meanavg").asDouble()) // 평균지수를 면적 컬럼에 임시 저장
+                            .fireLocVillage(item.path("doname").asText())   // 발생장소_시도
+                            .fireStartTime(item.path("analdate").asText() + ":00:00") // 발생일시 (DATETIME 형식 맞춤)
+                            .fireEndTime(item.path("analdate").asText() + ":00:00")   // 종료일시 (필수값 충족)
+                            .fireCause("산불위험예보")                        // 발생원인에 구분값 기록
+                            .build();
+
+                        mapper.insertForestFire(dto); // 기존 매퍼 메서드 재사용
+                    } catch (Exception e) {
+                        log.error("기존 테이블 매핑 저장 에러: {}", e.getMessage());
+                    }
+                })
+                .then();
+        });
+    }
+    
+    @Override
+    public Mono<Void> fetchAndSaveEarthquake(String startDate) {
+        return apihubDataWebClient.get()
+            .uri(uriBuilder -> {
+                uriBuilder.path("/typ01/url/eqk_now.php");
+                // 파라미터가 있을 때만 tm 추가
+                if (startDate != null && !startDate.isEmpty()) {
+                    uriBuilder.queryParam("tm", startDate);
+                }
+                uriBuilder.queryParam("authKey", apiHubKey);	
+                return uriBuilder.build();
+            })
+            .retrieve()
+            .bodyToMono(byte[].class)
+            // 1. 타임아웃을 60초로 대폭 늘림 (기상청 서버 지연 대비)
+            .timeout(java.time.Duration.ofSeconds(60)) 
+            // 2. 에러 발생 시 2초 간격으로 최대 3번 재시도
+            .retryWhen(reactor.util.retry.Retry.fixedDelay(3, java.time.Duration.ofSeconds(2))
+                .doBeforeRetry(retrySignal -> log.warn("지진 API 재시도 중... (시도 횟수: {})", retrySignal.totalRetries() + 1)))
+            .map(bytes -> new String(bytes, Charset.forName("EUC-KR")))
+            .flatMap(data -> {
+                if (data == null || data.trim().isEmpty()) return Mono.empty();
+                log.info("지진 데이터 수신 성공!");
+                
+                String[] lines = data.split("\n");
+                for (String line : lines) {
+                    String trimmed = line.trim();
+                    if (trimmed.startsWith("#") || trimmed.isEmpty() || trimmed.contains("TP")) continue;
+                    try {
+                        String content = trimmed.split("=")[0];
+                        String[] parts = content.split("\\s+");
+                        if (parts.length < 7) continue;
+
+                        int lonIndex = content.indexOf(parts[6]) + parts[6].length();
+                        String remaining = content.substring(lonIndex).trim();
+                        String[] details = remaining.split(",");
+
+                        DisasterAccidentDTO dto = DisasterAccidentDTO.builder()
+                            .tmFc(parts[1])
+                            .seq(Long.parseLong(parts[2]))
+                            .mt(Double.parseDouble(parts[4]))
+                            .lat(Double.parseDouble(parts[5]))
+                            .lon(Double.parseDouble(parts[6]))
+                            .loc(details[0].trim())
+                            .rem(details.length > 2 ? details[2].trim() : "")
+                            .build();
+                        mapper.insertEarthquake(dto);
+                    } catch (Exception e) {
+                        log.error("지진 파싱 에러: {}", e.getMessage());
+                    }
+                }
+                return Mono.empty();
+            })
+            .onErrorResume(e -> {
+                log.error("지진 API 최종 연결 실패 (타임아웃 가능성 높음): {}", e.getMessage());
+                return Mono.empty();
+            })
+            .then();
+    }
+
+    @Override
+    @Transactional
+    public Mono<Void> fetchAndSaveTyphoon(String year) {
+        log.info("{}년 태풍 데이터 수집 시작...", year);
+        
+        return apihubDataWebClient.get() // [수정] 기상청 전용 클라이언트 사용
+            .uri(uriBuilder -> uriBuilder
+                .path("/typ01/url/typ_lst.php")
+                .queryParam("YY", year)
+                .queryParam("authKey", apiHubKey)
+                .build())
+            .retrieve()
+            .bodyToMono(String.class)
+            .flatMap(data -> {
+                String[] lines = data.split("\n");
+                return Flux.fromArray(lines)
+                    .filter(line -> !line.startsWith("#") && !line.trim().isEmpty() && !line.contains("YY"))
+                    .concatMap(line -> {
+                        String[] cols = line.trim().split("\\s+");
+                        try {
+                            DisasterAccidentDTO info = DisasterAccidentDTO.builder()
+                                .typhoonYear(Integer.parseInt(cols[0]))
+                                .typhoonNo(Integer.parseInt(cols[1]))
+                                .typhoonActiveYn(cols[2].equals("1") ? "Y" : "N")
+                                .typhoonName(cols[6])
+                                .typhoonNameDesc(cols.length > 8 ? cols[8] : "")
+                                .build();
+                            mapper.insertTyphoonInfo(info);
+                            return fetchAndSaveTyphoonTrack(cols[0], cols[1]);
+                        } catch (Exception e) {
+                            log.error("태풍 목록 파싱 에러: {}", line);
+                            return Mono.empty();
+                        }
+                    })
+                    .then();
+            })
+            .onErrorResume(e -> Mono.empty());
+    }
+
+    private Mono<Void> fetchAndSaveTyphoonTrack(String yy, String typ) {
+        return apihubDataWebClient.get() // [수정] 기상청 전용 클라이언트 사용
+            .uri(uriBuilder -> uriBuilder
+                .path("/typ01/url/typ_data.php")
+                .queryParam("YY", yy)
+                .queryParam("mode", "1")
+                .queryParam("authKey", apiHubKey)
+                .build())
+            .retrieve()
+            .bodyToMono(String.class)
+            .timeout(java.time.Duration.ofSeconds(30))
+            .doOnNext(data -> {
+                String[] lines = data.split("\n");
+                for (String line : lines) {
+                    if (line.startsWith("#") || line.trim().isEmpty() || line.contains("FT")) continue;
+                    String[] cols = line.trim().split("\\s+");
+                    if (cols[0].equals("0")) { 
+                        try {
+                            DisasterAccidentDTO track = DisasterAccidentDTO.builder()
+                                .typhoonYear(Integer.parseInt(cols[1]))
+                                .typhoonNo(Integer.parseInt(cols[2]))
+                                .typhoonReportNo(Integer.parseInt(cols[3]))
+                                .typhoonAnalysisDatetime(cols[5])
+                                .typhoonLat(Double.parseDouble(cols[7]))
+                                .typhoonLon(Double.parseDouble(cols[8]))
+                                .typhoonMoveSpeed(Double.parseDouble(cols[10]))
+                                .typhoonCentralPressure(Integer.parseInt(cols[11]))
+                                .typhoonMaxWindSpeed(Double.parseDouble(cols[12]))
+                                .typhoonRadius15ms(Integer.parseInt(cols[13]))
+                                .typhoonLocation(cols[cols.length-1])
+                                .build();
+                            mapper.insertTyphoonTrack(track);
+                        } catch (Exception e) { log.error("태풍 경로 저장 에러"); }
+                    }
+                }
+            })
+            .onErrorResume(e -> Mono.empty())
+            .then();
+    }
+
+    @Override
+    public Mono<Void> fetchAndSaveLandslide() {
+        return Mono.defer(() -> {
+            java.net.URI uri = org.springframework.web.util.UriComponentsBuilder
+                    .fromHttpUrl("https://apis.data.go.kr/1400000/predictionInfoService/predictionInfoList")
+                    .queryParam("serviceKey", serviceKey)
+                    .queryParam("_type", "json")
+                    .build(true).toUri();
+
+            return publicDataWebClient.get()
+                .uri(uri)
+                .retrieve()
+                .bodyToMono(JsonNode.class)
+                .flatMapIterable(node -> {
+                    JsonNode items = node.path("response").path("body").path("items").path("item");
+                    if (items.isMissingNode()) return java.util.Collections.emptyList();
+                    return items.isArray() ? (Iterable<JsonNode>) items::elements 
+                                         : java.util.Collections.singletonList(items);
+                })
+                .doOnNext(item -> {
+                    // [로그 분석 기반 수정] 실제 API 필드명으로 교체
+                    String frcstNm = item.path("lndslFrcstNm").asText();    // 주의보/경보
+                    String sggNm = item.path("sgg").asText();              // 지역명
+                    String rawDate = item.path("prctnInfoAnlssDt").asText(); // 분석일시
+
+                    if (rawDate == null || rawDate.isEmpty()) {
+                        log.warn("산사태 데이터 날짜 누락: {}", item);
+                        return;
+                    }
+
+                    try {
+                        DisasterAccidentDTO dto = DisasterAccidentDTO.builder()
+                            .lnldFrcstNm(frcstNm)
+                            .sggNm(sggNm)
+                            .predcAnlsDt(rawDate) // 이미 "2025-10-25 13:00:00" 형식이므로 바로 저장 가능
+                            .build();
+
+                        mapper.insertLandslide(dto);
+                        log.info("산사태 데이터 저장 완료: {} {}", sggNm, frcstNm);
+                    } catch (Exception e) { 
+                        log.error("산사태 DB 저장 에러: {}", e.getMessage()); 
+                    }
+                })
+                .then();
+        });
+    }
+}
+
