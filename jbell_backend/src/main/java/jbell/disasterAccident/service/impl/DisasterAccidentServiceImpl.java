@@ -1,6 +1,7 @@
 package jbell.disasterAccident.service.impl;
 
 import java.nio.charset.Charset;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -272,6 +273,81 @@ public class DisasterAccidentServiceImpl implements DisasterAccident {
                 })
                 .then();
         });
+    }
+    
+    
+    @Override
+    public Mono<Void> fetchAndSaveWeatherWarning(String warningType) {
+        return Mono.defer(() -> {
+            // 1. 전북 지역 특보구역 코드 리스트 (보내준 이미지 기반)
+            List<String> jeonbukAreaCodes = java.util.Arrays.asList(
+                "L1060100", "L1060200", "L1060300", "L1060400", "L1060500", 
+                "L1060600", "L1060700", "L1060800", "L1060900", "L1061000", 
+                "L1061100", "L1061200", "L1061300", "L1061400"
+            );
+
+            java.time.LocalDate now = java.time.LocalDate.now();
+            String toTmFc = now.format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+            String fromTmFc = now.minusDays(5).format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+            java.net.URI uri = org.springframework.web.util.UriComponentsBuilder
+                    .fromHttpUrl("https://apis.data.go.kr/1360000/WthrWrnInfoService/getPwnCd")
+                    .queryParam("serviceKey", serviceKey)
+                    .queryParam("pageNo", "1")
+                    .queryParam("numOfRows", "100")
+                    .queryParam("dataType", "JSON")
+                    .queryParam("fromTmFc", fromTmFc)
+                    .queryParam("toTmFc", toTmFc)
+                    .queryParam("warningType", warningType) 
+                    .build(true).toUri();
+
+            log.info("🚀 [전북 필터링] 기간: {} ~ {}, 대상 코드: L1060100 ~ L1061400", fromTmFc, toTmFc);
+
+            return publicDataWebClient.get()
+                    .uri(uri)
+                    .retrieve()
+                    .bodyToMono(JsonNode.class)
+                    .flatMapMany(node -> {
+                        JsonNode items = node.path("response").path("body").path("items").path("item");
+                        if (items.isMissingNode() || items.isNull()) return Flux.empty();
+                        return items.isArray() ? Flux.fromIterable(items) : Flux.just(items);
+                    })
+                    // ⭐ 핵심 수정: areaCode가 전북 코드 리스트에 포함되는지 확인
+                    .filter(item -> {
+                        String code = item.path("areaCode").asText("");
+                        return jeonbukAreaCodes.contains(code);
+                    })
+                    .publishOn(reactor.core.scheduler.Schedulers.boundedElastic()) 
+                    .flatMap(item -> {
+                        try {
+                            DisasterAccidentDTO dto = DisasterAccidentDTO.builder()
+                                    .tmFc(item.path("tmFc").asText())
+                                    .tmSeq(item.path("tmSeq").asInt())
+                                    .areaCode(item.path("areaCode").asText())
+                                    .warnVar(item.path("warnVar").asInt())
+                                    .stnId(item.path("stnId").asText())
+                                    .areaName(item.path("areaName").asText())
+                                    .warnStress(item.path("warnStress").asInt())
+                                    .startTime(item.path("startTime").asText())
+                                    .endTime(item.path("endTime").asText())
+                                    .type(Integer.parseInt(warningType))
+                                    .build();
+                            
+                            mapper.insertKmaWeather(dto);
+                            log.info("✅ 전북 지역 저장 완료: {} ({})", dto.getAreaName(), dto.getAreaCode());
+                            return Mono.just(dto); 
+                        } catch (Exception e) {
+                            log.error("❌ 저장 실패: {}", e.getMessage());
+                            return Mono.empty();
+                        }
+                    })
+                    .then();
+        });
+    }
+    @Override
+    public List<DisasterAccidentDTO> getWeatherListByType(int type) {
+        // 매퍼를 호출해서 DB에서 리스트를 가져와
+        return mapper.selectKmaWeatherByType(type);
     }
 }
 
