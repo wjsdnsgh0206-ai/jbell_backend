@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="jbell.behaviorMethod.mapper.BehaviorMethodMapper">
+	
+	<!-- 코드 아이템 코드 조회 -->
+	<select id="findCodeItemIdByDescription" resultType="string">
+        SELECT code_item_id
+        FROM code_item
+        WHERE description = #{description}
+        LIMIT 1
+    </select>
+    
+    <!-- 마지막에 등록된 visible_yn의 Y값을 N으로 수정 -->
+    <update id="updateBehaviorMethodContents" parameterType="String">
+    	UPDATE content
+		SET
+			visible_yn = 'N'
+		WHERE 
+			content_type = #{realContentType}
+			AND visible_yn = 'Y';
+    </update>
+    
+    <!-- 외부 API 호출 및 가공 데이터 DB에 INSERT -->
+    <insert id="insertBehaviorMethodContents">
+        INSERT INTO content (
+             title
+            ,body
+            ,content_type
+            ,visible_yn
+            ,ordering
+            ,content_link
+            ,created_at
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+        (
+             IFNULL(#{item.safetyCateNm3}, '행동요령 참고 자료')
+            ,#{item.body}
+            ,#{contentType}
+            ,'Y'
+            ,#{item.ordering}
+            ,#{item.contentsUrl}
+            ,NOW()
+        )
+        </foreach>
+    </insert>
+    
+    <!-- 행동요령 목록 조회  -->
+    <resultMap id="BehaviorMethodResultMap" type="jbell.behaviorMethod.domain.BehaviorMethodContentVO">
+        <id property="contentId" column="content_id" />
+        <result property="title" column="title" />
+        <result property="body" column="body" />
+        <result property="contentType" column="content_type" />
+        <result property="contentLink" column="content_link" />
+        <result property="ordering" column="ordering" />
+        <result property="visibleYn" column="visible_yn" />
+    </resultMap>
+
+    <select id="selectBehaviorMethodList" parameterType="string" resultMap="BehaviorMethodResultMap">
+        SELECT 
+             content_id
+            ,title
+            ,body
+            ,content_type
+            ,REPLACE(content_link, 'http://mepv2.safekorea.go.kr', '') AS content_link
+            ,ordering
+            ,visible_yn
+        FROM content
+        WHERE content_type = #{contentType}
+          AND visible_yn = 'Y'
+        ORDER BY ordering ASC
+    </select>
+
+</mapper>

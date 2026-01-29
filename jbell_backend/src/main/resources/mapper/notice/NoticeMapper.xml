@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ 
+<mapper namespace="jbell.notice.mapper.NoticeMapper">
+
+    <select id="selectNoticeList" resultType="jbell.notice.entity.Notice">
+        SELECT
+            notice_id   AS id,
+	        title,
+	        content,
+	        created_by AS author,
+	        view_count AS views,
+	        is_public  AS isPublic,
+	        created_at AS createdAt,
+	        updated_at AS updatedAt
+        FROM notice
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 공지사항 목록 -->
+    <select id="selectNoticeDTOList"
+            resultType="jbell.notice.dto.NoticeDTO">
+        SELECT
+            notice_id   AS id,
+            title,
+            content,
+            created_by AS author,
+            view_count AS views,
+            is_public  AS isPublic,
+            created_at AS createdAt,
+            updated_at AS updatedAt
+        FROM notice
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 공지사항 상세 -->
+    <select id="selectNoticeDTOById"
+            parameterType="long"
+            resultType="jbell.notice.dto.NoticeDTO">
+        SELECT
+            notice_id   AS id,
+            title,
+            content,
+            created_by AS author,
+            view_count AS views,
+            is_public  AS isPublic,
+            created_at AS createdAt,
+            updated_at AS updatedAt
+        FROM notice
+        WHERE notice_id = #{id}
+    </select>
+    
+    <!-- 공지사항 등록 -->
+    <insert id="createNotice" parameterType="jbell.notice.entity.Notice">
+	    INSERT INTO notice (
+	        title,
+	        content,
+	        created_by,
+	        is_public,
+	        view_count,
+	        created_at,
+	        updated_at
+	    ) VALUES (
+	        #{title},
+	        #{content},
+	        #{author},
+	        #{isPublic},  
+	        0,
+	        NOW(),
+	        NOW()
+	    )
+	</insert>
+
+	<!-- 공지사항 수정 -->
+  	<update id="updateNotice" parameterType="jbell.notice.entity.Notice">
+	    UPDATE notice
+	    SET
+	      title = #{title},
+	      content = #{content},
+	      is_public = #{isPublic}, 
+	      updated_at = NOW(),
+	      created_by = #{author}
+	    WHERE notice_id = #{noticeId}
+	</update>
+	<!-- 공지사항 삭제 -->
+	<delete id="deleteNotice" parameterType="long">
+	    DELETE FROM notice WHERE notice_id = #{id}
+	</delete>
+    
+
+</mapper>
