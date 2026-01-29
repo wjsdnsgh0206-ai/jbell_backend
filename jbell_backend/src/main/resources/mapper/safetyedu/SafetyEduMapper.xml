@@ -15,6 +15,7 @@
         <result property="userId" column="user_id" />
         <result property="createdAt" column="created_at" />
         <result property="lastUpdateDate" column="last_update_date" />
+        <result property="userName" column="user_name" />
     </resultMap>
     
     <select id="selectRandomAdminId" resultType="string">
@@ -25,26 +26,26 @@
     </select>
 
     <sql id="searchCriteria">
-        WHERE content_type = 'SAFETY_EDU'
+        WHERE c.content_type = 'SAFETY_EDU'
         <if test="isPublic != null and isPublic != 'all'">
-            AND visible_yn = CASE 
+            AND c.visible_yn = CASE 
                 WHEN #{isPublic} = 'visible' THEN 'Y'
                 WHEN #{isPublic} = 'hidden' THEN 'N'
-                ELSE visible_yn
+                ELSE c.visible_yn
             END
         </if>
         <if test="keyword != null and keyword != ''">
             <choose>
                 <when test="searchType == 'title'">
-                    AND title LIKE CONCAT('%', #{keyword}, '%')
+                    AND c.title LIKE CONCAT('%', #{keyword}, '%')
                 </when>
                 <when test="searchType == 'source' or searchType == 'content'">
-                    AND body LIKE CONCAT('%', #{keyword}, '%')
+                    AND c.body LIKE CONCAT('%', #{keyword}, '%')
                 </when>
                 <otherwise>
                     AND (
-                        title LIKE CONCAT('%', #{keyword}, '%') 
-                        OR body LIKE CONCAT('%', #{keyword}, '%')
+                        c.title LIKE CONCAT('%', #{keyword}, '%') 
+                        OR c.body LIKE CONCAT('%', #{keyword}, '%')
                     )
                 </otherwise>
             </choose>
@@ -52,13 +53,17 @@
     </sql>
 
     <select id="selectSafetyEduList" resultMap="ContentResultMap">
-    	/* 리스트 조회*/
-        SELECT * 
+        /* 리스트 조회 (사용자 이름 포함) */
+        SELECT 
+            c.*,
+            u.user_name
         FROM 
-        	content
+            content c
+        LEFT JOIN 
+            user u ON c.user_id = u.user_id
         <include refid="searchCriteria" />
         ORDER BY 
-        	ordering ASC, created_at DESC
+            c.ordering ASC, c.created_at DESC
         LIMIT #{limit} OFFSET #{offset}
     </select>
     
@@ -67,17 +72,21 @@
         SELECT 
         	count(*) 
         FROM 
-        	content
+        	content c
         <include refid="searchCriteria" />
     </select>
 
     <select id="selectContentById" resultMap="ContentResultMap">
-    	/* 상세 조회 */
-        SELECT * 
+        /* 상세 조회 (사용자 이름 포함) */
+        SELECT 
+            c.*,
+            u.user_name
         FROM 
-        	content 
+            content c
+        LEFT JOIN 
+            user u ON c.user_id = u.user_id
         WHERE 
-        	content_id = #{contentId}
+            c.content_id = #{contentId}
     </select>
 
     <insert id="insertContent" useGeneratedKeys="true" keyProperty="contentId">
