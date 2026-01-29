@@ -11,3 +11,4 @@ public interface DisasterAccidentMapper {
     int insertLandslide(DisasterAccidentDTO dto);
     void insertForestFire(DisasterAccidentDTO dto);
 }
+

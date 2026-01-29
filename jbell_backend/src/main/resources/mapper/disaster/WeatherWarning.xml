@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="jbell.disaster.mapper.WeatherWarningMapper">
+
+    <insert id="insertWeatherWarnings" parameterType="java.util.List">
+        INSERT INTO weather_warning_info (
+            prsntn_sn,
+            ttl,
+            prsntn_tm,
+            rlvt_zone,
+            content,
+            time_txt,
+            maas_obnt_dt
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+                #{item.prsntnSn},
+                #{item.ttl},
+                #{item.prsntnTm},
+                #{item.rlvtZone},
+                #{item.content},
+                #{item.timeTxt},
+                #{item.maasObntDt}
+            )
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+            ttl = VALUES(ttl),
+            prsntn_tm = VALUES(prsntn_tm),
+            rlvt_zone = VALUES(rlvt_zone),
+            content = VALUES(content),
+            time_txt = VALUES(time_txt),
+            maas_obnt_dt = VALUES(maas_obnt_dt)
+    </insert>
+
+    <select id="selectWeatherWarningList" resultType="jbell.disaster.dto.PredictionInfoResponse">
+        SELECT 
+            prsntn_sn AS prsntnSn,
+            ttl,
+            prsntn_tm AS prsntnTm,
+            rlvt_zone AS rlvtZone,
+            content,
+            time_txt AS timeTxt,
+            maas_obnt_dt AS maasObntDt
+        FROM weather_warning_info
+        ORDER BY prsntn_tm DESC
+    </select>
+
+</mapper>
