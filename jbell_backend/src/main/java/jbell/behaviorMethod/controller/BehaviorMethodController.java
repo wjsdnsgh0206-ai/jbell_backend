@@ -69,13 +69,19 @@ public class BehaviorMethodController {
 	}
 	
 	
-	/**
-     * 행동요령 조회 API
-     * @param contentType 재난 유형 (예: NATURAL_TYPHOON, NATURAL_EARTHQUAKE)
-     * @return 행동요령 리스트
+    /**
+     * 행동요령 조회 API (사용자/관리자 공용)
+     * @param contentType 재난 유형 (Null이면 전체 조회), (예: NATURAL_TYPHOON, NATURAL_EARTHQUAKE)
+     * @param visibleYn 노출 여부 (Null이면 전체 조회, 'Y'면 노출만 조회)
      */
     @GetMapping("/list")
-    public List<BehaviorMethodContentVO> getBehaviorList(@RequestParam("contentType") String contentType) {
-        return behaviorMethodService.getBehaviorList(contentType);
+    public List<BehaviorMethodContentVO> getBehaviorList(
+        @RequestParam(value = "contentType", required = false) String contentType,
+        @RequestParam(value = "visibleYn", required = false) String visibleYn
+    ) {
+        // 1. 관리자 페이지에서 호출 시: contentType 없이 호출됨 -> 전체 조회
+        // 2. 사용자 페이지에서 호출 시: contentType="NATURAL_TYPHOON" -> 특정 유형만 조회
+        return behaviorMethodService.getBehaviorList(contentType, visibleYn);
     }
+    
 }

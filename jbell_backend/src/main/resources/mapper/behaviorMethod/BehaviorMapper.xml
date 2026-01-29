@@ -44,7 +44,7 @@
         </foreach>
     </insert>
     
-    <!-- 행동요령 목록 조회  -->
+    <!-- 행동요령 목록 property, column 매핑 -->
     <resultMap id="BehaviorMethodResultMap" type="jbell.behaviorMethod.domain.BehaviorMethodContentVO">
         <id property="contentId" column="content_id" />
         <result property="title" column="title" />
@@ -54,20 +54,31 @@
         <result property="ordering" column="ordering" />
         <result property="visibleYn" column="visible_yn" />
     </resultMap>
-
-    <select id="selectBehaviorMethodList" parameterType="string" resultMap="BehaviorMethodResultMap">
-        SELECT 
-             content_id
-            ,title
-            ,body
-            ,content_type
-            ,REPLACE(content_link, 'http://mepv2.safekorea.go.kr', '') AS content_link
-            ,ordering
-            ,visible_yn
-        FROM content
-        WHERE content_type = #{contentType}
-          AND visible_yn = 'Y'
-        ORDER BY ordering ASC
-    </select>
+    
+    <!-- 행동요령 목록 조회  -->
+    <select id="selectBehaviorMethodList" resultMap="BehaviorMethodResultMap">
+	    SELECT 
+		     c.content_id
+		    ,c.title
+		    ,c.body
+		    ,c.content_type
+		    ,ci.code_item_name AS content_type_name
+		    ,cgi.code_group_id AS group_name
+		    ,REPLACE(c.content_link, 'http://mepv2.safekorea.go.kr', '') AS content_link
+		    ,c.ordering
+		    ,c.visible_yn
+		FROM content c
+		LEFT JOIN code_item ci ON c.content_type = ci.code_item_id
+		LEFT JOIN code_group cgi ON ci.code_group_id = cgi.code_group_id
+	    <where>
+	        <if test="contentType != null and contentType != ''">
+	            AND c.content_type = #{contentType}
+	        </if>
+	        <if test="visibleYn != null and visibleYn != ''">
+	            AND c.visible_yn = #{visibleYn}
+	        </if>
+	    </where>
+	    ORDER BY c.ordering ASC
+	</select>
 
 </mapper>

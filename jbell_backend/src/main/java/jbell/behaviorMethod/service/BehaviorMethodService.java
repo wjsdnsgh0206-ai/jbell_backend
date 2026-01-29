@@ -201,8 +201,8 @@ public class BehaviorMethodService {
     }
 	
 	// 행동요령 조회 서비스 로직
-	public List<BehaviorMethodContentVO> getBehaviorList(String contentType) {
-        // 필요하다면 여기서 데이터 가공 로직 추가 (예: body의 줄바꿈 처리 등)
-        return behaviorMethodMapper.selectBehaviorMethodList(contentType);
-    }
+	public List<BehaviorMethodContentVO> getBehaviorList(String contentType, String visibleYn) {
+		// 데이터 가공 로직(필요시 추가) (예: body의 줄바꿈 처리 등)
+	    return behaviorMethodMapper.selectBehaviorMethodList(contentType, visibleYn);
+	}
 }
