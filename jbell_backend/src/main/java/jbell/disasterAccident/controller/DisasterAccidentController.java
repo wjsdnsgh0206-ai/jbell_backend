@@ -1,6 +1,5 @@
 package jbell.disasterAccident.controller;
 
-
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -45,3 +44,4 @@ public class DisasterAccidentController {
                 .then(Mono.just(ApiResponse.success("산사태 예보 데이터 수집 완료")));
     }
 }
+

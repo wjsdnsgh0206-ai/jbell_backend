@@ -173,16 +173,19 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         try {
-            Map<String, String> tokens = authService.login(loginRequest);
-            return ResponseEntity.ok(ApiResponse.success(tokens));
+            // 리턴 타입을 Map<String, Object>로 받습니다.
+            Map<String, Object> loginData = authService.login(loginRequest);
+            return ResponseEntity.ok(ApiResponse.success(loginData));
             
         } catch (BaseException e) {
-            return ResponseEntity.status(e.getErrorCode().status()).body(ApiResponse.error(e.getErrorCode().status().value(), e.getMessage()));
+            return ResponseEntity.status(e.getErrorCode().status())
+                                 .body(ApiResponse.error(e.getErrorCode().status().value(), e.getMessage()));
         } catch (RuntimeException e) { 
-            // Service에서 던지는 RuntimeException("아이디 또는 비밀번호가 틀렸습니다")을 여기서 잡습니다.
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.error(401, e.getMessage()));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                                 .body(ApiResponse.error(401, e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error(500, "서버 내부 오류가 발생했습니다."));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                 .body(ApiResponse.error(500, "서버 내부 오류가 발생했습니다."));
         }
     }
 
