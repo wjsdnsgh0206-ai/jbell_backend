@@ -45,4 +45,7 @@ public class Content {
 
     // 수정 일시
     private LocalDateTime lastUpdateDate;
+    
+    // JOIN을 통해 가져올 사용자 이름 (DB 컬럼: user_name)
+    private String userName;
 }
