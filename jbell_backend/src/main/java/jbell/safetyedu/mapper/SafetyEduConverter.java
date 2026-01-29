@@ -56,6 +56,10 @@ public class SafetyEduConverter {
         dto.setOrderNo(content.getOrdering());
         dto.setSourceUrl(content.getContentLink());
         dto.setIsPublic("Y".equals(content.getVisibleYn()));
+        String displayName = content.getUserName();
+        if (!StringUtils.hasText(displayName)) {
+            displayName = content.getUserId();
+        }
         dto.setAuthor(content.getUserId());
         dto.setCreatedAt(content.getCreatedAt());
         dto.setUpdatedAt(content.getLastUpdateDate());
