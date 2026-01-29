@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -27,25 +28,12 @@ import reactor.util.retry.Retry;
 
 @Service
 @Slf4j
-// @RequiredArgsConstructor를 쓰면 final 필드에 대한 생성자를 자동 생성해줍니다.
-// 하지만 WebClient에 @Qualifier가 필요하므로 직접 생성자를 유지하거나, 
-// 아래처럼 Lombok과 직접 생성자를 조합하지 말고 기존 방식을 유지하는 게 낫습니다.
 public class BehaviorMethodService {
-	
-	private final ObjectMapper objectMapper;
+    
+    private final ObjectMapper objectMapper;
     private final BehaviorMethodMapper behaviorMethodMapper;
     private final WebClient safetyDataWebClient;
 
-    /*
-    // 서비스키 늘어날 시 MAP 활용 (예시: 키 관리 맵 활용)
-    private String getServiceKey(String apiPath) {
-        return Map.of(
-            API_PATH_NATURAL, naturalServiceKey,
-            API_PATH_SOCIAL, socialServiceKey,
-            API_PATH_LIFE, lifeServiceKey
-        ).getOrDefault(apiPath, naturalServiceKey);
-    }
-    */
     @Value("${safetydata.behaviorMethod.natural.servicekey}")
     private String naturalServiceKey;
 
@@ -54,19 +42,19 @@ public class BehaviorMethodService {
 
     @Value("${safetydata.behaviorMethod.life.servicekey}")
     private String lifeServiceKey;
-    
+     
     @Value("${external.api.timeout}")
     private int timeout;
 
-    // 대분류별 카테고리 코드 정의 (ENUM 대신 List 사용)
+    // 대분류별 카테고리 코드 정의
     private static final List<String> NATURAL_CODES = List.of("01001", "01002", "01003", "01006", "01011", "01014");
     private static final List<String> SOCIAL_CODES = List.of("02007", "02011", "02012", "02013", "02019");
     private static final List<String> LIFE_CODES = List.of("03002", "03003", "03005", "03006", "03013", "03014");
 
-    // 각 API 서비스 ID (공공데이터포털 상세 명세 확인 필요, 일반적으로 연번으로 부여됨)
-    private static final String API_PATH_NATURAL = "/DSSP-IF-20588"; // 행정안전부_자연재난국민행동요령 ID
-    private static final String API_PATH_SOCIAL = "/DSSP-IF-20589"; // 행정안전부_사회재난국민행동요령 ID
-    private static final String API_PATH_LIFE = "/DSSP-IF-20590";   // 행정안전부_생활안전국민행동요령 ID
+    // 각 API 서비스 ID
+    private static final String API_PATH_NATURAL = "/DSSP-IF-20588";
+    private static final String API_PATH_SOCIAL = "/DSSP-IF-20589";
+    private static final String API_PATH_LIFE = "/DSSP-IF-20590";
 
     public BehaviorMethodService(@Qualifier("safetyDataWebClient") WebClient safetyDataWebClient,
                                  @Qualifier("objectMapper") ObjectMapper objectMapper,
@@ -75,7 +63,7 @@ public class BehaviorMethodService {
         this.objectMapper = objectMapper;
         this.behaviorMethodMapper = behaviorMethodMapper;
     }
-    
+     
     // ================== Public Methods (Controller 연결) ==================
 
     public Mono<Map<String, String>> syncNatural() {
@@ -89,29 +77,36 @@ public class BehaviorMethodService {
     public Mono<Map<String, String>> syncLife() {
         return executeSync(LIFE_CODES, API_PATH_LIFE, lifeServiceKey);
     }
+    
+    /**
+     * 행동요령 목록 조회 (관리자/사용자 공용)
+     * @param contentType 재난유형
+     * @param visibleYn 노출여부 (null이면 전체)
+     * @param onlyLatest 최신데이터만 보기 (Y/N) - 관리자용 필터
+     */
+    public List<BehaviorMethodContentVO> getBehaviorList(String contentType, String visibleYn, String onlyLatest) {
+        // Mapper의 파라미터 3개와 맞춰줍니다.
+        return behaviorMethodMapper.selectBehaviorMethodList(contentType, visibleYn, onlyLatest);
+    }
+    
+    // (삭제됨: syncBehaviorMethods 메서드는 아래 fetchAndSave 로직으로 통합되었으므로 삭제합니다.)
 
     // ================== Core Logic (공통 로직) ==================
 
-    /**
-     * 공통 실행 로직: 코드 리스트를 순회하며 fetchSafetyData 호출
-     */
-    private Mono<Map<String, String>> executeSync(List<String> codes, String apiPath, String serviceKey) { // 서비스 키까지 파라미터로 받도록 확장
+    private Mono<Map<String, String>> executeSync(List<String> codes, String apiPath, String serviceKey) {
         Map<String, String> resultMap = new ConcurrentHashMap<>();
         
         return Flux.fromIterable(codes)
-                   .delayElements(Duration.ofMillis(500)) // API 부하 방지
+                   .delayElements(Duration.ofMillis(500)) 
                    .concatMap(code -> fetchAndSave(code, apiPath, serviceKey, resultMap))
                    .then(Mono.just(resultMap));
     }
 
-    /**
-     * 실제 API 호출 및 DB 저장 로직
-     */
     private Mono<List<BehaviorMethod>> fetchAndSave(String categoryCode, String apiPath, String serviceKey, Map<String, String> resultMap) {
         return safetyDataWebClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path(apiPath)
-                        .queryParam("serviceKey", serviceKey) // 파라미터로 받은 전용 키 적용
+                        .queryParam("serviceKey", serviceKey)
                         .queryParam("pageNo", 1)
                         .queryParam("numOfRows", 300)
                         .queryParam("safety_cate", categoryCode)
@@ -120,7 +115,7 @@ public class BehaviorMethodService {
                 .bodyToMono(JsonNode.class)
                 .timeout(Duration.ofMillis(timeout))
                 .map(json -> {
-                    // 1. JSON 파싱 로직 (기존과 동일)
+                    // --- 1. JSON 파싱 및 데이터 가공 (기존 로직 유지) ---
                     List<BehaviorMethod> behaviorMethodList = List.of();
                     
                     JsonNode header = json.get("header");
@@ -166,21 +161,22 @@ public class BehaviorMethodService {
                     return behaviorMethodList;
                 })
                 .flatMap(behaviorMethodList -> {
-                    // 2. DB 저장 로직 (기존 유지)
+                    // --- 2. DB 저장 로직 (★수정됨★) ---
                     return Mono.fromCallable(() -> {
                         if (behaviorMethodList.isEmpty()) return behaviorMethodList;
 
                         log.info("DB 저장 시작: {}건", behaviorMethodList.size());
                         
-                        // API 코드(01001 등)로 실제 DB 저장용 ContentType 조회 (매퍼 로직 활용)
+                        // 실제 DB 저장용 ContentType 코드 조회
                         String apiCateCode = behaviorMethodList.get(0).getSafetyCate2();
                         String realContentType = behaviorMethodMapper.findCodeItemIdByDescription(apiCateCode);
                         
                         if (realContentType == null) realContentType = "BEHAVIOR_METHOD";
                         
-                        // 해당 타입 기존 데이터 숨김 처리
-                        behaviorMethodMapper.updateBehaviorMethodContents(realContentType);
-                        // 신규 데이터 저장
+                        // 1. [동기화 전처리] 기존 API 데이터(API)의 최신 여부를 'N'으로 변경 (수동 데이터는 보존)
+                        behaviorMethodMapper.updateOldSyncDataToN(realContentType);
+                        
+                        // 2. [신규 등록] 배치 Insert (Mapper XML에서 last_sync_yn='Y', reg_type='API'로 처리됨)
                         behaviorMethodMapper.insertBehaviorMethodContents(behaviorMethodList, realContentType);
                         
                         return behaviorMethodList;
@@ -195,14 +191,33 @@ public class BehaviorMethodService {
                 .onErrorResume(e -> {
                     log.error("Error processing category {}: {}", categoryCode, e.getMessage());
                     resultMap.put(categoryCode, "실패: " + e.getMessage());
-                    return Mono.empty(); // 에러 발생 시에도 전체 흐름 중단 없이 다음 카테고리 진행
+                    return Mono.empty();
                 })
                 .retryWhen(Retry.backoff(2, Duration.ofSeconds(2)).maxBackoff(Duration.ofSeconds(5)));
     }
-	
-	// 행동요령 조회 서비스 로직
-	public List<BehaviorMethodContentVO> getBehaviorList(String contentType, String visibleYn) {
-		// 데이터 가공 로직(필요시 추가) (예: body의 줄바꿈 처리 등)
-	    return behaviorMethodMapper.selectBehaviorMethodList(contentType, visibleYn);
-	}
+    
+    /**
+     * 과거 동기화 데이터 삭제 (API 데이터 중 last_sync_yn = 'N' 인 것들)
+     */
+    public void deleteOldSyncData() {
+        behaviorMethodMapper.deleteOldSyncData();
+    }
+    
+    /**
+     * 행동요령 단건 상세 조회
+     */
+    public BehaviorMethodContentVO getBehaviorDetail(Long contentId) {
+        return behaviorMethodMapper.selectBehaviorMethodDetail(contentId);
+    }
+
+    /**
+     * 행동요령 데이터 수정
+     */
+    @Transactional
+    public void updateBehaviorMethod(BehaviorMethodContentVO updateData) {
+        int result = behaviorMethodMapper.updateBehaviorMethod(updateData);
+        if (result == 0) {
+            throw new CustomException(ErrorCode.NOT_FOUND); // 업데이트 된 행이 없으면 에러 처리
+        }
+    }
 }

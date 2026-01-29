@@ -2,25 +2,29 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="jbell.behaviorMethod.mapper.BehaviorMethodMapper">
 	
-	<!-- 코드 아이템 코드 조회 -->
-	<select id="findCodeItemIdByDescription" resultType="string">
-        SELECT code_item_id
-        FROM code_item
-        WHERE description = #{description}
-        LIMIT 1
-    </select>
-    
-    <!-- 마지막에 등록된 visible_yn의 Y값을 N으로 수정 -->
-    <update id="updateBehaviorMethodContents" parameterType="String">
-    	UPDATE content
-		SET
-			visible_yn = 'N'
-		WHERE 
-			content_type = #{realContentType}
-			AND visible_yn = 'Y';
+    <resultMap id="BehaviorMethodResultMap" type="jbell.behaviorMethod.domain.BehaviorMethodContentVO">
+        <id property="contentId" column="content_id" />
+        <result property="title" column="title" />
+        <result property="body" column="body" />
+        <result property="contentType" column="content_type" />
+        <result property="contentTypeName" column="content_type_name" />
+        <result property="groupName" column="group_name" />
+        
+        <result property="contentLink" column="content_link" />
+        <result property="ordering" column="ordering" />
+        <result property="visibleYn" column="visible_yn" />
+        <result property="lastSyncYn" column="last_sync_yn" />
+        <result property="regType" column="reg_type" />
+    </resultMap>
+
+    <update id="updateOldSyncDataToN" parameterType="String">
+        UPDATE content
+        SET last_sync_yn = 'N'
+        WHERE content_type = #{contentType}
+          AND reg_type = 'API'
+          AND last_sync_yn = 'Y'
     </update>
     
-    <!-- 외부 API 호출 및 가공 데이터 DB에 INSERT -->
     <insert id="insertBehaviorMethodContents">
         INSERT INTO content (
              title
@@ -30,6 +34,8 @@
             ,ordering
             ,content_link
             ,created_at
+            ,last_sync_yn
+            ,reg_type
         ) VALUES
         <foreach collection="list" item="item" separator=",">
         (
@@ -40,45 +46,85 @@
             ,#{item.ordering}
             ,#{item.contentsUrl}
             ,NOW()
-        )
+            ,'Y'     ,'API'   )
         </foreach>
     </insert>
+
+    <delete id="deleteOldSyncData">
+        DELETE FROM content
+        WHERE reg_type = 'API'
+          AND last_sync_yn = 'N'
+    </delete>
+
+    <select id="findCodeItemIdByDescription" resultType="string">
+        SELECT code_item_id
+        FROM code_item
+        WHERE description = #{description}
+        LIMIT 1
+    </select>
     
-    <!-- 행동요령 목록 property, column 매핑 -->
-    <resultMap id="BehaviorMethodResultMap" type="jbell.behaviorMethod.domain.BehaviorMethodContentVO">
-        <id property="contentId" column="content_id" />
-        <result property="title" column="title" />
-        <result property="body" column="body" />
-        <result property="contentType" column="content_type" />
-        <result property="contentLink" column="content_link" />
-        <result property="ordering" column="ordering" />
-        <result property="visibleYn" column="visible_yn" />
-    </resultMap>
-    
-    <!-- 행동요령 목록 조회  -->
     <select id="selectBehaviorMethodList" resultMap="BehaviorMethodResultMap">
 	    SELECT 
-		     c.content_id
-		    ,c.title
-		    ,c.body
-		    ,c.content_type
-		    ,ci.code_item_name AS content_type_name
-		    ,cgi.code_group_id AS group_name
-		    ,REPLACE(c.content_link, 'http://mepv2.safekorea.go.kr', '') AS content_link
-		    ,c.ordering
-		    ,c.visible_yn
-		FROM content c
-		LEFT JOIN code_item ci ON c.content_type = ci.code_item_id
-		LEFT JOIN code_group cgi ON ci.code_group_id = cgi.code_group_id
+	         c.content_id
+	        ,c.title
+	        ,c.body
+	        ,c.content_type
+	        ,ci.code_item_name AS content_type_name
+	        ,cgi.code_group_name AS group_name
+	        ,REPLACE(c.content_link, 'http://mepv2.safekorea.go.kr', '') AS content_link
+	        ,c.ordering
+	        ,c.visible_yn
+	        ,c.last_sync_yn
+	        ,c.reg_type
+	    FROM content c
+	    LEFT JOIN code_item ci ON c.content_type = ci.code_item_id
+	    LEFT JOIN code_group cgi ON ci.code_group_id = cgi.code_group_id
 	    <where>
-	        <if test="contentType != null and contentType != ''">
+	        AND cgi.code_group_id LIKE 'BEHAVIOR_METHOD_%'
+	
+	        <if test="contentType != null and contentType != '' and contentType != 'all'">
 	            AND c.content_type = #{contentType}
 	        </if>
-	        <if test="visibleYn != null and visibleYn != ''">
-	            AND c.visible_yn = #{visibleYn}
+	        
+	        <if test='onlyLatest == "Y"'>
+	            AND (c.last_sync_yn = 'Y' OR c.reg_type = 'MANUAL')
+	            AND c.visible_yn = 'Y'
 	        </if>
-	    </where>
-	    ORDER BY c.ordering ASC
+	        
+	        </where>
+	    ORDER BY c.created_at DESC, c.ordering ASC
 	</select>
+	
+	<!-- 상세 조회 -->
+	<select id="selectBehaviorMethodDetail" resultMap="BehaviorMethodResultMap">
+        SELECT 
+             c.content_id
+            ,c.title
+            ,c.body
+            ,c.content_type
+            ,ci.code_item_name AS content_type_name
+            ,cgi.code_group_name AS group_name
+            ,REPLACE(c.content_link, 'http://mepv2.safekorea.go.kr', '') AS content_link
+            ,c.ordering
+            ,c.visible_yn
+            ,c.last_sync_yn
+            ,c.reg_type
+            ,c.created_at
+        FROM content c
+        LEFT JOIN code_item ci ON c.content_type = ci.code_item_id
+        LEFT JOIN code_group cgi ON ci.code_group_id = cgi.code_group_id
+        WHERE c.content_id = #{contentId}
+    </select>
+
+	<!-- 수정 -->
+    <update id="updateBehaviorMethod" parameterType="jbell.behaviorMethod.domain.BehaviorMethodContentVO">
+        UPDATE content
+        SET
+             title = #{title}
+            ,body = #{body}
+            ,visible_yn = #{visibleYn}
+            ,last_update_date = NOW()
+        WHERE content_id = #{contentId}
+    </update>
 
 </mapper>
