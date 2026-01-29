@@ -97,24 +97,27 @@ public class AuthServiceImpl implements AuthService {
 
     // 로그인
     @Override
-    public Map<String, String> login(LoginRequest loginRequest) {
+    public Map<String, Object> login(LoginRequest loginRequest) {
         User user = userMapper.findByUserId(loginRequest.getUserId());
         
         if (user == null || !passwordEncoder.matches(loginRequest.getUserPw(), user.getUserPw())) {
-        	log.info("{}", !passwordEncoder.matches(loginRequest.getUserPw(), user.getUserPw()));
+            log.info("로그인 실패: 비밀번호 불일치 ({})", loginRequest.getUserId());
             throw new RuntimeException("아이디 또는 비밀번호가 틀렸습니다.");
         }
 
-        // [중요] 수정된 JwtTokenProvider에 따라 userGrade를 두 번째 인자로 전달합니다.
+        // 토큰 생성
         String accessToken = jwtTokenProvider.createAccessToken(user.getUserId(), user.getUserGrade());
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getUserId());
 
         userMapper.updateRefreshToken(user.getUserId(), refreshToken);
-
-        Map<String, String> tokens = new HashMap<>();
-        tokens.put("accessToken", accessToken);
-        tokens.put("refreshToken", refreshToken);
-        return tokens;
+        // 프론트엔드 응답을 위한 데이터 구성
+        Map<String, Object> responseData = new HashMap<>();
+        responseData.put("accessToken", accessToken);
+        responseData.put("refreshToken", refreshToken);
+        responseData.put("userName", user.getUserName());
+        responseData.put("userGrade", user.getUserGrade());
+        
+        return responseData;
     }
     
     // 비밀번호 검증
