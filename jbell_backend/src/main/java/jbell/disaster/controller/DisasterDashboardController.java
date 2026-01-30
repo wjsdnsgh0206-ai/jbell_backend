@@ -1,6 +1,18 @@
 package jbell.disaster.controller;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+
+//import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.log;
+
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -9,10 +21,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import jakarta.validation.Valid;
 import jbell.common.response.ApiResponse;
+import jbell.disaster.dto.DisasterBatchRequest;
 import jbell.disaster.dto.DisasterExternApiRequest;
 import jbell.disaster.dto.PredictionInfoResponse;
+import jbell.disaster.service.DisasterService;
 import jbell.exception.ErrorCode;
 import jbell.externapi.dto.PublicDataResponse;
+import jbell.externapi.dto.SafetyDataResponse;
 import jbell.externapi.service.IntegrationService;
 import jbell.externapi.service.PublicDataService;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +42,131 @@ public class DisasterDashboardController {
 	
 	private final IntegrationService integrationService;
 	private final PublicDataService publicDataService;
+	private final DisasterService disasterService;
+	
+	
+	
+	
+	// 1. 재난문자 리스트 (기존 유지)
+	@GetMapping("/disasterMessages")
+	public ResponseEntity<?> getDisasterMessages(PredictionInfoResponse searchParams) {
+	    Map<String, Object> response = new HashMap<>();
+	    response.put("list", disasterService.getSavedDisasterMessages(searchParams));
+	    response.put("totalCount", disasterService.getTotalCount(searchParams));
+	    
+	    return ResponseEntity.ok(response);
+	}
+	
+	// 2. 재난문자 상세 조회
+    @GetMapping("/disasterMessages/{sn}")
+    public ResponseEntity<?> getDisasterDetail(@PathVariable("sn") Long sn) { // String이면 String으로
+        return ResponseEntity.ok(disasterService.getDisasterDetail(sn));
+    }
+
+    // 3. 재난문자 일괄 노출/비노출 설정
+    @PostMapping("/disasterMessages/visibility")
+    public ResponseEntity<String> updateVisibility(@RequestBody DisasterBatchRequest request) {
+    	disasterService.updateDisasterVisibility(request.getIds(), request.getVisibleYn());
+        return ResponseEntity.ok("상태가 변경되었습니다.");
+    }
+
+    // 4. 재난문자 일괄 삭제 (논리 삭제)
+    @PostMapping("/disasterMessages/delete")
+    public ResponseEntity<String> deleteDisasters(@RequestBody List<Long> sns) {
+    	disasterService.deleteDisasters(sns);
+        return ResponseEntity.ok("성공적으로 삭제(비노출 처리)되었습니다.");
+    }
+    
+    
+    // 5. 재난문자 수동 등록
+    @PostMapping("/disasterMessages")
+    public ResponseEntity<String> createDisaster(@RequestBody @Valid PredictionInfoResponse dto) {
+    	disasterService.saveDisaster(dto);
+        return ResponseEntity.ok("성공적으로 등록되었습니다.");
+    }
+
+    // 6. 재난문자 수정
+    @PutMapping("/disasterMessages/{sn}")
+    public ResponseEntity<String> updateDisaster(@PathVariable("sn") Long sn, @RequestBody PredictionInfoResponse dto) {
+        dto.setSn(sn.intValue()); // 경로변수의 sn을 DTO에 세팅
+        disasterService.modifyDisaster(dto);
+        return ResponseEntity.ok("성공적으로 수정되었습니다.");
+    }
+    
+    
+    // ========== 기상특보 ========
+    // 기상특보 리스트 조회 (검색 파라미터 추가)
+    @GetMapping("/weatherWarnings")
+    public ResponseEntity<Map<String, Object>> getSavedWeatherWarnings(
+            @ModelAttribute PredictionInfoResponse searchParams) {
+        
+        Map<String, Object> result = new HashMap<>();
+        
+        // 리스트 데이터
+        List<PredictionInfoResponse> list = disasterService.getSavedWeatherWarnings(searchParams);
+        // 검색 조건에 따른 총 개수
+        int totalCount = disasterService.getWeatherTotalCount(searchParams);
+        
+        result.put("list", list);
+        result.put("totalCount", totalCount);
+        
+        return ResponseEntity.ok(result);
+    }
+    
+    
+    // 1. 기상특보 상세 조회
+    @GetMapping("/weatherWarnings/{key}")
+    public ResponseEntity<PredictionInfoResponse> getWeatherDetail(@PathVariable("key") String key) {
+        return ResponseEntity.ok(disasterService.getWeatherDetail(key));
+    }
+
+    // 2. 기상특보 수동 등록
+    @PostMapping("/weatherWarnings")
+    public ResponseEntity<String> createWeather(@RequestBody PredictionInfoResponse dto) {
+    	disasterService.saveWeather(dto);
+        return ResponseEntity.ok("기상 특보가 등록되었습니다.");
+    }
+
+    // 3. 기상특보 수정
+    @PutMapping("/weatherWarnings/{key}")
+    public ResponseEntity<String> updateWeather(@PathVariable("key") String key, @RequestBody PredictionInfoResponse dto) {
+        dto.setPrsntnSn(Integer.parseInt(key)); // 여기서 키를 세팅함
+        disasterService.modifyWeather(dto);
+        return ResponseEntity.ok("기상 특보가 수정되었습니다.");
+    }
+
+    // 4. 기상특보 일괄 노출 변경
+    @PostMapping("/weatherWarnings/visibility")
+    public ResponseEntity<String> updateWeatherVisibility(@RequestBody DisasterBatchRequest request) {
+        List<String> keys = request.getIds().stream()
+                                   .map(String::valueOf)
+                                   .toList();
+        disasterService.updateWeatherVisibility(keys, request.getVisibleYn());
+        return ResponseEntity.ok("노출 상태가 변경되었습니다.");
+    }
+
+    // 5. 기상특보 일괄 삭제 (논리 삭제)
+    @PostMapping("/weatherWarnings/delete")
+    public ResponseEntity<String> deleteWeatherWarnings(@RequestBody List<String> keys) {
+    	if (keys == null || keys.isEmpty()) {
+            return ResponseEntity.badRequest().body("처리할 대상이 없습니다.");
+        }
+        disasterService.deleteWeatherWarnings(keys);
+        return ResponseEntity.ok("선택한 항목이 비노출 처리되었습니다.");
+    }
+    
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	// ========================================================================   api요청 ======================================================================================
+	
+	
 		
 	/**
 	 * 산사태 정보 api 요청
@@ -91,6 +231,113 @@ public class DisasterDashboardController {
 				                        ErrorCode.NOT_FOUND.message()
 				                 ));
 	}
+	
+	
+	
+	
+	
+	// =============================================================
+	/**
+	 * 재난문자이력 api 요청
+	 * 주소 /api/disaster/dashboard/disasterMessageInfo
+	 * 요청정보 json
+	  {
+	  		"pageNo" : "1",
+	  		"numOfRows" : "30",
+	  		"type" : "json", 
+	  		"crtDt" : 
+	  		"rgnNm" : "전북"
+	  }
+	 */
+	@PostMapping("/disasterMessageInfo")
+	public Mono<ApiResponse<SafetyDataResponse<PredictionInfoResponse>>> getDisasterMessageInfo(@Valid @RequestBody DisasterExternApiRequest request){
+	    
+	    return publicDataService.getAndSaveDisasterMessages(request) 
+	                            .map(ApiResponse::success)
+	                            .onErrorResume(e -> {
+	                                log.error("Error occurred: {}", e.getMessage());
+	                                return Mono.just(ApiResponse.error(
+	                                        ErrorCode.EXTERNAL_API_ERROR.code(),
+	                                        ErrorCode.EXTERNAL_API_ERROR.message()
+	                                ));
+	                            })
+	                            .defaultIfEmpty(ApiResponse.error(
+	                                    ErrorCode.NOT_FOUND.code(),
+	                                    ErrorCode.NOT_FOUND.message()
+	                            ));
+	}
+
+	
+	
+	
+	
+	
+	
+	// =============================================================
+    /**
+     * 기상 특보 api 요청 및 저장
+     * 주소 /api/disaster/dashboard/weatherWarningInfo
+     * 요청정보 json
+      {
+            "pageNo" : "1",
+            "numOfRows" : "50",
+            "inqDt" : "20260128"
+      }
+     */
+//    @PostMapping("/weatherWarningInfo")
+//    public Mono<ApiResponse<SafetyDataResponse<PredictionInfoResponse>>> getWeatherWarningInfo(@Valid @RequestBody DisasterExternApiRequest request){
+//        
+//        // 서비스에서 7일치 데이터를 수집하고 저장한 뒤 결과를 리턴함
+//        return publicDataService.getAndSaveWeatherWarnings(request) 
+//                                .map(ApiResponse::success)
+//                                .onErrorResume(e -> {
+//                                    log.error("기상 특보 수집 에러: {}", e.getMessage());
+//                                    return Mono.just(ApiResponse.error(
+//                                            ErrorCode.EXTERNAL_API_ERROR.code(),
+//                                            ErrorCode.EXTERNAL_API_ERROR.message()
+//                                    ));
+//                                })
+//                                .defaultIfEmpty(ApiResponse.error(
+//                                        ErrorCode.NOT_FOUND.code(),
+//                                        ErrorCode.NOT_FOUND.message()
+//                                ));
+//    }
+
+    /**
+     * DB에 저장된 기상 특보 목록 가져오기
+     * 주소 /api/disaster/dashboard/weatherWarnings
+     */
+//    @GetMapping("/weatherWarnings")
+//    public ResponseEntity<List<PredictionInfoResponse>> getWeatherWarnings() {
+//        // 서비스에서 DB에 저장된 기상 특보 데이터를 가져옴
+//        List<PredictionInfoResponse> list = publicDataService.getSavedWeatherWarnings();
+//        return ResponseEntity.ok(list);
+//    }
+    
+ // 1. [데이터 수집용 POST] 
+    // 기존의 fetchAndSaveWeatherWarning와 getWeatherWarningInfo(RequestBody 있는 버전)를 하나로 합침
+	// 1. 데이터 수집/저장용 (POST)
+    @PostMapping("/weatherWarningInfo")
+    public Mono<ApiResponse<SafetyDataResponse<PredictionInfoResponse>>> collectWeatherWarnings(@Valid @RequestBody DisasterExternApiRequest request){
+        return publicDataService.getAndSaveWeatherWarnings(request) 
+                                .map(ApiResponse::success)
+                                .onErrorResume(e -> {
+                                    log.error("기상 특보 수집 에러: {}", e.getMessage());
+                                    return Mono.just(ApiResponse.error(
+                                            ErrorCode.EXTERNAL_API_ERROR.code(),
+                                            ErrorCode.EXTERNAL_API_ERROR.message()
+                                    ));
+                                });
+    }
+
+   
+    
+    
+    
+    
+    
+    
+    
 }
 
 

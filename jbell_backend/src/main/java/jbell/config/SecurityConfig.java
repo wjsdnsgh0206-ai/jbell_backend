@@ -26,6 +26,8 @@ public class SecurityConfig {
 	private static String[] RERMIT_REQUEST_URI = {
 		 "/api/**"
 		,"/oauth2/login"
+		,"/api/attachment/**"
+		,"/uploads/**"		
 	};
 	
 	private final CorsConfigurationSource corsConfigurationSource;

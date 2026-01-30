@@ -1,12 +1,14 @@
 package jbell.auth.service.impl;
 
-import jbell.auth.service.EmailService;
+import java.util.Random;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.util.Random;
+import jbell.auth.service.EmailService;
 
 @Service
 public class EmailServiceImpl implements EmailService {
@@ -22,6 +24,7 @@ public class EmailServiceImpl implements EmailService {
     }
 
     // 실제 메일 발송 로직
+    @Async
     @Override
     public void sendVerificationMail(String toEmail, String code) {
         SimpleMailMessage message = new SimpleMailMessage();

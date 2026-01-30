@@ -1,59 +1,73 @@
 package jbell.externapi.service;
 
 import java.time.Duration;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 
 import jbell.disaster.dto.DisasterExternApiRequest;
 import jbell.disaster.dto.PredictionInfoResponse;
+import jbell.disaster.mapper.DisasterMessageMapper;
+import jbell.disaster.mapper.WeatherWarningMapper;
+import jbell.disasterAccident.mapper.DisasterAccidentMapper;
 import jbell.exception.CustomException;
 import jbell.exception.ErrorCode;
 import jbell.externapi.dto.PublicDataResponse;
+import jbell.externapi.dto.SafetyDataResponse;
 import lombok.extern.slf4j.Slf4j;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
 @Service
 @Slf4j
 public class PublicDataService {
-	
-	@Value("${publicdata.servicekey}")
-	private String serviceKey;
-	
-	@Value("${external.api.timeout}")
-	private int timeout;
+    
+    @Value("${publicdata.servicekey}")
+    private String serviceKey;
+    
+    @Value("${external.api.timeout}")
+    private int timeout;
 
-	private final WebClient publicDataWebClient;
+    @Value("${safetydata.disaster.msg.key}") 
+    private String safetyDataServiceKey;
+    
+    @Value("${safetydata.weatherWarning.key}")
+    private String safetyDataWeatherWarningKey;
+    
+    private final WebClient publicDataWebClient;
+    private final WebClient safetyDataWebClient; 
     private final ObjectMapper objectMapper;    
     private final XmlMapper xmlMapper;
-	
-	
-	public PublicDataService(@Qualifier("publicDataWebClient") WebClient publicDataWebClient
-							,@Qualifier("objectMapper") ObjectMapper objectMapper
-							,@Qualifier("xmlMapper") XmlMapper xmlMapper
-							) {
-		this.publicDataWebClient = publicDataWebClient;
-		this.objectMapper = objectMapper;
-		this.xmlMapper = xmlMapper;
-	}
-	
-    /**
-     * 산림청_산사태예측정보 조회
-     * @param <T>
-     * @param request
-     * @param responseType 최종 반환할 클래스
-     *  요청 방법 예시 getLandslidePredictionInfo(request, PredictionInfoResponse.class) 
-     */
+    private final DisasterMessageMapper disasterMessageMapper;
+    private final WeatherWarningMapper weatherWarningMapper;
+    
+    
+    public PublicDataService(@Qualifier("publicDataWebClient") WebClient publicDataWebClient
+                            ,@Qualifier("safetyDataWebClient") WebClient safetyDataWebClient 
+                            ,@Qualifier("objectMapper") ObjectMapper objectMapper
+                            ,@Qualifier("xmlMapper") XmlMapper xmlMapper
+                            ,@Qualifier("disasterMessageMapper") DisasterMessageMapper disasterMessageMapper
+                            ,@Qualifier("weatherWarningMapper") WeatherWarningMapper weatherWarningMapper
+                            ,DisasterAccidentMapper disasterAccidentMapper 
+                            ) {
+        this.publicDataWebClient = publicDataWebClient;
+        this.safetyDataWebClient = safetyDataWebClient;
+        this.objectMapper = objectMapper;
+        this.xmlMapper = xmlMapper;
+        this.disasterMessageMapper = disasterMessageMapper;
+        this.weatherWarningMapper = weatherWarningMapper; // ⭐ 이 줄이 정확히 있는지 확인!
+    }
+    
+    // 산사태 정보 조회 (기존 유지)
     public <T> Mono<PublicDataResponse<T>> getLandslidePredictionInfo(DisasterExternApiRequest request, Class<T> responseType) {
-        log.info("request:{}", request);
-        
         return publicDataWebClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/1400000/predictionInfoService/predictionInfoList")
@@ -67,86 +81,144 @@ public class PublicDataService {
                 .bodyToMono(String.class)
                 .map(responseString -> parseResponse(responseString, request.getType(), responseType))
                 .timeout(Duration.ofMillis(timeout))
-                .doOnSuccess(firstResponse -> log.info("Successfully fetched page {}", firstResponse))
-                .doOnError(error -> log.error("Error fetching page {}: {}", request.getPageNo(), error.getMessage()))
-                .onErrorResume(CustomException.class, e -> {
-                    log.error("WebClient error on page: Status={}", e.getMessage());
-                    return Mono.empty();
-                })
-                .retryWhen(Retry.backoff(2, Duration.ofSeconds(2))  // 재시도 횟수 축소 (3->2)
-                        .maxBackoff(Duration.ofSeconds(5))
-                        .doBeforeRetry(retrySignal -> 
-                                log.warn("Retrying page {} - attempt {}", request.getPageNo(), retrySignal.totalRetries() + 1)));
-                /*
-                // 마지막 페이지의 번호로 시작
-                .flatMap(response -> {
-                    if (response == null || response.getResponse().getBody() == null) {
-                        log.warn("First response is empty");
-                        return Mono.empty();
-                    }
-                    
-                    // 첫 번째 응답 데이터를 사용해서 두 번째 요청
-                    double totalCount = response.getResponse().getBody().getTotalCount();
-                    Integer numOfRows = response.getResponse().getBody().getNumOfRows();
-                    int lastPage = (int) Math.ceil(totalCount/numOfRows);
-                    log.info("전체 페이지 수: {}", lastPage);
-                    
-                    return publicDataWebClient.get()
-                            .uri(uriBuilder -> uriBuilder
-                                    .path("/1400000/predictionInfoService/predictionInfoList")
-                                    .queryParam("serviceKey", serviceKey)
-                                    .queryParam("pageNo", lastPage)
-                                    .queryParam("numOfRows", numOfRows)
-                                    .queryParam("_type", request.getType())
-                                    .queryParam("sgg", request.getSgg())
-                                    .build())
-                            .retrieve()
-                            .bodyToMono(new ParameterizedTypeReference<PublicDataResponse<PredictionInfoResponse>>() {})
-                            .timeout(Duration.ofMillis(timeout))
-                            .doOnSuccess(secondResponse -> log.info("Successfully fetched page {}", secondResponse))
-                            .doOnError(error -> log.error("Error fetching page {}: {}", request.getPageNo(), error.getMessage()))
-                            .onErrorResume(WebClientResponseException.class, e -> {
-                                log.error("WebClient error on page {}: Status={}", request.getPageNo(), e.getStatusCode());
-                                return Mono.empty();
-                            })
-                            .retryWhen(Retry.backoff(2, Duration.ofSeconds(2))  // 재시도 횟수 축소 (3->2)
-                                    .maxBackoff(Duration.ofSeconds(5))
-                                    .doBeforeRetry(retrySignal -> 
-                                            log.warn("Retrying page {} - attempt {}", request.getPageNo(), retrySignal.totalRetries() + 1)));
-                });
-                */
+                .retryWhen(Retry.backoff(2, Duration.ofSeconds(2)));
     }
     
-    /**
-     * 응답타입에 따른 객체 변환
-     * @param responseString 응답데이터
-     * @param type 변환할 타입(xml, json)
-     * @return PublicDataResponse 공공데이터응답객체
-     */
     private <T> PublicDataResponse<T> parseResponse(String responseString, String type, Class<T> responseType) {
-    	System.out.println(responseString);
         try {
             if ("xml".equalsIgnoreCase(type)) {
-                return xmlMapper.readValue(
-                        responseString,
-                        xmlMapper.getTypeFactory().constructParametricType(
-                        		PublicDataResponse.class,
-                        		responseType
-                        )
-                );
+                return xmlMapper.readValue(responseString, xmlMapper.getTypeFactory().constructParametricType(PublicDataResponse.class, responseType));
             } else {
-                return objectMapper.readValue(
-                        responseString,
-                        objectMapper.getTypeFactory().constructParametricType(
-                                PublicDataResponse.class,
-                                responseType
-                        )
-                );
+                return objectMapper.readValue(responseString, objectMapper.getTypeFactory().constructParametricType(PublicDataResponse.class, responseType));
             }
         } catch (Exception e) {
-            log.error("Parsing failed for type {}: {}", type, e.getMessage());
             throw new CustomException(ErrorCode.DATA_PARSING_ERROR);
         }
     }
     
+    // ================================================================================
+    
+    // 재난문자 단건 조회 (기존 queryParam 유지)
+    public <T> Mono<SafetyDataResponse<T>> getDisasterMessageInfo(DisasterExternApiRequest request, Class<T> responseType) {
+        String formattedCrtDt = request.getCrtDt().format(DateTimeFormatter.ofPattern("yyyyMMdd"));   
+        
+        return safetyDataWebClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/DSSP-IF-00247")
+                        .queryParam("serviceKey", safetyDataServiceKey)
+                        .queryParam("numOfRows", request.getNumOfRows())
+                        .queryParam("pageNo", request.getPageNo())
+                        .queryParam("returnType", request.getType())
+                        .queryParam("crtDt", formattedCrtDt)
+                        .queryParam("rgnNm", request.getRgnNm())
+                        .build())
+                .retrieve()
+                .bodyToMono(String.class)
+                .map(responseString -> parseSafetyResponse(responseString, responseType));
+    }
+
+    private <T> SafetyDataResponse<T> parseSafetyResponse(String responseString, Class<T> responseType) {
+        try {
+            return objectMapper.readValue(responseString, objectMapper.getTypeFactory().constructParametricType(SafetyDataResponse.class, responseType));
+        } catch (Exception e) {
+            log.error("파싱 실패: {}", e.getMessage());
+            throw new CustomException(ErrorCode.DATA_PARSING_ERROR);
+        }
+    }
+    
+    /**
+     * ⭐ [수정 핵심] 7일치 데이터를 저장하고, 컨트롤러가 원하는 응답 타입을 정확히 리턴함
+     */
+    public Mono<SafetyDataResponse<PredictionInfoResponse>> getAndSaveDisasterMessages(DisasterExternApiRequest request) {
+        // 1. 오늘 날짜 데이터 호출 준비 (리턴용)
+        Mono<SafetyDataResponse<PredictionInfoResponse>> todayResponseMono = getDisasterMessageInfo(request, PredictionInfoResponse.class);
+
+        // 2. 0~6일까지 (오늘 포함 7일) 반복 수집
+        return Flux.range(0, 7)
+                .flatMap(day -> {
+                    // 반복용 요청 객체 생성 (날짜만 변경)
+                    DisasterExternApiRequest dailyReq = new DisasterExternApiRequest();
+                    dailyReq.setCrtDt(request.getCrtDt().minusDays(day));
+                    dailyReq.setRgnNm(request.getRgnNm());
+                    dailyReq.setNumOfRows(request.getNumOfRows());
+                    dailyReq.setPageNo(request.getPageNo());
+                    dailyReq.setType(request.getType());
+
+                    return getDisasterMessageInfo(dailyReq, PredictionInfoResponse.class)
+                            .doOnNext(response -> {
+                                if (response.getBody() != null && !response.getBody().isEmpty()) {
+                                    disasterMessageMapper.insertDisasterMessages(response.getBody());
+                                    log.info("{} 수집 및 저장 완료", dailyReq.getCrtDt());
+                                }
+                            });
+                })
+                .then(todayResponseMono); // 7일치 작업이 다 끝나면 '오늘 응답'을 컨트롤러에 전달!
+    }
+    
+    public List<PredictionInfoResponse> getSavedDisasterMessages() {
+        return disasterMessageMapper.selectDisasterMessageList();
+    }
+    
+    
+    
+    // ================================================================================
+    
+    // 기상청 실시간 특보 
+    /**
+     * 기상청 특보 단건 호출 로직
+     */
+    public <T> Mono<SafetyDataResponse<T>> getWeatherWarningInfo(DisasterExternApiRequest request, Class<T> responseType) {
+        // 기상청 특보는 YYYYMMDD 형식 문자열이 필요함 (inqDt 필드 활용)
+        String inqDt = request.getInqDt(); 
+        
+        return safetyDataWebClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/DSSP-IF-00045") // 기상청 특보 엔드포인트
+                        .queryParam("serviceKey", safetyDataWeatherWarningKey)
+                        .queryParam("numOfRows", request.getNumOfRows())
+                        .queryParam("pageNo", request.getPageNo())
+                        .queryParam("returnType", "json")
+                        .queryParam("inqDt", inqDt)
+                        .build())
+                .retrieve()
+                .bodyToMono(String.class)
+                .map(responseString -> parseSafetyResponse(responseString, responseType));
+    }
+
+    /**
+     * 기상청 특보 수집 및 저장 (7일치 데이터)
+     */
+    public Mono<SafetyDataResponse<PredictionInfoResponse>> getAndSaveWeatherWarnings(DisasterExternApiRequest request) {
+        // 1. 리턴용 현재 요청 응답 준비
+        Mono<SafetyDataResponse<PredictionInfoResponse>> currentResponseMono = getWeatherWarningInfo(request, PredictionInfoResponse.class);
+
+        // 2. 7일치 반복 수집 (기상청 특보는 inqDt가 문자열이므로 계산 필요)
+        return Flux.range(0, 7)
+                .flatMap(day -> {
+                    // 날짜 계산 (YYYYMMDD)
+                    String targetDate = java.time.LocalDate.now().minusDays(day)
+                                        .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+                    
+                    DisasterExternApiRequest dailyReq = new DisasterExternApiRequest();
+                    dailyReq.setInqDt(targetDate);
+                    dailyReq.setNumOfRows(100); // 넉넉하게 수집
+                    dailyReq.setPageNo(1);
+
+                    return getWeatherWarningInfo(dailyReq, PredictionInfoResponse.class)
+                            .doOnNext(response -> {
+                                if (response.getBody() != null && !response.getBody().isEmpty()) {
+                                    weatherWarningMapper.insertWeatherWarnings(response.getBody());
+                                    log.info("기상 특보 {} 일자 수집 및 저장 완료 ({}건)", targetDate, response.getBody().size());
+                                }
+                            });
+                })
+                .then(currentResponseMono);
+    }
+
+    /**
+     * DB에서 저장된 기상 특보 가져오기
+     */
+    public List<PredictionInfoResponse> getSavedWeatherWarnings() {
+        return weatherWarningMapper.selectWeatherWarningList();
+    }
 }
