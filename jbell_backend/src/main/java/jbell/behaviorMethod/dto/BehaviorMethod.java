@@ -45,26 +45,3 @@ public class BehaviorMethod {
     @JsonProperty("contentsUrl")
     private String contentsUrl;
 }
-
-/*
-"safety_cate1": "01", // 자연재난, 사회재난, 생활안전
-"safety_cate_nm1": "자연재난" 
-"safety_cate2": "01002", // 태풍, 홍수, 호우 등
-"safety_cate_nm2": "홍수",
-"safety_cate3": "01002003", // 특정 상황(전, 중, 후 등)
-"safety_cate_nm3": "물이 밀려들 때는",
-"safety_cate4": null, // 
-"actRmks": null, // 본문
-"contentsUrl": "http://mepv2.safekorea.go.kr/mdbs_html/images/mobileWeb/bTyphoon/bTyphoon_icon_08.png", // 첨부 자료
-
-
-"safety_cate1": "01",
-"safety_cate_nm1": "자연재난"
-"safety_cate2": "01002",
-"safety_cate_nm2": "홍수",
-"safety_cate3": "01002003",
-"safety_cate_nm3": "물이 밀려들 때는",
-"safety_cate4": null,
-"actRmks": "흐르는 물에 들어가지 맙시다.",
-"contentsUrl": null,
-*/

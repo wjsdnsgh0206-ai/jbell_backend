@@ -11,7 +11,7 @@ public interface AuthService {
 	void registerUser(SignupRequest request);
     boolean isUserIdDuplicated(String userId);
     
-    Map<String, String> login(LoginRequest loginRequest); 
+    public Map<String, Object> login(LoginRequest loginRequest); 
     
     String refreshAccessToken(String refreshToken);
     String findId(String email);

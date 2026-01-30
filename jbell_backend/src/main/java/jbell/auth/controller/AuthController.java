@@ -104,18 +104,31 @@ public class AuthController {
                 return ResponseEntity.badRequest().body(ApiResponse.error(400, "이메일 주소가 누락되었습니다."));
             }
 
+            // --- 추가된 재요청 방지 로직 (1분 제한) ---
+            Long lastSendTime = (Long) session.getAttribute("lastSendTime");
+            long currentTime = System.currentTimeMillis();
+
+            if (lastSendTime != null && (currentTime - lastSendTime) < 60000) { // 60,000ms = 1분
+                long secondsLeft = (60000 - (currentTime - lastSendTime)) / 1000;
+                return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                                     .body(ApiResponse.error(429, secondsLeft + "초 후에 다시 시도해주세요."));
+            }
+            // ---------------------------------------
+
             String code = emailService.generateCode();
             
+            // 세션 정보 저장
             session.setAttribute("emailCode", code);
             session.setAttribute("targetEmail", email);
+            session.setAttribute("lastSendTime", currentTime); // 발송 시간 기록
             session.setMaxInactiveInterval(180); 
             
             emailService.sendVerificationMail(email, code);
             
             return ResponseEntity.ok(ApiResponse.success("인증번호가 전송되었습니다."));
+            
         } catch (Exception e) {
             e.printStackTrace();
-            // [수정된 부분] .body(...) 앞에 ResponseEntity.status(500)이 있어야 합니다.
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                                  .body(ApiResponse.error(500, "메일 발송에 실패했습니다."));
         }
@@ -160,16 +173,19 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         try {
-            Map<String, String> tokens = authService.login(loginRequest);
-            return ResponseEntity.ok(ApiResponse.success(tokens));
+            // 리턴 타입을 Map<String, Object>로 받습니다.
+            Map<String, Object> loginData = authService.login(loginRequest);
+            return ResponseEntity.ok(ApiResponse.success(loginData));
             
         } catch (BaseException e) {
-            return ResponseEntity.status(e.getErrorCode().status()).body(ApiResponse.error(e.getErrorCode().status().value(), e.getMessage()));
+            return ResponseEntity.status(e.getErrorCode().status())
+                                 .body(ApiResponse.error(e.getErrorCode().status().value(), e.getMessage()));
         } catch (RuntimeException e) { 
-            // Service에서 던지는 RuntimeException("아이디 또는 비밀번호가 틀렸습니다")을 여기서 잡습니다.
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.error(401, e.getMessage()));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                                 .body(ApiResponse.error(401, e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error(500, "서버 내부 오류가 발생했습니다."));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                 .body(ApiResponse.error(500, "서버 내부 오류가 발생했습니다."));
         }
     }
 

@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="jbell.disaster.mapper.DisasterMapper">
+	
+	
+	<!-- ============ 재난 문자 이력 ============ -->
+	<select id="selectDisasterList" parameterType="jbell.disaster.dto.PredictionInfoResponse" resultType="jbell.disaster.dto.PredictionInfoResponse">
+	    SELECT 
+	        sn, 
+	        crt_dt as crtDt, 
+	        msg_cn as msgCn, 
+	        rcptn_rgn_nm as rcptnRgnNm, 
+	        emrg_step_nm as emrgStepNm, 
+	        dst_type as dstType
+	    FROM disaster_text_history
+	    WHERE visible_yn = 'Y'
+	    
+	    <if test="emrgStepNm != null and emrgStepNm != ''">
+	        AND emrg_step_nm = #{emrgStepNm}
+	    </if>
+	    <if test="dstType != null and dstType != ''">
+	        AND dst_type = #{dstType}
+	    </if>
+	    <if test="rcptnRgnNm != null and rcptnRgnNm != ''">
+	        AND rcptn_rgn_nm LIKE CONCAT('%', #{rcptnRgnNm}, '%')
+	    </if>
+	    
+	    ORDER BY crt_dt DESC
+	    /* 페이징 처리 추가 */
+	    LIMIT #{limit} OFFSET #{offset}
+	</select>
+	
+	<select id="selectDisasterTotalCount" parameterType="jbell.disaster.dto.PredictionInfoResponse" resultType="int">
+	    SELECT COUNT(*)
+	    FROM disaster_text_history
+	    WHERE visible_yn = 'Y'
+	    <if test="emrgStepNm != null and emrgStepNm != ''">
+	        AND emrg_step_nm = #{emrgStepNm}
+	    </if>
+	    <if test="dstType != null and dstType != ''">
+	        AND dst_type = #{dstType}
+	    </if>
+	    <if test="rcptnRgnNm != null and rcptnRgnNm != ''">
+	        AND rcptn_rgn_nm LIKE CONCAT('%', #{rcptnRgnNm}, '%')
+	    </if>
+	</select>
+
+    <select id="selectDisasterDetail" resultType="jbell.disaster.dto.PredictionInfoResponse">
+	    SELECT
+	        sn,
+	        crt_dt AS crtDt,
+	        msg_cn AS msgCn,
+	        rcptn_rgn_nm AS rcptnRgnNm,
+	        emrg_step_nm AS emrgStepNm,
+	        dst_type AS dstType,
+	        visible_yn AS visibleYn  FROM disaster_text_history
+	    WHERE sn = #{sn}
+	</select>
+
+    <update id="updateDisasterVisibility">
+        UPDATE disaster_text_history
+        SET visible_yn = #{visibleYn}, mdfcn_ymd = CURDATE()
+        WHERE sn IN 
+        <foreach collection="list" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+
+    <delete id="deleteDisasterLogical">
+	    DELETE FROM disaster_text_history
+	    WHERE sn IN 
+	    <foreach collection="list" item="item" open="(" separator="," close=")">
+	        #{item}
+	    </foreach>
+	</delete>
+    
+    
+    <insert id="insertDisaster" parameterType="jbell.disaster.dto.PredictionInfoResponse">
+	    INSERT INTO disaster_text_history (
+	        crt_dt, 
+	        msg_cn, 
+	        rcptn_rgn_nm, 
+	        emrg_step_nm, 
+	        dst_type, 
+	        reg_ymd, 
+	        mdfcn_ymd, 
+	        visible_yn
+	    ) VALUES (
+	        #{crtDt}, 
+	        #{msgCn}, 
+	        #{rcptnRgnNm}, 
+	        #{emrgStepNm}, 
+	        #{dstType}, 
+	        CURDATE(), 
+	        CURDATE(), 
+	        #{visibleYn}
+	    )
+	</insert>
+
+	<update id="updateDisaster" parameterType="jbell.disaster.dto.PredictionInfoResponse">
+	    UPDATE disaster_text_history
+	    SET 
+	        msg_cn = #{msgCn},
+	        rcptn_rgn_nm = #{rcptnRgnNm},
+	        emrg_step_nm = #{emrgStepNm},
+	        dst_type = #{dstType},
+	        mdfcn_ymd = CURDATE()
+	    WHERE sn = #{sn}
+	</update>
+    
+    
+	<!-- ================== 기상특보 =================== -->
+  
+    <select id="selectWeatherList" parameterType="jbell.disaster.dto.PredictionInfoResponse" resultType="jbell.disaster.dto.PredictionInfoResponse">
+	    SELECT 
+	        prsntn_sn    AS PRSNTN_SN, 
+	        prsntn_tm    AS PRSNTN_TM, 
+	        rlvt_zone    AS RLVT_ZONE, 
+	        time_txt     AS TIME_TXT, 
+	        ttl          AS TTL, 
+	        content      AS SPNE_FRMNT_PRCON_CN,
+	        visible_yn   AS visibleYn,
+	        maas_obnt_dt AS MAAS_OBNT_DT
+	    FROM weather_warning_info
+	    WHERE 1=1
+	        <if test="newsType != null and newsType != ''">
+	            AND ttl LIKE CONCAT('%', #{newsType}, '%')
+	        </if>
+	        <if test="region != null and region != ''">
+	            AND rlvt_zone LIKE CONCAT('%', #{region}, '%')
+	        </if>
+	        <if test="keyword != null and keyword != ''">
+	            AND (ttl LIKE CONCAT('%', #{keyword}, '%') OR content LIKE CONCAT('%', #{keyword}, '%'))
+	        </if>
+	    ORDER BY prsntn_tm DESC
+	    LIMIT #{limit} OFFSET #{offset}
+	</select>
+	
+	<select id="selectWeatherTotalCount" parameterType="jbell.disaster.dto.PredictionInfoResponse" resultType="int">
+	    SELECT COUNT(*)
+	    FROM weather_warning_info
+	    WHERE 1=1
+	    <if test="newsType != null and newsType != ''">
+	        AND ttl LIKE CONCAT('%', #{newsType}, '%')
+	    </if>
+	    <if test="region != null and region != ''">
+	        AND rlvt_zone LIKE CONCAT('%', #{region}, '%')
+	    </if>
+	    <if test="keyword != null and keyword != ''">
+	        AND (ttl LIKE CONCAT('%', #{keyword}, '%') OR content LIKE CONCAT('%', #{keyword}, '%'))
+	    </if>
+	</select>
+	
+	<select id="selectWeatherDetail" resultType="jbell.disaster.dto.PredictionInfoResponse">
+	    SELECT 
+	        prsntn_sn    AS prsntnSn,  prsntn_tm    AS prsntnTm,  rlvt_zone    AS rlvtZone, 
+	        time_txt     AS timeTxt, 
+	        ttl          AS ttl, 
+	        content      AS content,   maas_obnt_dt AS maasObntDt,
+	        visible_yn   AS visibleYn
+	    FROM weather_warning_info
+	    WHERE prsntn_sn = #{prsntnSn}
+	</select>
+
+
+	<insert id="insertWeather" parameterType="jbell.disaster.dto.PredictionInfoResponse">
+	    INSERT INTO weather_warning_info (
+	        ttl, prsntn_tm, rlvt_zone, content, time_txt, maas_obnt_dt, visible_yn
+	    ) VALUES (
+	       	#{ttl}, #{prsntnTm}, #{rlvtZone}, #{content}, #{timeTxt}, #{maasObntDt}, 'Y'
+	    )
+	</insert>
+	
+	<update id="updateWeather" parameterType="jbell.disaster.dto.PredictionInfoResponse">
+	    UPDATE weather_warning_info
+	    SET 
+	        ttl = #{ttl},
+	        prsntn_tm = #{prsntnTm},
+	        rlvt_zone = #{rlvtZone},
+	        content = #{content},
+	        time_txt = #{timeTxt}
+	    WHERE prsntn_sn = #{prsntnSn}
+	</update>
+	
+	<update id="updateWeatherVisibility">
+	    UPDATE weather_warning_info
+	    SET visible_yn = #{visibleYn}
+	    WHERE prsntn_sn IN 
+	    <foreach collection="list" item="item" open="(" separator="," close=")">
+	        #{item}
+	    </foreach>
+	</update>
+	
+	<delete id="deleteWeatherLogical" parameterType="java.util.List">
+	    DELETE FROM weather_warning_info
+	    WHERE prsntn_sn IN 
+	    <foreach collection="list" item="item" open="(" separator="," close=")">
+	        #{item}
+	    </foreach>
+	</delete>
+    
+
+</mapper>
