@@ -4,59 +4,21 @@ import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter @Setter
+@NoArgsConstructor
 public class Notice {
-
-    private Long noticeId;
+    private Long noticeId;      // content_id 매핑
     private String title;
-    private String content;
-    private LocalDateTime createdAt;
+    private String content;     // body 매핑
+    private String author;      // user_id 매핑
     
-    @JsonProperty("author")
-    private String author;
-    
-    // JSON의 "isPublic" 필드를 이 변수에 매핑하겠다는 선언
     @JsonProperty("isPublic")
-    private boolean isPublic; 
-    
-
-    public Notice() {}
-    
-    public String getAuthor() { return author; }
-    public void setAuthor(String author) { this.author = author; }
-
-    public boolean isPublic() { return isPublic; }
-    public void setIsPublic(boolean isPublic) { this.isPublic = isPublic; }
-    
-    
-    public Long getNoticeId() {
-        return noticeId;
-    }
-
-    public void setNoticeId(Long noticeId) {
-        this.noticeId = noticeId;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getContent() {
-        return content;
-    }
-
-    public void setContent(String content) {
-        this.content = content;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
+    private String visibleYn = "Y"; 
+    private String contentType; 
+    private int ordering = 0;
+    private LocalDateTime createdAt;
 }
