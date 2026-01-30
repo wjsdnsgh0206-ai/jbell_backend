@@ -24,6 +24,7 @@ public class DisasterAccidentDTO {
 	private Double maxIndex; // 최댓값 (maxi)
 	private Double minIndex; // 최솟값 (mini)
 	private Long area; // 면적
+	private String fireExposeYn; // 노출 여부 (Y/N)
 
 	// 지진 (earthquake_event)
 	private Long seq;

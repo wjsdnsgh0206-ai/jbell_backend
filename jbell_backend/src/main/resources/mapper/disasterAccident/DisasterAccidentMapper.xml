@@ -4,6 +4,25 @@
 <mapper
 	namespace="jbell.disasterAccident.mapper.DisasterAccidentMapper">
 
+	<!-- =========================================== -->
+	<!-- 산불 -->
+	<select id="selectForestFireList"
+		resultType="jbell.disasterAccident.dto.DisasterAccidentDTO">
+		SELECT
+		fire_id AS fireId,
+		fire_damage_area AS fireDamageArea,
+		fire_end_time AS fireEndTime,
+		fire_cause AS fireCause,
+		fire_loc_village
+		AS fireLocVillage,
+		fire_start_time AS fireStartTime
+		FROM
+		forest_fire_information
+		WHERE fire_start_time >= DATE_SUB(NOW(),
+		INTERVAL 7 DAY)
+		ORDER BY fire_start_time DESC
+	</select>
+
 	<insert id="insertForestFire"
 		parameterType="jbell.disasterAccident.dto.DisasterAccidentDTO">
 		INSERT INTO forest_fire_information (
@@ -33,6 +52,47 @@
 		VALUES(fire_start_time)
 	</insert>
 
+	<!-- =========================================== -->
+	<!-- 산불 예측 지수 -->
+	<insert id="insertForestFireRisk"
+		parameterType="jbell.disasterAccident.dto.DisasterAccidentDTO">
+		INSERT INTO forest_fire_risk (
+		anal_date,
+		do_name,
+		avg_index,
+		max_index,
+		min_index,
+		reg_dt
+		) VALUES (
+		#{analDate},
+		#{doName},
+		#{avgIndex},
+		#{maxIndex},
+		#{minIndex},
+		CURRENT_TIMESTAMP
+		)
+		ON DUPLICATE KEY UPDATE
+		avg_index = VALUES(avg_index),
+		max_index = VALUES(max_index),
+		min_index = VALUES(min_index)
+	</insert>
+
+	<select id="selectForestFireRiskList"
+		resultType="jbell.disasterAccident.dto.DisasterAccidentDTO">
+		SELECT
+		anal_date AS analDate,
+		do_name AS doName,
+		avg_index AS avgIndex,
+		max_index AS maxIndex,
+		min_index AS minIndex
+		FROM
+		forest_fire_risk
+		ORDER BY anal_date DESC, reg_dt DESC
+		LIMIT 20
+	</select>
+
+	<!-- =========================================== -->
+	<!-- 지진 -->
 	<insert id="insertEarthquake"
 		parameterType="jbell.disasterAccident.dto.DisasterAccidentDTO">
 		INSERT INTO earthquake_event (
@@ -49,6 +109,26 @@
 		rem = VALUES(rem);
 	</insert>
 
+	<select id="selectEarthquakeList"
+		resultType="jbell.disasterAccident.dto.DisasterAccidentDTO">
+		SELECT
+		seq,
+		lat,
+		lon,
+		loc,
+		rem,
+		tm_fc AS tmFc,
+		mt,
+		msc
+		FROM
+		earthquake_event
+		WHERE STR_TO_DATE(tm_fc, '%Y%m%d%H%i') >=
+		DATE_SUB(NOW(), INTERVAL 1 YEAR)
+		ORDER BY tm_fc DESC
+	</select>
+
+	<!-- =========================================== -->
+	<!-- 태풍 -->
 	<insert id="insertTyphoonInfo"
 		parameterType="jbell.disasterAccident.dto.DisasterAccidentDTO">
 		INSERT INTO typhoon_info (
@@ -107,12 +187,16 @@
 	<insert id="insertKmaWeather"
 		parameterType="jbell.disasterAccident.dto.DisasterAccidentDTO">
 		INSERT INTO kma_weather_report (
-		tm_fc, tm_seq, area_code, warn_var, stn_id,
-		area_name, warn_stress, start_time, end_time,
+		tm_fc, tm_seq,
+		area_code, warn_var, stn_id,
+		area_name, warn_stress, start_time,
+		end_time,
 		type, reg_dt
 		) VALUES (
-		#{tmFc}, #{tmSeq}, #{areaCode}, #{warnVar}, #{stnId},
-		#{areaName}, #{warnStress}, #{startTime}, #{endTime},
+		#{tmFc}, #{tmSeq}, #{areaCode},
+		#{warnVar}, #{stnId},
+		#{areaName}, #{warnStress}, #{startTime},
+		#{endTime},
 		#{type}, CURRENT_TIMESTAMP
 		)
 		ON DUPLICATE KEY UPDATE
@@ -120,7 +204,8 @@
 		warn_stress = VALUES(warn_stress),
 		start_time = VALUES(start_time),
 		end_time = VALUES(end_time),
-		type = VALUES(type),
+		type =
+		VALUES(type),
 		warn_var = VALUES(warn_var)
 	</insert>
 	<select id="selectKmaWeatherByType"
