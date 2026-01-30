@@ -73,8 +73,5 @@ public class PredictionInfoResponse {
 
         @JsonProperty("MAAS_OBNT_DT")
         private String maasObntDt;
-        
 
-   
-    
 }
