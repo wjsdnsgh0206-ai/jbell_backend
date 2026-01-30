@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="jbell.disaster.mapper.DisasterMessageMapper">
+
+	<select id="selectDisasterMessageList"
+		resultType="jbell.disaster.dto.PredictionInfoResponse">
+		SELECT
+		sn,
+		crt_dt AS crtDt,
+		msg_cn AS msgCn,
+		rcptn_rgn_nm AS rcptnRgnNm,
+		emrg_step_nm AS emrgStepNm,
+		dst_type AS dstType
+		FROM disaster_text_history
+		WHERE crt_dt >= DATE_SUB(NOW(), INTERVAL 7 DAY) 
+		ORDER BY crt_dt DESC
+	</select>
+
+
+
+	<insert id="insertDisasterMessages"
+		parameterType="java.util.List">
+		INSERT INTO disaster_text_history (
+		sn,
+		crt_dt,
+		msg_cn,
+		rcptn_rgn_nm,
+		emrg_step_nm,
+		dst_type,
+		reg_ymd,
+		mdfcn_ymd,
+		visible_yn
+		) VALUES
+		<foreach collection="list" item="msg" separator=",">
+			(
+			#{msg.sn},
+			#{msg.crtDt},
+			#{msg.msgCn},
+			#{msg.rcptnRgnNm},
+			#{msg.emrgStepNm},
+			#{msg.dstType},
+			CURDATE(),
+			CURDATE(),
+			'Y'
+			)
+		</foreach>
+		ON DUPLICATE KEY UPDATE
+		msg_cn = VALUES(msg_cn),
+		rcptn_rgn_nm = VALUES(rcptn_rgn_nm),
+		mdfcn_ymd = NOW()
+	</insert>
+
+</mapper>

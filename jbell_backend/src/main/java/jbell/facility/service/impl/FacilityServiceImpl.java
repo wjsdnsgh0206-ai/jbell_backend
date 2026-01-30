@@ -21,7 +21,9 @@ import jbell.facility.dto.FacilityListResponse;
 import jbell.facility.eunm.ApiType;
 import jbell.facility.mapper.FacilityMapper;
 import jbell.facility.service.FacilityService;
+
 import lombok.extern.slf4j.Slf4j;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -119,13 +121,19 @@ public class FacilityServiceImpl implements FacilityService {
         }).subscribeOn(Schedulers.boundedElastic());
     }
 
-    
-    @Value("${VITE_API_SHELTER_TEMPORARY_HOUSING_KEY}") private String imsiKey;
-    @Value("${VITE_API_SHELTER_HEAT_KEY}") private String heatKey;
-    @Value("${VITE_API_SHELTER_COLD_WAVE}") private String coldKey;
-    @Value("${VITE_API_SHELTER_EARTHQUAKE1}") private String quakeKey;
-    @Value("${VITE_API_SHELTER_CIVIL_DEFENSE_NUCLEAR}") private String nuclearKey;
-    @Value("${VITE_API_SHELTER_CIVIL_DEFENSE_DISASTER}") private String civilKey;
+    // api키 불러오기
+    @Value("${safetydata.shelter.mois.temporary.key}") 
+    private String imsiKey;
+    @Value("${safetydata.shelter.mois.heat.key}") 
+    private String heatKey;
+    @Value("${safetydata.shelter.mois.cold.key}") 
+    private String coldKey;
+    @Value("${safetydata.shelter.mois.earthquake.key}") 
+    private String quakeKey;
+    @Value("${safetydata.shelter.kins.nuclear.key}") 
+    private String nuclearKey;
+    @Value("${safetydata.shelter.mois.civil.defense.key}") 
+    private String civilKey;
     
     
     private void loadAreaCodes() {

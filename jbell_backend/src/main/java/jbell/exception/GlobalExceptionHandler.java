@@ -23,6 +23,7 @@ public class GlobalExceptionHandler {
 	 * @param request
 	 * @return ResponseEntity<ApiResponse> 에러필드명, 에러메시지
 	 */
+	@ExceptionHandler(CustomException.class)
 	public ResponseEntity<ApiResponse<?>> handleValidationException(BaseException ex, HttpServletRequest request){
 		StackTraceElement[] stackTrace = ex.getStackTrace();
 		StackTraceElement origin = stackTrace[0];

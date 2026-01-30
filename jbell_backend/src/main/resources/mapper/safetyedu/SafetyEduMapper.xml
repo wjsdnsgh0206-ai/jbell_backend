@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="jbell.safetyedu.mapper.SafetyEduMapper">
+
+    <resultMap id="ContentResultMap" type="jbell.safetyedu.domain.Content">
+        <id property="contentId" column="content_id" />
+        <result property="title" column="title" />
+        <result property="contentType" column="content_type" />
+        <result property="visibleYn" column="visible_yn" />
+        <result property="body" column="body" jdbcType="CLOB" />
+        <result property="contentLink" column="content_link" />
+        <result property="ordering" column="ordering" />
+        <result property="userId" column="user_id" />
+        <result property="createdAt" column="created_at" />
+        <result property="lastUpdateDate" column="last_update_date" />
+        <result property="userName" column="user_name" />
+    </resultMap>
+    
+    <select id="selectRandomAdminId" resultType="string">
+        SELECT user_id 
+        FROM user 
+        WHERE user_grade = 'ADMIN' 
+        LIMIT 1
+    </select>
+
+    <sql id="searchCriteria">
+        WHERE c.content_type = 'SAFETY_EDU'
+        <if test="isPublic != null and isPublic != 'all'">
+            AND c.visible_yn = CASE 
+                WHEN #{isPublic} = 'visible' THEN 'Y'
+                WHEN #{isPublic} = 'hidden' THEN 'N'
+                ELSE c.visible_yn
+            END
+        </if>
+        <if test="keyword != null and keyword != ''">
+            <choose>
+                <when test="searchType == 'title'">
+                    AND c.title LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'source' or searchType == 'content'">
+                    AND c.body LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <otherwise>
+                    AND (
+                        c.title LIKE CONCAT('%', #{keyword}, '%') 
+                        OR c.body LIKE CONCAT('%', #{keyword}, '%')
+                    )
+                </otherwise>
+            </choose>
+        </if>
+    </sql>
+
+    <select id="selectSafetyEduList" resultMap="ContentResultMap">
+        /* 리스트 조회 (사용자 이름 포함) */
+        SELECT 
+            c.*,
+            u.user_name
+        FROM 
+            content c
+        LEFT JOIN 
+            user u ON c.user_id = u.user_id
+        <include refid="searchCriteria" />
+        ORDER BY 
+            c.ordering ASC, c.created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+    
+    <select id="countSafetyEduList" resultType="long">
+    	/* 조회수 카운트 */
+        SELECT 
+        	count(*) 
+        FROM 
+        	content c
+        <include refid="searchCriteria" />
+    </select>
+
+    <select id="selectContentById" resultMap="ContentResultMap">
+        /* 상세 조회 (사용자 이름 포함) */
+        SELECT 
+            c.*,
+            u.user_name
+        FROM 
+            content c
+        LEFT JOIN 
+            user u ON c.user_id = u.user_id
+        WHERE 
+            c.content_id = #{contentId}
+    </select>
+
+    <insert id="insertContent" useGeneratedKeys="true" keyProperty="contentId">
+    	/* 안전교육 등록 */
+        INSERT INTO content (
+            title
+            , content_type
+            , visible_yn
+            , body
+            , content_link
+            , ordering
+            , user_id
+            , created_at
+            , last_update_date
+        ) VALUES (
+            #{title}
+            , #{contentType}
+            , #{visibleYn}
+            , #{body}
+            , #{contentLink}
+            , #{ordering}
+            , #{userId}
+            , NOW()
+            , NOW()
+        )
+    </insert>
+
+    <update id="updateContent">
+    	/* 안전교육 수정 */
+        UPDATE content
+        SET 
+            title = #{title},
+            visible_yn = #{visibleYn},
+            body = #{body},
+            content_link = #{contentLink},
+            ordering = #{ordering},
+            last_update_date = NOW()
+        WHERE 
+        	content_id = #{contentId}
+    </update>
+
+    <delete id="deleteContent">
+    	/* 안전교육 단건 삭제 */
+        DELETE 
+        FROM 
+        	content 
+        WHERE 
+        	content_id = #{contentId}
+    </delete>
+
+    <delete id="deleteContents">
+    	/* 안전교육 다건 삭제 */
+        DELETE 
+        FROM 
+        	content 
+        WHERE 
+        	content_id IN
+        <foreach item="id" collection="ids" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <update id="updateVisibility">
+    	/* 공개, 비공개 수정 */
+        UPDATE 
+        	content
+        SET 
+        	visible_yn = #{visibleYn}, last_update_date = NOW()
+        WHERE 
+        	content_id IN
+        <foreach item="id" collection="ids" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+</mapper>
