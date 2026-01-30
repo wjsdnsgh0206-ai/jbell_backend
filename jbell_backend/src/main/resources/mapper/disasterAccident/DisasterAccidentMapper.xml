@@ -71,7 +71,8 @@
 		#{minIndex},
 		CURRENT_TIMESTAMP
 		)
-		ON DUPLICATE KEY UPDATE
+		ON DUPLICATE KEY
+		UPDATE
 		avg_index = VALUES(avg_index),
 		max_index = VALUES(max_index),
 		min_index = VALUES(min_index)
@@ -82,7 +83,8 @@
 		SELECT
 		anal_date AS analDate,
 		do_name AS doName,
-		avg_index AS avgIndex,
+		avg_index AS
+		avgIndex,
 		max_index AS maxIndex,
 		min_index AS minIndex
 		FROM
@@ -172,6 +174,8 @@
 		)
 	</insert>
 
+	<!-- =========================================== -->
+	<!-- 산사태 -->
 	<insert id="insertLandslide"
 		parameterType="jbell.disasterAccident.dto.DisasterAccidentDTO">
 		INSERT INTO lnld_forecast_info (
@@ -182,7 +186,33 @@
 		#{sggNm}, #{predcAnlsDt}, CURRENT_TIMESTAMP, 'Y', CURRENT_TIMESTAMP
 		)
 	</insert>
-
+<select id="selectLandslideList"
+    resultType="jbell.disasterAccident.dto.DisasterAccidentDTO">
+    SELECT 
+        lnld_frcst_nm AS lnldFrcstNm,
+        sgg_nm AS sggNm,
+        predc_anls_dt AS predcAnlsDt
+    FROM (
+        SELECT 
+            lnld_frcst_nm,
+            sgg_nm,
+            predc_anls_dt,
+            -- 지역(sgg_nm)별로 그룹화해서 가장 최신 발령 일시만 가져옴
+            ROW_NUMBER() OVER(PARTITION BY sgg_nm ORDER BY predc_anls_dt DESC) as rn
+        FROM 
+            lnld_forecast_info
+        WHERE 
+            use_yn = 'Y'
+            -- 1. 산사태 데이터만 확실히 필터링 (필드값이 있을 때만)
+            AND lnld_frcst_nm IS NOT NULL 
+            AND sgg_nm IS NOT NULL
+            -- 2. (선택사항) 특정 기간 내 데이터만 보고 싶다면 추가
+            -- AND reg_dt >= DATE_SUB(NOW(), INTERVAL 7 DAY) 
+    ) t
+    WHERE t.rn = 1  -- 각 지역별 최신 데이터 1개씩만 선택
+    ORDER BY t.predc_anls_dt DESC
+    LIMIT 100
+</select>
 	<!-- 기상특보 (ex. 호우특보, 한파특보, 태풍특보) -->
 	<insert id="insertKmaWeather"
 		parameterType="jbell.disasterAccident.dto.DisasterAccidentDTO">
