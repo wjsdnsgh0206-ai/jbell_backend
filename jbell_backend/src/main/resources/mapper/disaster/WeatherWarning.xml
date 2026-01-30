@@ -5,7 +5,6 @@
 
     <insert id="insertWeatherWarnings" parameterType="java.util.List">
         INSERT INTO weather_warning_info (
-            prsntn_sn,
             ttl,
             prsntn_tm,
             rlvt_zone,
@@ -15,7 +14,6 @@
         ) VALUES
         <foreach collection="list" item="item" separator=",">
             (
-                #{item.prsntnSn},
                 #{item.ttl},
                 #{item.prsntnTm},
                 #{item.rlvtZone},
