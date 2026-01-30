@@ -20,6 +20,19 @@
             #{contentId}, #{fileName}, #{fileRealName}, #{fileExt}, #{fileSize}, #{filePath}, NOW()
         )
     </insert>
+    
+    <insert id="insertAttachmentList" parameterType="jbell.common.domain.AttachmentVO">
+		/* 다중 파일 데이터 등록 */
+		INSERT INTO attachment (
+			 content_id, file_name, file_real_name, file_ext, file_size, file_path, created_at, file_type
+		)VALUES
+		<foreach collection="list" item="file" separator=",">
+		( 
+			 #{file.contentId}, #{file.fileName}, #{file.fileRealName}, #{file.fileExt}, #{file.fileSize}, #{file.filePath}, NOW(), 'ATTACH'
+		)
+		</foreach>
+	</insert>
+    
     <resultMap id="PressListMap" type="jbell.press.dto.PressDTO">
 	    <id property="contentId" column="contentId"/>
 	    <result property="title" column="title"/>
@@ -64,8 +77,11 @@
 
 	<select id="getFileList" resultType="map">
     SELECT 
-        file_id AS id,           file_name AS name,       
-        file_real_name AS url,   
+        file_id AS id,           
+        file_name AS name,       
+        file_real_name AS realName,   
+        file_path AS url,   
+        file_ext AS type,   
         file_size AS size
     FROM attachment
     WHERE content_id = #{contentId}

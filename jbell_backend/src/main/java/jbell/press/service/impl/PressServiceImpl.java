@@ -1,21 +1,33 @@
 package jbell.press.service.impl;
 
-import jbell.press.dto.PressDTO;
-import jbell.press.mapper.PressMapper;
-import jbell.press.service.PressService;
-import lombok.RequiredArgsConstructor;
+import java.io.File;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.util.*;
+import jbell.common.domain.AttachmentVO;
+import jbell.common.domain.FileMetaData;
+import jbell.common.utils.FilesUtils;
+import jbell.press.dto.PressDTO;
+import jbell.press.mapper.PressMapper;
+import jbell.press.service.PressService;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class PressServiceImpl implements PressService {
 
     private final PressMapper pressMapper;
+    private final FilesUtils filesUtils;
+    @Value("${file.path}")
     private final String uploadPath = "C:/upload/press/";
 
     @Override
@@ -28,32 +40,15 @@ public class PressServiceImpl implements PressService {
         // 2. 글 등록
         pressMapper.insertContent(dto);
         Long contentId = dto.getContentId();
-
-        // 3. 파일 처리
-        if (files != null && !files.isEmpty()) {
-            File dir = new File(uploadPath);
-            if (!dir.exists()) dir.mkdirs();
-
-            for (MultipartFile file : files) {
-                if (file.isEmpty()) continue;
-
-                String originalName = file.getOriginalFilename();
-                String ext = originalName.substring(originalName.lastIndexOf(".") + 1);
-                String realName = UUID.randomUUID().toString() + "." + ext;
-
-                file.transferTo(new File(uploadPath + realName));
-
-                Map<String, Object> fileInfo = new HashMap<>();
-                fileInfo.put("contentId", contentId);
-                fileInfo.put("fileName", originalName);
-                fileInfo.put("fileRealName", realName);
-                fileInfo.put("fileExt", ext);
-                fileInfo.put("fileSize", file.getSize());
-                fileInfo.put("filePath", uploadPath);
-
-                pressMapper.insertAttachment(fileInfo);
-            }
-        }
+        
+        List<FileMetaData> fileList = filesUtils.uploadFiles(files);
+        fileList.forEach(f -> f.setFileIdx(contentId));
+        var uploadFileList = fileList.stream()
+				        			  .map(FileMetaData :: toAttachmentVO)
+				        			  .collect(Collectors.toList());
+        
+        pressMapper.insertAttachmentList(uploadFileList);
+        
         return contentId;
     }
 
@@ -93,32 +88,15 @@ public class PressServiceImpl implements PressService {
         // 2. 파일 정리: 유지 목록(existingFileIds)에 없는 파일 삭제
         // 만약 existingFileIds가 비어있다면 해당 게시글의 모든 파일 삭제
         pressMapper.deleteAttachmentsExcludeIds(dto.getContentId(), dto.getExistingFileIds());
-
-        // 3. 신규 파일 업로드
-        if (files != null && !files.isEmpty()) {
-            File dir = new File(uploadPath);
-            if (!dir.exists()) dir.mkdirs();
-
-            for (MultipartFile file : files) {
-                if (file.isEmpty()) continue;
-
-                String originalName = file.getOriginalFilename();
-                String ext = originalName.substring(originalName.lastIndexOf(".") + 1);
-                String realName = UUID.randomUUID().toString() + "." + ext;
-
-                file.transferTo(new File(uploadPath + realName));
-
-                Map<String, Object> fileInfo = new HashMap<>();
-                fileInfo.put("contentId", dto.getContentId());
-                fileInfo.put("fileName", originalName);
-                fileInfo.put("fileRealName", realName);
-                fileInfo.put("fileExt", ext);
-                fileInfo.put("fileSize", file.getSize());
-                fileInfo.put("filePath", uploadPath);
-
-                pressMapper.insertAttachment(fileInfo);
-            }
+        if(files != null && !files.isEmpty()) {        	
+        	List<FileMetaData> fileList = filesUtils.uploadFiles(files);
+        	fileList.forEach(f -> f.setFileIdx(dto.getContentId()));
+        	var uploadFileList = fileList.stream()
+					        		     .map(FileMetaData :: toAttachmentVO)
+					        			 .collect(Collectors.toList());
+        	pressMapper.insertAttachmentList(uploadFileList);
         }
+        
     }
     
     
