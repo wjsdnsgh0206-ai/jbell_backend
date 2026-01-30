@@ -36,7 +36,7 @@ public class FilesUtils {
 		return fileInfo;
 	}
 
-	public List<FileMetaData> uploadFiles(MultipartFile[] multipartFiles) {
+	public List<FileMetaData> uploadFiles(List<MultipartFile> multipartFiles) {
 		List<FileMetaData> fileList = new ArrayList<FileMetaData>();
 		FileMetaData fileInfo;
 		for(MultipartFile multipartFile : multipartFiles) {
@@ -108,6 +108,7 @@ public class FilesUtils {
 									   //이거 \ 경로 부터 교체 해야 됨 아님 /home/teamproject 치환 안됨
 									   .filePath("/api" + uploadPath.toString().replace("\\", "/").replace(fileRealPath, ""))
 									   .fileSize(multipartFile.getSize())
+									   .fileType(extension)
 									   .build();
 			
 		} catch (IOException e) {
