@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jbell.behaviorMethod.domain.BehaviorMethodContentVO;
 import jbell.behaviorMethod.dto.BehaviorMethod;
 import jbell.behaviorMethod.mapper.BehaviorMethodMapper;
+import jbell.common.service.FileService;
 import jbell.exception.CustomException;
 import jbell.exception.ErrorCode;
 import lombok.extern.slf4j.Slf4j;
@@ -30,9 +31,11 @@ import reactor.util.retry.Retry;
 @Slf4j
 public class BehaviorMethodService {
     
+	// 필드 선언부
     private final ObjectMapper objectMapper;
     private final BehaviorMethodMapper behaviorMethodMapper;
     private final WebClient safetyDataWebClient;
+    private final FileService fileService;
 
     @Value("${safetydata.behaviorMethod.natural.servicekey}")
     private String naturalServiceKey;
@@ -56,12 +59,15 @@ public class BehaviorMethodService {
     private static final String API_PATH_SOCIAL = "/DSSP-IF-20589";
     private static final String API_PATH_LIFE = "/DSSP-IF-20590";
 
+    // 생성자 수정
     public BehaviorMethodService(@Qualifier("safetyDataWebClient") WebClient safetyDataWebClient,
                                  @Qualifier("objectMapper") ObjectMapper objectMapper,
-                                 BehaviorMethodMapper behaviorMethodMapper) {
+                                 BehaviorMethodMapper behaviorMethodMapper,
+                                 FileService fileService) {
         this.safetyDataWebClient = safetyDataWebClient;
         this.objectMapper = objectMapper;
         this.behaviorMethodMapper = behaviorMethodMapper;
+        this.fileService = fileService;
     }
      
     // ================== Public Methods (Controller 연결) ==================
@@ -213,11 +219,19 @@ public class BehaviorMethodService {
     /**
      * 행동요령 데이터 수정
      */
+    
     @Transactional
     public void updateBehaviorMethod(BehaviorMethodContentVO updateData) {
+        // 1. 본문 데이터 수정
         int result = behaviorMethodMapper.updateBehaviorMethod(updateData);
+        
+        // 2. ★ 파일 연결 (contentId와 파일 ID들을 연결)
+        if (updateData.getFileIds() != null && !updateData.getFileIds().isEmpty()) {
+            fileService.linkFilesToContent(updateData.getContentId(), updateData.getFileIds());
+        }
+        
         if (result == 0) {
-            throw new CustomException(ErrorCode.NOT_FOUND); // 업데이트 된 행이 없으면 에러 처리
+            throw new CustomException(ErrorCode.NOT_FOUND);
         }
     }
 }

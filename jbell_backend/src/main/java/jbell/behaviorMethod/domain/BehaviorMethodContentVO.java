@@ -1,5 +1,7 @@
 package jbell.behaviorMethod.domain;
 
+import java.util.List;
+
 import lombok.Data;
 
 @Data
@@ -15,4 +17,5 @@ public class BehaviorMethodContentVO {
     private String visibleYn;       // visible_yn (노출 여부)
     private String lastSyncYn;      // 최신 동기화 여부 (Y/N)
     private String regType;         // 등록 방식 (API / MANUAL)
+    private List<Long> fileIds; // 프론트에서 보내주는 업로드된 파일 ID 목록
 }
