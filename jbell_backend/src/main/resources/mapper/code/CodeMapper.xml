@@ -30,7 +30,7 @@
             ''                AS subName,
             g.code_desc       AS `desc`,
             g.sort_order      AS `order`,
-            IF(g.visible_yn = 'Y', 1, 0) AS visible, /* boolean 매핑을 위해 1,0으로 변환 */
+            IF(g.visible_yn = 'Y', 1, 0) AS visible,
             DATE_FORMAT(g.created_at, '%Y-%m-%d %H:%i:%s') AS createdAt,
             DATE_FORMAT(g.updated_at, '%Y-%m-%d %H:%i:%s') AS updatedAt
         FROM code_group g
@@ -45,13 +45,14 @@
             i.code_item_name  AS subName,
             i.description     AS `desc`,
             i.sort_order      AS `order`,
-            IF(i.visible_yn = 'Y', 1, 0) AS visible, /* boolean 매핑을 위해 1,0으로 변환 */
+            IF(i.visible_yn = 'Y', 1, 0) AS visible,
             DATE_FORMAT(i.created_at, '%Y-%m-%d %H:%i:%s') AS createdAt,
             DATE_FORMAT(i.updated_at, '%Y-%m-%d %H:%i:%s') AS updatedAt
         FROM code_item i
         JOIN code_group g ON i.code_group_id = g.code_group_id
     
-        ORDER BY groupCode ASC, `order` ASC, subCode ASC
+        /* [수정 포인트] order가 같을 경우 createdAt(등록일) 순으로 보조 정렬 */
+        ORDER BY groupCode ASC, `order` ASC, createdAt ASC, subCode ASC
     </select>
 
     <select id="selectCodeGroupList" resultType="jbell.common.code.domain.CodeGroup">
@@ -177,5 +178,26 @@
         WHERE code_group_id = #{codeGroupId} 
           AND code_item_id = #{codeItemId}
     </delete>
+    
+    <select id="selectMaxGroupOrder" resultType="int">
+    SELECT IFNULL(MAX(sort_order), 0) FROM code_group
+</select>
+
+<select id="selectMaxItemOrder" parameterType="String" resultType="int">
+    SELECT IFNULL(MAX(sort_order), 0) FROM code_item 
+    WHERE code_group_id = #{groupCode}
+</select>
+
+<delete id="deleteCodeItemsByGroupId" parameterType="string">
+    DELETE FROM code_item 
+    WHERE code_group_id = #{groupId}
+</delete>
+
+<delete id="deleteCodeGroup" parameterType="string">
+    DELETE FROM code_group 
+    WHERE code_group_id = #{codeGroupId}
+</delete>
+
+
 
 </mapper>

@@ -20,6 +20,7 @@ public interface CodeMapper {
     void insertCodeGroup(CodeGroup group);
     void updateCodeGroup(CodeGroup group);
     void deleteCodeGroup(String codeGroupId);
+   // void deleteCodeItemsByGroupId(String groupId);
     
     // 상세 아이템 관련
     void insertCodeItem(CodeItem item);
@@ -44,4 +45,10 @@ public interface CodeMapper {
     // 상세 관련 체크
     int countSubCode(@Param("groupCode") String groupCode, @Param("subCode") String subCode);
     int countSubName(@Param("groupCode") String groupCode, @Param("subName") String subName);
+    
+    // 그룹 코드의 최대 순서 조회
+    int selectMaxGroupOrder();
+
+    // 특정 그룹 내 상세 코드의 최대 순서 조회
+    int selectMaxItemOrder(@Param("groupCode") String groupCode);
 }
