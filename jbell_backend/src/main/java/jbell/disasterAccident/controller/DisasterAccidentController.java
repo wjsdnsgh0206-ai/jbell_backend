@@ -72,10 +72,19 @@ public class DisasterAccidentController {
 				.then(Mono.just(ApiResponse.success(year + "년 태풍 데이터 수집 완료")));
 	}
 
-	// 5. 산사태 정보 수집
+
+	// 5. 산사태 정보 수집 (관리자용)
 	@PostMapping("/landslide")
 	public Mono<ApiResponse<String>> fetchLandslide() {
-		return disasterAccidentService.fetchAndSaveLandslide().then(Mono.just(ApiResponse.success("산사태 예보 데이터 수집 완료")));
+	    return disasterAccidentService.fetchAndSaveLandslide()
+	            .then(Mono.just(ApiResponse.success("산사태 예보 데이터 수집 및 DB 저장 완료")));
+	}
+
+	// 5-1. 산사태 정보 조회 (사용자/관리자 화면용)
+	@GetMapping("/landslide-list")
+	public ApiResponse<List<DisasterAccidentDTO>> getLandslideList() {
+	    List<DisasterAccidentDTO> list = disasterAccidentService.getLandslideList();
+	    return ApiResponse.success(list);
 	}
 
 	// 6. 기상특보(ex. 호우특보, 태풍특보) 정보 수집
