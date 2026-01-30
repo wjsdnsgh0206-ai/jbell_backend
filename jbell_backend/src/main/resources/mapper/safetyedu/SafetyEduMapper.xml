@@ -92,11 +92,25 @@
     <insert id="insertContent" useGeneratedKeys="true" keyProperty="contentId">
     	/* 안전교육 등록 */
         INSERT INTO content (
-            title, content_type, visible_yn, body, content_link, 
-            ordering, user_id, created_at, last_update_date
+            title
+            , content_type
+            , visible_yn
+            , body
+            , content_link
+            , ordering
+            , user_id
+            , created_at
+            , last_update_date
         ) VALUES (
-            #{title}, #{contentType}, #{visibleYn}, #{body}, #{contentLink}, 
-            #{ordering}, #{userId}, NOW(), NOW()
+            #{title}
+            , #{contentType}
+            , #{visibleYn}
+            , #{body}
+            , #{contentLink}
+            , #{ordering}
+            , #{userId}
+            , NOW()
+            , NOW()
         )
     </insert>
 
@@ -110,17 +124,26 @@
             content_link = #{contentLink},
             ordering = #{ordering},
             last_update_date = NOW()
-        WHERE content_id = #{contentId}
+        WHERE 
+        	content_id = #{contentId}
     </update>
 
     <delete id="deleteContent">
     	/* 안전교육 단건 삭제 */
-        DELETE FROM content WHERE content_id = #{contentId}
+        DELETE 
+        FROM 
+        	content 
+        WHERE 
+        	content_id = #{contentId}
     </delete>
 
     <delete id="deleteContents">
     	/* 안전교육 다건 삭제 */
-        DELETE FROM content WHERE content_id IN
+        DELETE 
+        FROM 
+        	content 
+        WHERE 
+        	content_id IN
         <foreach item="id" collection="ids" open="(" separator="," close=")">
             #{id}
         </foreach>
@@ -128,9 +151,12 @@
 
     <update id="updateVisibility">
     	/* 공개, 비공개 수정 */
-        UPDATE content
-        SET visible_yn = #{visibleYn}, last_update_date = NOW()
-        WHERE content_id IN
+        UPDATE 
+        	content
+        SET 
+        	visible_yn = #{visibleYn}, last_update_date = NOW()
+        WHERE 
+        	content_id IN
         <foreach item="id" collection="ids" open="(" separator="," close=")">
             #{id}
         </foreach>

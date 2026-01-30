@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="jbell.press.mapper.PressMapper">
+
+    <insert id="insertContent" parameterType="jbell.press.dto.PressDTO" useGeneratedKeys="true" keyProperty="contentId">
+        INSERT INTO content (
+            title, body, visible_yn, content_type, content_link, 
+            user_id, reg_type, source, created_at, last_update_date
+        ) VALUES (
+            #{title}, #{body}, #{visibleYn}, 'PR01', #{contentLink}, 
+            #{userId}, COALESCE(#{regType}, '직접등록'), #{source}, NOW(), NOW()
+        )
+    </insert>
+
+    <insert id="insertAttachment" parameterType="map">
+        INSERT INTO attachment (
+            content_id, file_name, file_real_name, file_ext, file_size, file_path, created_at
+        ) VALUES (
+            #{contentId}, #{fileName}, #{fileRealName}, #{fileExt}, #{fileSize}, #{filePath}, NOW()
+        )
+    </insert>
+    <resultMap id="PressListMap" type="jbell.press.dto.PressDTO">
+	    <id property="contentId" column="contentId"/>
+	    <result property="title" column="title"/>
+	    <result property="body" column="body"/>
+	    <result property="visibleYn" column="visibleYn"/>
+	    <result property="userId" column="userId"/>
+	    <result property="source" column="source"/>
+	    <result property="regType" column="regType"/>
+	    <result property="createdAt" column="createdAt"/>
+	    <result property="fileCount" column="fileCount"/>
+	    <collection property="fileList" column="{contentId=contentId}" select="getFileList" />
+	</resultMap>
+	
+	<select id="getPressList" resultMap="PressListMap">
+	   SELECT 
+	        c.content_id as contentId,
+	        c.title,
+	        c.body,
+	        c.visible_yn as visibleYn,
+	        c.user_id as userId,
+	        c.source,
+	        c.reg_type as regType,
+	        c.created_at as createdAt,
+	        COUNT(a.file_id) as fileCount
+	    FROM content c
+	    LEFT JOIN attachment a ON c.content_id = a.content_id
+	    WHERE c.content_type = 'PR01'
+	    GROUP BY 
+	        c.content_id, c.title, c.body, c.visible_yn, 
+	        c.user_id, c.source, c.reg_type, c.created_at
+	    ORDER BY c.content_id DESC
+	    <if test="limit != null and limit > 0">
+	        LIMIT #{limit} OFFSET #{offset}
+	    </if>
+	</select>
+
+
+
+    <select id="getPressById" resultType="jbell.press.dto.PressDTO">
+        SELECT * FROM content WHERE content_id = #{contentId}
+    </select>
+
+	<select id="getFileList" resultType="map">
+    SELECT 
+        file_id AS id,           file_name AS name,       
+        file_real_name AS url,   
+        file_size AS size
+    FROM attachment
+    WHERE content_id = #{contentId}
+</select>
+
+<update id="updateContent" parameterType="jbell.press.dto.PressDTO">
+    UPDATE content
+    SET 
+        title = #{title},
+        body = #{body},
+        visible_yn = #{visibleYn},
+        source = #{source},
+        content_link = #{contentLink},
+        last_update_date = NOW()
+    WHERE content_id = #{contentId}
+</update>
+
+<delete id="deleteAttachmentsExcludeIds">
+    DELETE FROM attachment 
+    WHERE content_id = #{contentId}
+    <if test="existingIds != null and existingIds.size() > 0">
+        AND file_id NOT IN 
+        <foreach item="id" collection="existingIds" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </if>
+</delete>
+
+<delete id="deleteAttachmentsByContentId" parameterType="long">
+    DELETE FROM attachment WHERE content_id = #{contentId}
+</delete>
+
+</mapper>

@@ -88,6 +88,7 @@ public class PredictionInfoResponse {
 
         @JsonProperty("MAAS_OBNT_DT")
         private String maasObntDt;
+
         
         private String lvl;        // 기상 수준 (주의, 위험 등)
         
@@ -100,6 +101,4 @@ public class PredictionInfoResponse {
         private String region;
         private String level;
 
-   
-    
 }
