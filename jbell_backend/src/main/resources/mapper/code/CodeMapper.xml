@@ -133,11 +133,6 @@
         )
     </insert>
 
-    <delete id="deleteCodeGroup" parameterType="String">
-        DELETE FROM code_group 
-        WHERE code_group_id = #{codeGroupId}
-    </delete>
-
     <update id="updateCodeGroup" parameterType="jbell.common.code.domain.CodeGroup">
         UPDATE code_group
         SET 

@@ -15,9 +15,6 @@ public class WebConfig  implements WebMvcConfigurer{
 	
 	private final LogInterceptor logInterceptor;
 	
-	@Value("${file.upload-dir}")
-	private String uploadDir;
-	
 	@Value("${file.path}")
 	private String fileRealPath;
 	
@@ -41,10 +38,6 @@ public class WebConfig  implements WebMvcConfigurer{
 	 */
 	@Override
 	public void addResourceHandlers(ResourceHandlerRegistry registry) {
-		// 브라우저에서 /uploads/ 로 시작하는 모든 요청을 가로채서
-		registry.addResourceHandler("/uploads/**")
-				// 실제 로컬 컴퓨터의 uploadDir 폴더 내 파일로 연결한다.
-				.addResourceLocations("file:///" + uploadDir);
 		
 		String rootPath = getOSFilePath();
 				

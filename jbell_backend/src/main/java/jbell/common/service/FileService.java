@@ -22,11 +22,7 @@ import java.util.UUID;
 public class FileService {
 
     private final AttachmentMapper attachmentMapper;
-
-    @Value("${file.upload-dir}") // 예: C:/jbell/uploads/
     private String uploadDir;
-
-    @Value("${file.domain}")     // 예: http://localhost:8080/uploads/
     private String domain;
 
     /**
