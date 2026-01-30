@@ -1,80 +1,259 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="jbell.disasterAccident.mapper.DisasterAccidentMapper">
+<mapper
+	namespace="jbell.disasterAccident.mapper.DisasterAccidentMapper">
 
-    <insert id="insertForestFire" parameterType="jbell.disasterAccident.dto.DisasterAccidentDTO">
-    INSERT INTO forest_fire_information (
-        fire_id,
-        fire_damage_area,
-        fire_end_time,
-        fire_cause,
-        fire_loc_village,
-        fire_start_time,
-        fire_expose_yn
-    ) VALUES (
-        #{fireId},
-        #{fireDamageArea},
-        #{fireEndTime},
-        #{fireCause},
-        #{fireLocVillage},
-        #{fireStartTime},
-        'Y'
-    )
-    ON DUPLICATE KEY UPDATE
-        fire_damage_area = VALUES(fire_damage_area),
-        fire_end_time = VALUES(fire_end_time),
-        fire_cause = VALUES(fire_cause),
-        fire_loc_village = VALUES(fire_loc_village),
-        fire_start_time = VALUES(fire_start_time)
-</insert>
+	<!-- =========================================== -->
+	<!-- 산불 -->
+	<select id="selectForestFireList"
+		resultType="jbell.disasterAccident.dto.DisasterAccidentDTO">
+		SELECT
+		fire_id AS fireId,
+		fire_damage_area AS fireDamageArea,
+		fire_end_time AS fireEndTime,
+		fire_cause AS fireCause,
+		fire_loc_village
+		AS fireLocVillage,
+		fire_start_time AS fireStartTime
+		FROM
+		forest_fire_information
+		WHERE fire_start_time >= DATE_SUB(NOW(),
+		INTERVAL 7 DAY)
+		ORDER BY fire_start_time DESC
+	</select>
 
-    <insert id="insertEarthquake" parameterType="jbell.disasterAccident.dto.DisasterAccidentDTO">
-        INSERT INTO earthquake_event (
-            seq, lat, lon, loc, rem, tm_fc, msc, mt, expose_yn
-        ) VALUES (
-            #{seq}, #{lat}, #{lon}, #{loc}, #{rem}, #{tmFc}, #{msc}, #{mt}, 'Y'
-        )
-        ON DUPLICATE KEY UPDATE
-            loc = VALUES(loc),
-            mt = VALUES(mt),
-            rem = VALUES(rem);
-    </insert>
+	<insert id="insertForestFire"
+		parameterType="jbell.disasterAccident.dto.DisasterAccidentDTO">
+		INSERT INTO forest_fire_information (
+		fire_id,
+		fire_damage_area,
+		fire_end_time,
+		fire_cause,
+		fire_loc_village,
+		fire_start_time,
+		fire_expose_yn
+		) VALUES (
+		#{fireId},
+		#{fireDamageArea},
+		#{fireEndTime},
+		#{fireCause},
+		#{fireLocVillage},
+		#{fireStartTime},
+		'Y'
+		)
+		ON
+		DUPLICATE KEY UPDATE
+		fire_damage_area = VALUES(fire_damage_area),
+		fire_end_time = VALUES(fire_end_time),
+		fire_cause = VALUES(fire_cause),
+		fire_loc_village = VALUES(fire_loc_village),
+		fire_start_time =
+		VALUES(fire_start_time)
+	</insert>
 
-    <insert id="insertTyphoonInfo" parameterType="jbell.disasterAccident.dto.DisasterAccidentDTO">
-        INSERT INTO typhoon_info (
-            typhoon_year, typhoon_no, typhoon_name, typhoon_name_desc, 
-            typhoon_active_yn, typhoon_first_location
-        ) VALUES (
-            #{typhoonYear}, #{typhoonNo}, #{typhoonName}, #{typhoonNameDesc}, 
-            #{typhoonActiveYn}, #{typhoonFirstLocation}
-        )
-        ON DUPLICATE KEY UPDATE
-            typhoon_active_yn = VALUES(typhoon_active_yn),
-            typhoon_name_desc = VALUES(typhoon_name_desc);
-    </insert>
+	<!-- =========================================== -->
+	<!-- 산불 예측 지수 -->
+	<insert id="insertForestFireRisk"
+		parameterType="jbell.disasterAccident.dto.DisasterAccidentDTO">
+		INSERT INTO forest_fire_risk (
+		anal_date,
+		do_name,
+		avg_index,
+		max_index,
+		min_index,
+		reg_dt
+		) VALUES (
+		#{analDate},
+		#{doName},
+		#{avgIndex},
+		#{maxIndex},
+		#{minIndex},
+		CURRENT_TIMESTAMP
+		)
+		ON DUPLICATE KEY
+		UPDATE
+		avg_index = VALUES(avg_index),
+		max_index = VALUES(max_index),
+		min_index = VALUES(min_index)
+	</insert>
 
-    <insert id="insertTyphoonTrack" parameterType="jbell.disasterAccident.dto.DisasterAccidentDTO">
-        INSERT INTO typhoon_track (
-            typhoon_year, typhoon_no, typhoon_analysis_datetime, 
-            typhoon_lat, typhoon_lon, typhoon_move_speed, 
-            typhoon_central_pressure, typhoon_max_wind_speed, 
-            typhoon_radius_15ms, typhoon_radius_25ms, 
-            typhoon_location, typhoon_report_no
-        ) VALUES (
-            #{typhoonYear}, #{typhoonNo}, #{typhoonAnalysisDatetime}, 
-            #{typhoonLat}, #{typhoonLon}, #{typhoonMoveSpeed}, 
-            #{typhoonCentralPressure}, #{typhoonMaxWindSpeed}, 
-            #{typhoonRadius15ms}, #{typhoonRadius25ms}, 
-            #{typhoonLocation}, #{typhoonReportNo}
-        )
-    </insert>
+	<select id="selectForestFireRiskList"
+		resultType="jbell.disasterAccident.dto.DisasterAccidentDTO">
+		SELECT
+		anal_date AS analDate,
+		do_name AS doName,
+		avg_index AS
+		avgIndex,
+		max_index AS maxIndex,
+		min_index AS minIndex
+		FROM
+		forest_fire_risk
+		ORDER BY anal_date DESC, reg_dt DESC
+		LIMIT 20
+	</select>
 
-    <insert id="insertLandslide" parameterType="jbell.disasterAccident.dto.DisasterAccidentDTO">
-        INSERT INTO lnld_forecast_info (
-            lnld_frcst_nm, sgg_nm, predc_anls_dt, data_std_dt, use_yn, reg_dt
-        ) VALUES (
-            #{lnldFrcstNm}, #{sggNm}, #{predcAnlsDt}, CURRENT_TIMESTAMP, 'Y', CURRENT_TIMESTAMP
-        )
-    </insert>
+	<!-- =========================================== -->
+	<!-- 지진 -->
+	<insert id="insertEarthquake"
+		parameterType="jbell.disasterAccident.dto.DisasterAccidentDTO">
+		INSERT INTO earthquake_event (
+		seq, lat, lon, loc, rem,
+		tm_fc, msc, mt, expose_yn
+		) VALUES (
+		#{seq}, #{lat}, #{lon}, #{loc},
+		#{rem}, #{tmFc}, #{msc}, #{mt}, 'Y'
+		)
+		ON DUPLICATE KEY UPDATE
+		loc =
+		VALUES(loc),
+		mt = VALUES(mt),
+		rem = VALUES(rem);
+	</insert>
+
+	<select id="selectEarthquakeList"
+		resultType="jbell.disasterAccident.dto.DisasterAccidentDTO">
+		SELECT
+		seq,
+		lat,
+		lon,
+		loc,
+		rem,
+		tm_fc AS tmFc,
+		mt,
+		msc
+		FROM
+		earthquake_event
+		WHERE STR_TO_DATE(tm_fc, '%Y%m%d%H%i') >=
+		DATE_SUB(NOW(), INTERVAL 1 YEAR)
+		ORDER BY tm_fc DESC
+	</select>
+
+	<!-- =========================================== -->
+	<!-- 태풍 -->
+	<insert id="insertTyphoonInfo"
+		parameterType="jbell.disasterAccident.dto.DisasterAccidentDTO">
+		INSERT INTO typhoon_info (
+		typhoon_year, typhoon_no,
+		typhoon_name, typhoon_name_desc,
+		typhoon_active_yn,
+		typhoon_first_location
+		) VALUES (
+		#{typhoonYear}, #{typhoonNo},
+		#{typhoonName}, #{typhoonNameDesc},
+		#{typhoonActiveYn},
+		#{typhoonFirstLocation}
+		)
+		ON DUPLICATE KEY UPDATE
+		typhoon_active_yn =
+		VALUES(typhoon_active_yn),
+		typhoon_name_desc =
+		VALUES(typhoon_name_desc);
+	</insert>
+
+	<insert id="insertTyphoonTrack"
+		parameterType="jbell.disasterAccident.dto.DisasterAccidentDTO">
+		INSERT INTO typhoon_track (
+		typhoon_year, typhoon_no,
+		typhoon_analysis_datetime,
+		typhoon_lat, typhoon_lon,
+		typhoon_move_speed,
+		typhoon_central_pressure, typhoon_max_wind_speed,
+		typhoon_radius_15ms, typhoon_radius_25ms,
+		typhoon_location,
+		typhoon_report_no
+		) VALUES (
+		#{typhoonYear}, #{typhoonNo},
+		#{typhoonAnalysisDatetime},
+		#{typhoonLat}, #{typhoonLon},
+		#{typhoonMoveSpeed},
+		#{typhoonCentralPressure}, #{typhoonMaxWindSpeed},
+		#{typhoonRadius15ms}, #{typhoonRadius25ms},
+		#{typhoonLocation},
+		#{typhoonReportNo}
+		)
+	</insert>
+
+	<!-- =========================================== -->
+	<!-- 산사태 -->
+	<insert id="insertLandslide"
+		parameterType="jbell.disasterAccident.dto.DisasterAccidentDTO">
+		INSERT INTO lnld_forecast_info (
+		lnld_frcst_nm, sgg_nm,
+		predc_anls_dt, data_std_dt, use_yn, reg_dt
+		) VALUES (
+		#{lnldFrcstNm},
+		#{sggNm}, #{predcAnlsDt}, CURRENT_TIMESTAMP, 'Y', CURRENT_TIMESTAMP
+		)
+	</insert>
+<select id="selectLandslideList"
+    resultType="jbell.disasterAccident.dto.DisasterAccidentDTO">
+    SELECT 
+        lnld_frcst_nm AS lnldFrcstNm,
+        sgg_nm AS sggNm,
+        predc_anls_dt AS predcAnlsDt
+    FROM (
+        SELECT 
+            lnld_frcst_nm,
+            sgg_nm,
+            predc_anls_dt,
+            -- 지역(sgg_nm)별로 그룹화해서 가장 최신 발령 일시만 가져옴
+            ROW_NUMBER() OVER(PARTITION BY sgg_nm ORDER BY predc_anls_dt DESC) as rn
+        FROM 
+            lnld_forecast_info
+        WHERE 
+            use_yn = 'Y'
+            -- 1. 산사태 데이터만 확실히 필터링 (필드값이 있을 때만)
+            AND lnld_frcst_nm IS NOT NULL 
+            AND sgg_nm IS NOT NULL
+            -- 2. (선택사항) 특정 기간 내 데이터만 보고 싶다면 추가
+            -- AND reg_dt >= DATE_SUB(NOW(), INTERVAL 7 DAY) 
+    ) t
+    WHERE t.rn = 1  -- 각 지역별 최신 데이터 1개씩만 선택
+    ORDER BY t.predc_anls_dt DESC
+    LIMIT 100
+</select>
+	<!-- 기상특보 (ex. 호우특보, 한파특보, 태풍특보) -->
+	<insert id="insertKmaWeather"
+		parameterType="jbell.disasterAccident.dto.DisasterAccidentDTO">
+		INSERT INTO kma_weather_report (
+		tm_fc, tm_seq,
+		area_code, warn_var, stn_id,
+		area_name, warn_stress, start_time,
+		end_time,
+		type, reg_dt
+		) VALUES (
+		#{tmFc}, #{tmSeq}, #{areaCode},
+		#{warnVar}, #{stnId},
+		#{areaName}, #{warnStress}, #{startTime},
+		#{endTime},
+		#{type}, CURRENT_TIMESTAMP
+		)
+		ON DUPLICATE KEY UPDATE
+		area_name = VALUES(area_name),
+		warn_stress = VALUES(warn_stress),
+		start_time = VALUES(start_time),
+		end_time = VALUES(end_time),
+		type =
+		VALUES(type),
+		warn_var = VALUES(warn_var)
+	</insert>
+	<select id="selectKmaWeatherByType"
+		resultType="jbell.disasterAccident.dto.DisasterAccidentDTO">
+		SELECT
+		tm_fc AS tmFc,
+		tm_seq AS tmSeq,
+		area_code AS areaCode,
+		warn_var AS warnVar,
+		stn_id AS stnId,
+		area_name AS areaName,
+		warn_stress
+		AS warnStress,
+		start_time AS startTime,
+		end_time AS endTime,
+		type FROM
+		kma_weather_report
+		WHERE type = #{type} ORDER BY tm_fc DESC, tm_seq
+		DESC
+	</select>
 </mapper>
