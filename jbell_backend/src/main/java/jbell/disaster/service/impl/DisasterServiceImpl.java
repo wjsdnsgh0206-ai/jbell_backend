@@ -1,0 +1,108 @@
+package jbell.disaster.service.impl;
+
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import jbell.disaster.dto.PredictionInfoResponse;
+import jbell.disaster.mapper.DisasterMapper;
+import jbell.disaster.service.DisasterService;
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+@Transactional
+public class DisasterServiceImpl implements DisasterService {
+	
+	
+	private final DisasterMapper disasterMapper;
+
+    // 리스트 조회
+	@Override
+    @Transactional(readOnly = true)
+    public List<PredictionInfoResponse> getSavedDisasterMessages(PredictionInfoResponse searchParams) {
+        return disasterMapper.selectDisasterList(searchParams);
+    }
+
+    // [추가] 전체 개수 조회 구현
+    @Override
+    @Transactional(readOnly = true)
+    public int getTotalCount(PredictionInfoResponse searchParams) {
+        return disasterMapper.selectDisasterTotalCount(searchParams);
+    }
+
+    // 상세 조회
+    public PredictionInfoResponse getDisasterDetail(Long sn) {
+        return disasterMapper.selectDisasterDetail(sn);
+    }
+
+    // 일괄 노출 변경
+    public void updateDisasterVisibility(List<Long> sns, String visibleYn) {
+        disasterMapper.updateDisasterVisibility(sns, visibleYn);
+    }
+
+    // 일괄 삭제 (논리 삭제)
+    public void deleteDisasters(List<Long> sns) {
+        disasterMapper.deleteDisasterLogical(sns);
+    }
+    
+    @Transactional
+    public void saveDisaster(PredictionInfoResponse dto) {
+        disasterMapper.insertDisaster(dto);
+    }
+
+    @Transactional
+    public void modifyDisaster(PredictionInfoResponse dto) {
+        disasterMapper.updateDisaster(dto);
+    }
+    
+    
+    // ===============================  기상 특보 ========================
+    
+ // 기상특보 리스트 (검색 조건 적용)
+    @Override
+    @Transactional(readOnly = true)
+    public List<PredictionInfoResponse> getSavedWeatherWarnings(PredictionInfoResponse searchParams) {
+        return disasterMapper.selectWeatherList(searchParams);
+    }
+
+    // 기상특보 총 개수 (추가)
+    @Override
+    @Transactional(readOnly = true)
+    public int getWeatherTotalCount(PredictionInfoResponse searchParams) {
+        return disasterMapper.selectWeatherTotalCount(searchParams);
+    }
+    
+    // 기상특보 리스트
+    public List<PredictionInfoResponse> getSavedWeatherWarnings() {
+    	return disasterMapper.selectWeatherList();
+    }
+
+    public PredictionInfoResponse getWeatherDetail(String key) {
+        PredictionInfoResponse result = disasterMapper.selectWeatherDetail(key);
+        System.out.println("DB 조회 결과: " + result); // 여기서 null이 나오는지 확인
+        return result;
+    }
+
+    @Transactional
+    public void saveWeather(PredictionInfoResponse dto) {
+        disasterMapper.insertWeather(dto);
+    }
+
+    @Transactional
+    public void modifyWeather(PredictionInfoResponse dto) {
+        disasterMapper.updateWeather(dto);
+    }
+
+    @Transactional
+    public void updateWeatherVisibility(List<String> keys, String visibleYn) {
+        disasterMapper.updateWeatherVisibility(keys, visibleYn);
+    }
+
+    @Transactional
+    public void deleteWeatherWarnings(List<String> keys) {
+        disasterMapper.deleteWeatherLogical(keys);
+    }
+
+}

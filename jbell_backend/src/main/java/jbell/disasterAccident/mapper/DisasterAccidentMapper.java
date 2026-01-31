@@ -14,8 +14,10 @@ public interface DisasterAccidentMapper {
 
 	int insertTyphoonTrack(DisasterAccidentDTO dto);
 
+	// 산사태
 	int insertLandslide(DisasterAccidentDTO dto);
-
+	List<DisasterAccidentDTO> selectLandslideList(); // 산사태 조회
+	
 	// 산불
 	void insertForestFire(DisasterAccidentDTO dto);
 	List<DisasterAccidentDTO> selectForestFireList();
