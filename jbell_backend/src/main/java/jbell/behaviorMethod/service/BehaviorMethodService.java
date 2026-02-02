@@ -234,4 +234,61 @@ public class BehaviorMethodService {
             throw new CustomException(ErrorCode.NOT_FOUND);
         }
     }
+    
+    /**
+     * 행동요령 등록
+     */
+    @Transactional
+    public Long registerBehaviorMethod(BehaviorMethodContentVO vo) {
+        // 1. 프론트에서 넘어온 숫자 코드(예: 01011)를 실제 DB PK인 code_item_id로 변환
+        // vo.getContentType() 에 "01011"이 들어있음
+        String realCodeItemId = behaviorMethodMapper.findCodeItemIdByDescription(vo.getContentType());
+        
+        if (realCodeItemId == null || realCodeItemId.isEmpty()) {
+            // 만약 매칭되는 코드가 없다면 예외 처리 (혹은 기본값 설정)
+            log.error("부적절한 재난 유형 코드: {}", vo.getContentType());
+            throw new CustomException(ErrorCode.BAD_REQUEST); 
+        }
+        
+        // 2. 변환된 ID를 다시 세팅 (이제 "01011" 대신 "EARTHQUAKE"가 들어감)
+        vo.setContentType(realCodeItemId);
+        
+        // 3. 행동요령 본문 내용 등록
+        behaviorMethodMapper.insertManualBehaviorMethod(vo);
+        
+        return vo.getContentId();
+    }
+    
+    /**
+     * 행동요령 삭제 (단건 및 다건 일괄 삭제)
+     * @param ids 삭제할 콘텐츠 ID 리스트
+     */
+    @Transactional
+    public void deleteBehaviorMethods(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+        
+        // 1. 행동요령 본문 데이터 삭제
+        int result = behaviorMethodMapper.deleteBehaviorMethods(ids);
+        
+        // 2. (선택사항) 해당 콘텐츠에 연결된 파일 매핑 정보도 삭제해야 한다면 추가
+        // fileService.deleteLinksByContentIds(ids);
+        
+        if (result == 0) {
+            log.warn("삭제 요청된 ID들 중 존재하지 않는 데이터가 있습니다: {}", ids);
+        } else {
+            log.info("행동요령 {}건 삭제 완료", result);
+        }
+    }
+    
+    /**
+     * 행동요령 노출 상태 일괄 변경
+     * @param ids 대상 ID 리스트
+     * @param visibleYn 변경할 상태 ('Y' / 'N')
+     */
+    @Transactional
+    public void updateVisibility(List<Long> ids, String visibleYn) {
+        behaviorMethodMapper.updateVisibility(ids, visibleYn);
+    }
 }

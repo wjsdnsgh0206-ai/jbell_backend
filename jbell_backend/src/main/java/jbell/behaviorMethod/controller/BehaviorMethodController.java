@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.springframework.web.bind.annotation.DeleteMapping; // 추가됨
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -141,6 +142,55 @@ public class BehaviorMethodController {
         return behaviorMethodService.getBehaviorList(contentType, visibleYn, onlyLatest);
     }
     
+    /**
+     * 행동요령 수동 등록 API
+     * @param vo 등록할 데이터 (JSON Body)
+     */
+    @PostMapping
+    public ApiResponse<Long> createBehaviorMethod(@RequestBody BehaviorMethodContentVO vo) {
+        // regType을 MANUAL로 설정하여 API 동기화 데이터와 구분
+        vo.setRegType("MANUAL");
+        
+        Long resultId = behaviorMethodService.registerBehaviorMethod(vo);
+        
+        if (resultId != null && resultId > 0) {
+            return ApiResponse.success(resultId);
+        } else {
+            return ApiResponse.error(ErrorCode.INTERNAL_SERVER_ERROR.code(), "등록에 실패하였습니다.");
+        }
+    }
+
+    /**
+     * 행동요령 삭제 API (단건 및 다건 일괄 삭제)
+     * @param request 삭제할 ID 리스트가 담긴 Map (예: { "ids": [1, 2, 3] })
+     */
+    @DeleteMapping
+    public ApiResponse<String> deleteBehaviorMethods(@RequestBody Map<String, List<Long>> request) {
+        List<Long> ids = request.get("ids");
+        
+        if (ids == null || ids.isEmpty()) {
+            return ApiResponse.error(ErrorCode.BAD_REQUEST.code(), "삭제할 대상이 없습니다.");
+        }
+        
+        behaviorMethodService.deleteBehaviorMethods(ids);
+        return ApiResponse.success("성공적으로 삭제되었습니다.");
+    }
     
-    
+    /**
+     * 행동요령 노출 여부 일괄 변경 API
+     * @param request 변경할 ID 리스트와 상태값이 담긴 Map 
+     * (예: { "ids": [1, 2], "visibleYn": "Y" })
+     */
+    @PatchMapping("/visibility")
+    public ApiResponse<String> updateVisibility(@RequestBody Map<String, Object> request) {
+        List<Long> ids = (List<Long>) request.get("ids");
+        String visibleYn = (String) request.get("visibleYn");
+
+        if (ids == null || ids.isEmpty() || visibleYn == null) {
+            return ApiResponse.error(ErrorCode.BAD_REQUEST.code(), "필수 파라미터가 누락되었습니다.");
+        }
+
+        behaviorMethodService.updateVisibility(ids, visibleYn);
+        return ApiResponse.success("상태가 성공적으로 변경되었습니다.");
+    }
 }
