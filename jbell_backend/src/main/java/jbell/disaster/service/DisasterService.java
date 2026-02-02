@@ -9,10 +9,13 @@ public interface  DisasterService {
     // 리스트 조회
 	public List<PredictionInfoResponse> getSavedDisasterMessages(PredictionInfoResponse searchParams);
     // 검색 조건에 맞는 전체 데이터 개수 (페이지네이션용)
-    public int getTotalCount(PredictionInfoResponse searchParams);
+    int getTotalCount(PredictionInfoResponse searchParams);
+	List<PredictionInfoResponse> getDisasterMessages(PredictionInfoResponse searchParams);
+	
     
     // 상세 조회
-    public PredictionInfoResponse getDisasterDetail(Long sn);
+    public PredictionInfoResponse getDisasterDetail(Long id);
+    
     // 일괄 노출 변경
     public void updateDisasterVisibility(List<Long> sns, String visibleYn);
 
@@ -22,7 +25,6 @@ public interface  DisasterService {
     public void saveDisaster(PredictionInfoResponse dto);
 
     public void modifyDisaster(PredictionInfoResponse dto);
-    
     
     
     // ===================== 기상 특보 =======================

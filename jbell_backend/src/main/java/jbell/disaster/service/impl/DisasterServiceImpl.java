@@ -24,6 +24,13 @@ public class DisasterServiceImpl implements DisasterService {
     public List<PredictionInfoResponse> getSavedDisasterMessages(PredictionInfoResponse searchParams) {
         return disasterMapper.selectDisasterList(searchParams);
     }
+	
+	@Override
+	@Transactional(readOnly = true)
+	public List<PredictionInfoResponse> getDisasterMessages(PredictionInfoResponse searchParams) {
+	    return disasterMapper.selectDisasterList(searchParams);
+	}
+	
 
     // [추가] 전체 개수 조회 구현
     @Override

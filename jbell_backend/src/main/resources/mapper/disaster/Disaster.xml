@@ -7,6 +7,7 @@
 	<!-- ============ 재난 문자 이력 ============ -->
 	<select id="selectDisasterList" parameterType="jbell.disaster.dto.PredictionInfoResponse" resultType="jbell.disaster.dto.PredictionInfoResponse">
 	    SELECT 
+	   		id,
 	        sn, 
 	        crt_dt as crtDt, 
 	        msg_cn as msgCn, 
@@ -46,17 +47,18 @@
 	    </if>
 	</select>
 
-    <select id="selectDisasterDetail" resultType="jbell.disaster.dto.PredictionInfoResponse">
-	    SELECT
-	        sn,
-	        crt_dt AS crtDt,
-	        msg_cn AS msgCn,
-	        rcptn_rgn_nm AS rcptnRgnNm,
-	        emrg_step_nm AS emrgStepNm,
-	        dst_type AS dstType,
-	        visible_yn AS visibleYn  FROM disaster_text_history
-	    WHERE sn = #{sn}
-	</select>
+<select id="selectDisasterDetail" resultType="jbell.disaster.dto.PredictionInfoResponse">
+    SELECT
+        id,
+        sn,
+        crt_dt AS crtDt,
+        msg_cn AS msgCn,
+        rcptn_rgn_nm AS rcptnRgnNm,
+        emrg_step_nm AS emrgStepNm,
+        dst_type AS dstType,
+        visible_yn AS visibleYn  
+    FROM disaster_text_history
+    WHERE id = #{id}  </select>
 
     <update id="updateDisasterVisibility">
         UPDATE disaster_text_history
@@ -106,7 +108,7 @@
 	        emrg_step_nm = #{emrgStepNm},
 	        dst_type = #{dstType},
 	        mdfcn_ymd = CURDATE()
-	    WHERE sn = #{sn}
+	    WHERE id = #{id} 
 	</update>
     
     

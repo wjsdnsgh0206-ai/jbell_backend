@@ -3,11 +3,11 @@
 
 <mapper namespace="jbell.disaster.mapper.DisasterMessageMapper">
 
-<select id="selectDisasterList" resultType="jbell.disaster.dto.PredictionInfoResponse">
-    SELECT
-        id AS id,        sn AS sn,        crt_dt AS crtDt,
-        msg_cn AS msgCn,
-        rcptn_rgn_nm AS rcptnRgnNm,
+	<select id="selectDisasterList" resultType="jbell.disaster.dto.PredictionInfoResponse">
+   		SELECT
+        	id AS id,        sn AS sn,        crt_dt AS crtDt,
+        	msg_cn AS msgCn,
+        	rcptn_rgn_nm AS rcptnRgnNm,
         emrg_step_nm AS emrgStepNm,
         dst_type AS dstType,
         visible_yn AS visibleYn
@@ -15,6 +15,11 @@
     WHERE visible_yn = 'Y'
     ORDER BY id DESC    LIMIT #{limit} OFFSET #{offset}
 </select>
+
+	<select id="selectMaxSn" resultType="long">
+        SELECT COALESCE(MAX(sn), 0) 
+        FROM disaster_text_history
+    </select>
 
     <insert id="insertDisaster" parameterType="jbell.disaster.dto.PredictionInfoResponse" 
             useGeneratedKeys="true" keyProperty="id">
@@ -27,7 +32,7 @@
 
     <insert id="insertDisasterMessages" parameterType="java.util.List">
         INSERT INTO disaster_text_history (
-            sn, crt_dt, msg_cn, rcptn_rgn_nm, emrg_step_nm, dst_type, reg_ymd, mdfcn_ymd, visible_yn
+            id, sn, crt_dt, msg_cn, rcptn_rgn_nm, emrg_step_nm, dst_type, reg_ymd, mdfcn_ymd, visible_yn
         ) VALUES
         <foreach collection="list" item="msg" separator=",">
             (#{msg.sn}, #{msg.crtDt}, #{msg.msgCn}, #{msg.rcptnRgnNm}, #{msg.emrgStepNm},
