@@ -18,8 +18,6 @@ public class WebConfig  implements WebMvcConfigurer{
 	@Value("${file.path}")
 	private String fileRealPath;
 	
-
-		
 	@Override
 	public void addInterceptors(InterceptorRegistry registry) {
 		
@@ -49,7 +47,6 @@ public class WebConfig  implements WebMvcConfigurer{
 		
 		WebMvcConfigurer.super.addResourceHandlers(registry);
 	}
-	
 
 	/**
 	 * 운영체제별 경로 설정
