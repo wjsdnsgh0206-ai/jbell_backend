@@ -1,6 +1,8 @@
 package jbell.safetypolicy.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
+
 import lombok.Data;
 
 /**
@@ -18,4 +20,5 @@ public class SafetyPolicyDTO {
     private String regType;     // A: 관리자 등록, S: 시스템 동기화
     private LocalDateTime createdAt;
     private String userId;      // 작성자
+    private List<Long> fileIds;
 }

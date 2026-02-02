@@ -28,7 +28,7 @@
 
     <select id="selectSafetyPolicyDetail" resultType="jbell.safetypolicy.dto.SafetyPolicyDTO">
         SELECT 
-            content_id, title, body, source, content_link, visible_yn, created_at, reg_type
+            content_id, title, body, source, content_link, visible_yn, created_at, reg_type, user_id
         FROM content
         WHERE content_id = #{contentId} AND content_type = 'SAFETY_POLICY'
     </select>
@@ -37,10 +37,10 @@
             useGeneratedKeys="true" keyProperty="contentId">
         INSERT INTO content (
             title, body, source, content_link, visible_yn, 
-            content_type, reg_type, user_id, ordering
+            content_type, reg_type, user_id, ordering, created_at
         ) VALUES (
             #{title}, #{body}, #{source}, #{contentLink}, #{visibleYn}, 
-            'SAFETY_POLICY', 'A', #{userId}, 0
+            'SAFETY_POLICY', 'A', #{userId}, 0, NOW()
         )
     </insert>
 
@@ -54,4 +54,23 @@
             last_update_date = NOW()
         WHERE content_id = #{contentId}
     </update>
+
+    <update id="updateVisibility">
+        UPDATE content
+        SET visible_yn = #{visibleYn},
+            last_update_date = NOW()
+        WHERE content_id IN
+        <foreach item="id" collection="ids" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <delete id="deleteSafetyPolicies">
+        DELETE FROM content
+        WHERE content_id IN
+        <foreach item="id" collection="ids" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
 </mapper>
