@@ -1,93 +1,79 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE mapper
-  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
- 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="jbell.notice.mapper.NoticeMapper">
 
-    <select id="selectNoticeList" resultType="jbell.notice.entity.Notice">
+    <select id="selectNoticeDTOList" resultType="jbell.notice.dto.NoticeDTO">
         SELECT
-            notice_id   AS id,
-	        title,
-	        content,
-	        created_by AS author,
-	        view_count AS views,
-	        is_public  AS isPublic,
-	        created_at AS createdAt,
-	        updated_at AS updatedAt
-        FROM notice
-        ORDER BY created_at DESC
+            c.content_id        AS id,
+            c.title,
+            c.body              AS content,
+            c.user_id           AS author,
+            c.visible_yn        AS isPublic,
+            c.created_at        AS createdAt,
+            c.last_update_date  AS updatedAt,
+            c.content_type      AS contentType,
+            (SELECT COUNT(*) FROM attachment WHERE content_id = c.content_id) as fileCount
+        from content c join code_item ci 
+		on c.content_type = ci.code_item_id 
+        <where>
+		 	ci.code_group_id = 'NOTICE'
+            <if test="contentType != null and contentType != ''">
+                AND c.content_type = #{contentType}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (c.title LIKE CONCAT('%', #{keyword}, '%') OR c.user_id LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+        </where>
+        ORDER BY c.created_at DESC
     </select>
 
-    <!-- 공지사항 목록 -->
-    <select id="selectNoticeDTOList"
-            resultType="jbell.notice.dto.NoticeDTO">
-        SELECT
-            notice_id   AS id,
-            title,
-            content,
-            created_by AS author,
-            view_count AS views,
-            is_public  AS isPublic,
-            created_at AS createdAt,
-            updated_at AS updatedAt
-        FROM notice
-        ORDER BY created_at DESC
-    </select>
-
-    <!-- 공지사항 상세 -->
-    <select id="selectNoticeDTOById"
-            parameterType="long"
-            resultType="jbell.notice.dto.NoticeDTO">
-        SELECT
-            notice_id   AS id,
-            title,
-            content,
-            created_by AS author,
-            view_count AS views,
-            is_public  AS isPublic,
-            created_at AS createdAt,
-            updated_at AS updatedAt
-        FROM notice
-        WHERE notice_id = #{id}
-    </select>
+   <select id="selectNoticeDTOById" resultType="jbell.notice.dto.NoticeDTO">
+	    SELECT
+	        c.content_id        AS id,
+	        c.title,
+	        c.body              AS content,
+	        c.user_id           AS author,
+	        c.visible_yn        AS isPublic,
+	        c.created_at        AS createdAt,
+	        c.last_update_date  AS updatedAt,
+	        c.content_type      AS contentType,
+	        0                   AS views 
+	    FROM content c 
+	    JOIN code_item ci ON c.content_type = ci.code_item_id
+	    WHERE ci.code_group_id = 'NOTICE'
+	      AND c.content_id = #{id}
+	</select>
     
-    <!-- 공지사항 등록 -->
-    <insert id="createNotice" parameterType="jbell.notice.entity.Notice">
-	    INSERT INTO notice (
-	        title,
-	        content,
-	        created_by,
-	        is_public,
-	        view_count,
-	        created_at,
-	        updated_at
-	    ) VALUES (
-	        #{title},
-	        #{content},
-	        #{author},
-	        #{isPublic},  
-	        0,
-	        NOW(),
-	        NOW()
-	    )
-	</insert>
-
-	<!-- 공지사항 수정 -->
-  	<update id="updateNotice" parameterType="jbell.notice.entity.Notice">
-	    UPDATE notice
-	    SET
-	      title = #{title},
-	      content = #{content},
-	      is_public = #{isPublic}, 
-	      updated_at = NOW(),
-	      created_by = #{author}
-	    WHERE notice_id = #{noticeId}
-	</update>
-	<!-- 공지사항 삭제 -->
-	<delete id="deleteNotice" parameterType="long">
-	    DELETE FROM notice WHERE notice_id = #{id}
-	</delete>
     
 
+  	<insert id="createNotice" parameterType="jbell.notice.entity.Notice" useGeneratedKeys="true" keyProperty="noticeId">
+        INSERT INTO content (
+            title, body, visible_yn, user_id, content_type, ordering, created_at, last_update_date
+        ) VALUES (
+            #{title}, #{content}, #{visibleYn}, 'admin', #{contentType}, #{ordering}, NOW(), NOW()
+        )
+    </insert>
+
+    <update id="updateNotice" parameterType="jbell.notice.entity.Notice">
+        UPDATE content
+        SET
+            title = #{title},
+            body = #{content},
+            visible_yn = #{visibleYn},
+            user_id = 'admin',
+            content_type = #{contentType},
+            last_update_date = NOW()
+        WHERE content_id = #{noticeId}
+    </update>
+
+    <select id="selectNoticeTypes" resultType="map">
+        SELECT code_item_id, code_item_name
+        from content c join code_item ci 
+		on c.content_type = ci.code_item_id 
+		where ci.code_group_id = 'NOTICE'
+    </select>
+
+    <delete id="deleteNotice" parameterType="long">
+        DELETE FROM content WHERE content_id = #{id}
+    </delete>
 </mapper>
