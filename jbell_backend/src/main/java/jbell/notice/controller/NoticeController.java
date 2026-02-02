@@ -86,12 +86,12 @@ public class NoticeController {
         }
     }
 
-    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PutMapping(value = "/{id}")
     public ResponseEntity<ApiResponse<?>> updateNotice(
             @PathVariable("id") Long id,
             @RequestPart("notice") Notice notice,
             @RequestPart(value = "files", required = false) List<MultipartFile> files,
-            @RequestPart(value = "deleteFileIds", required = false) List<Long> deleteFileIds
+            @RequestParam(value = "deleteFileIds", required = false) List<Long> deleteFileIds
     ) {
         try {
             notice.setNoticeId(id);
