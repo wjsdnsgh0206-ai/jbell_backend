@@ -65,13 +65,20 @@ public class DisasterAccidentController {
 	    List<DisasterAccidentDTO> list = disasterAccidentService.getEarthquakeList();
 	    return ApiResponse.success(list);
 	}
-	// 4. 태풍 정보 수집 (연도 기반)
+
+	// 4. 태풍 정보 수집 (연도 기반) - 관리자용
 	@PostMapping("/typhoon")
 	public Mono<ApiResponse<String>> fetchTyphoon(@RequestParam("year") String year) {
-		return disasterAccidentService.fetchAndSaveTyphoon(year)
-				.then(Mono.just(ApiResponse.success(year + "년 태풍 데이터 수집 완료")));
+	    return disasterAccidentService.fetchAndSaveTyphoon(year)
+	            .then(Mono.just(ApiResponse.success(year + "년 태풍 데이터 수집 완료")));
 	}
 
+	// 4-1. 태풍 정보 조회 (사용자 화면용)
+	@GetMapping("/typhoon-list")
+	public ApiResponse<List<DisasterAccidentDTO>> getTyphoonList() {
+	    List<DisasterAccidentDTO> list = disasterAccidentService.getTyphoonList();
+	    return ApiResponse.success(list);
+	}
 
 	// 5. 산사태 정보 수집 (관리자용)
 	@PostMapping("/landslide")
@@ -108,6 +115,22 @@ public class DisasterAccidentController {
 		return ApiResponse.success(list);
 	}
 	
+	// 7. 댐 및 하천 수위 정보 수집 (WAMIS API)
+    // [POST] 관리자: 특정 관측소의 데이터를 DB에 동기화
+    @PostMapping("/water-level/fetch")
+    public Mono<ApiResponse<String>> fetchWaterLevel(@RequestParam(value = "obscd", defaultValue = "4001605") String obscd) {
+        return disasterAccidentService.fetchAndSaveWaterLevel(obscd)
+                .then(Mono.just(ApiResponse.success("관측소(" + obscd + ") 수위 데이터 수집 완료")));
+    }
 
+    
+    
+    // 7-1. 댐 및 하천 수위 정보 조회 (사용자 화면용)
+    // [GET] DB에 저장된 최근 수위 데이터를 리스트로 반환
+    @GetMapping("/water-level-list")
+    public ApiResponse<List<DisasterAccidentDTO>> getWaterLevelList() {
+        List<DisasterAccidentDTO> list = disasterAccidentService.getWaterLevelList();
+        return ApiResponse.success(list);
+    }
 
 }
