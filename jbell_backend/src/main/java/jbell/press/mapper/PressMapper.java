@@ -19,18 +19,25 @@ public interface PressMapper {
     // 3. 사용자/관리자 공용: 목록 조회 (페이징 처리를 위해 limit, offset 사용)
     List<PressDTO> getPressList(@Param("offset") int offset, @Param("limit") int limit);
     
-    
     // 4. 사용자/관리자 공용: 상세 조회
     PressDTO getPressById(@Param("contentId") Long contentId);
 
     // 5. 관리자용: 선택 삭제 (다건 삭제를 위해 List로 받음)
-    int deletePress(@Param("ids") List<Long> ids);
+    int deletePress(@Param("list") List<Long> ids);
     
     List<Map<String, Object>> getFileList(Long contentId);
     
     int updateContent(PressDTO pressDto);
+    
+    // ★ 수정 포인트 1: 서비스에서 Map을 던지므로 파라미터 타입을 Map으로 변경
+    int deleteAttachmentsExcludeIds(Map<String, Object> params);
+    
+    // ★ 수정 포인트 2: 서비스에서 호출하는 deleteAttachmentsByContentId 메서드 추가
+    int deleteAttachmentsByContentId(@Param("contentId") Long contentId);
+
+    
 	// 특정 ID들만 제외하고 삭제하는 기능
-	int deleteAttachmentsExcludeIds(@Param("contentId") Long contentId, @Param("existingIds") List<Long> existingIds);
+	// int deleteAttachmentsExcludeIds(@Param("contentId") Long contentId, @Param("existingIds") List<Long> existingIds);
 	
 	// 다중 파일 저장
 	int insertAttachmentList(List<AttachmentVO> uploadFileList);
