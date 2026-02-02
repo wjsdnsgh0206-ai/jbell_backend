@@ -49,6 +49,8 @@ public class DisasterServiceImpl implements DisasterService {
         disasterMapper.updateDisasterVisibility(ids, visibleYn);
     }
 
+
+    
     // 일괄 삭제 
     public void deleteDisasters(List<Long> ids) {
         disasterMapper.deleteDisasterLogical(ids);

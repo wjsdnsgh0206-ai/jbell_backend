@@ -49,10 +49,9 @@ public class PredictionInfoResponse {
 
     @JsonProperty("REG_YMD")
     private String regYmd;
- 
-	
     
-
+    // 노출여부 설정
+    @JsonProperty("visible_yn")
 	private String visibleYn;
 
 	// 검색 페이지 이동 필드
