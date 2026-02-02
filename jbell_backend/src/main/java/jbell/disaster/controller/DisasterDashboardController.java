@@ -44,9 +44,6 @@ public class DisasterDashboardController {
 	private final PublicDataService publicDataService;
 	private final DisasterService disasterService;
 	
-	
-	
-	
 	// 1. 재난문자 리스트 (기존 유지)
 	@GetMapping("/disasterMessages")
 	public ResponseEntity<?> getDisasterMessages(PredictionInfoResponse searchParams) {
@@ -57,26 +54,28 @@ public class DisasterDashboardController {
 	    return ResponseEntity.ok(response);
 	}
 	
-	// 2. 재난문자 상세 조회
-    @GetMapping("/disasterMessages/{sn}")
-    public ResponseEntity<?> getDisasterDetail(@PathVariable("sn") Long sn) { // String이면 String으로
-        return ResponseEntity.ok(disasterService.getDisasterDetail(sn));
-    }
+	// 2. 재난문자 상세 조회 (sn 대신 id 권장)
+	@GetMapping("/disasterMessages/{id}")
+	public ResponseEntity<?> getDisasterDetail(@PathVariable("id") Long id) {
+	    return ResponseEntity.ok(disasterService.getDisasterDetail(id));
+	}
 
+	
+	
+	
     // 3. 재난문자 일괄 노출/비노출 설정
     @PostMapping("/disasterMessages/visibility")
     public ResponseEntity<String> updateVisibility(@RequestBody DisasterBatchRequest request) {
-    	disasterService.updateDisasterVisibility(request.getIds(), request.getVisibleYn());
+        disasterService.updateDisasterVisibility(request.getIds(), request.getVisibleYn());
         return ResponseEntity.ok("상태가 변경되었습니다.");
     }
 
     // 4. 재난문자 일괄 삭제 (논리 삭제)
     @PostMapping("/disasterMessages/delete")
-    public ResponseEntity<String> deleteDisasters(@RequestBody List<Long> sns) {
-    	disasterService.deleteDisasters(sns);
-        return ResponseEntity.ok("성공적으로 삭제(비노출 처리)되었습니다.");
+    public ResponseEntity<String> deleteDisasters(@RequestBody List<Long> ids) { 
+        disasterService.deleteDisasters(ids); 
+        return ResponseEntity.ok("성공적으로 삭제되었습니다.");
     }
-    
     
     // 5. 재난문자 수동 등록
     @PostMapping("/disasterMessages")
@@ -86,9 +85,9 @@ public class DisasterDashboardController {
     }
 
     // 6. 재난문자 수정
-    @PutMapping("/disasterMessages/{sn}")
-    public ResponseEntity<String> updateDisaster(@PathVariable("sn") Long sn, @RequestBody PredictionInfoResponse dto) {
-        dto.setSn(sn.intValue()); // 경로변수의 sn을 DTO에 세팅
+    @PutMapping("/disasterMessages/{id}")
+    public ResponseEntity<String> updateDisaster(@PathVariable("id") Long id, @RequestBody PredictionInfoResponse dto) {
+        dto.setId(id); // DTO에 id 세팅 (sn은 null일 수 있으므로 id가 기준이 됨)
         disasterService.modifyDisaster(dto);
         return ResponseEntity.ok("성공적으로 수정되었습니다.");
     }
@@ -249,28 +248,30 @@ public class DisasterDashboardController {
 	  		"rgnNm" : "전북"
 	  }
 	 */
+	// =============================================================
+	/**
+	 * 재난문자이력 api 요청 및 저장
+	 * 주소 /api/disaster/dashboard/disasterMessageInfo
+	 * * 이제 @RequestBody가 없으므로 Postman의 Params 탭에 값을 넣어 호출해!
+	 */
 	@PostMapping("/disasterMessageInfo")
-	public Mono<ApiResponse<SafetyDataResponse<PredictionInfoResponse>>> getDisasterMessageInfo(@Valid @RequestBody DisasterExternApiRequest request){
+	public Mono<ApiResponse<SafetyDataResponse<PredictionInfoResponse>>> getDisasterMessageInfo(@Valid DisasterExternApiRequest request) {	    // @RequestBody를 제거해서 이제 URL 파라미터(?pageNo=1&...)를 자동으로 인식함
+	    log.info("재난문자 수집 요청 파라미터: {}", request);
 	    
 	    return publicDataService.getAndSaveDisasterMessages(request) 
-	                            .map(ApiResponse::success)
-	                            .onErrorResume(e -> {
-	                                log.error("Error occurred: {}", e.getMessage());
-	                                return Mono.just(ApiResponse.error(
-	                                        ErrorCode.EXTERNAL_API_ERROR.code(),
-	                                        ErrorCode.EXTERNAL_API_ERROR.message()
-	                                ));
-	                            })
-	                            .defaultIfEmpty(ApiResponse.error(
-	                                    ErrorCode.NOT_FOUND.code(),
-	                                    ErrorCode.NOT_FOUND.message()
-	                            ));
+	            .map(ApiResponse::success)
+	            .onErrorResume(e -> {
+	                log.error("재난문자 수집 에러 발생: {}", e.getMessage());
+	                return Mono.just(ApiResponse.error(
+	                        ErrorCode.EXTERNAL_API_ERROR.code(),
+	                        ErrorCode.EXTERNAL_API_ERROR.message()
+	                ));
+	            })
+	            .defaultIfEmpty(ApiResponse.error(
+	                    ErrorCode.NOT_FOUND.code(),
+	                    ErrorCode.NOT_FOUND.message()
+	            ));
 	}
-
-	
-	
-	
-	
 	
 	
 	// =============================================================
@@ -284,39 +285,6 @@ public class DisasterDashboardController {
             "inqDt" : "20260128"
       }
      */
-//    @PostMapping("/weatherWarningInfo")
-//    public Mono<ApiResponse<SafetyDataResponse<PredictionInfoResponse>>> getWeatherWarningInfo(@Valid @RequestBody DisasterExternApiRequest request){
-//        
-//        // 서비스에서 7일치 데이터를 수집하고 저장한 뒤 결과를 리턴함
-//        return publicDataService.getAndSaveWeatherWarnings(request) 
-//                                .map(ApiResponse::success)
-//                                .onErrorResume(e -> {
-//                                    log.error("기상 특보 수집 에러: {}", e.getMessage());
-//                                    return Mono.just(ApiResponse.error(
-//                                            ErrorCode.EXTERNAL_API_ERROR.code(),
-//                                            ErrorCode.EXTERNAL_API_ERROR.message()
-//                                    ));
-//                                })
-//                                .defaultIfEmpty(ApiResponse.error(
-//                                        ErrorCode.NOT_FOUND.code(),
-//                                        ErrorCode.NOT_FOUND.message()
-//                                ));
-//    }
-
-    /**
-     * DB에 저장된 기상 특보 목록 가져오기
-     * 주소 /api/disaster/dashboard/weatherWarnings
-     */
-//    @GetMapping("/weatherWarnings")
-//    public ResponseEntity<List<PredictionInfoResponse>> getWeatherWarnings() {
-//        // 서비스에서 DB에 저장된 기상 특보 데이터를 가져옴
-//        List<PredictionInfoResponse> list = publicDataService.getSavedWeatherWarnings();
-//        return ResponseEntity.ok(list);
-//    }
-    
- // 1. [데이터 수집용 POST] 
-    // 기존의 fetchAndSaveWeatherWarning와 getWeatherWarningInfo(RequestBody 있는 버전)를 하나로 합침
-	// 1. 데이터 수집/저장용 (POST)
     @PostMapping("/weatherWarningInfo")
     public Mono<ApiResponse<SafetyDataResponse<PredictionInfoResponse>>> collectWeatherWarnings(@Valid @RequestBody DisasterExternApiRequest request){
         return publicDataService.getAndSaveWeatherWarnings(request) 

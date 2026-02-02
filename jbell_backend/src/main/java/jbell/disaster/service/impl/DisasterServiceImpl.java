@@ -32,19 +32,19 @@ public class DisasterServiceImpl implements DisasterService {
         return disasterMapper.selectDisasterTotalCount(searchParams);
     }
 
-    // 상세 조회
-    public PredictionInfoResponse getDisasterDetail(Long sn) {
-        return disasterMapper.selectDisasterDetail(sn);
+    // 상세 조회 
+    public PredictionInfoResponse getDisasterDetail(Long id) {
+        return disasterMapper.selectDisasterDetail(id); 
     }
 
-    // 일괄 노출 변경
-    public void updateDisasterVisibility(List<Long> sns, String visibleYn) {
-        disasterMapper.updateDisasterVisibility(sns, visibleYn);
+    // 일괄 노출 변경 
+    public void updateDisasterVisibility(List<Long> ids, String visibleYn) {
+        disasterMapper.updateDisasterVisibility(ids, visibleYn);
     }
 
-    // 일괄 삭제 (논리 삭제)
-    public void deleteDisasters(List<Long> sns) {
-        disasterMapper.deleteDisasterLogical(sns);
+    // 일괄 삭제 
+    public void deleteDisasters(List<Long> ids) {
+        disasterMapper.deleteDisasterLogical(ids);
     }
     
     @Transactional
@@ -60,7 +60,7 @@ public class DisasterServiceImpl implements DisasterService {
     
     // ===============================  기상 특보 ========================
     
- // 기상특보 리스트 (검색 조건 적용)
+    // 기상특보 리스트 (검색 조건 적용)
     @Override
     @Transactional(readOnly = true)
     public List<PredictionInfoResponse> getSavedWeatherWarnings(PredictionInfoResponse searchParams) {
