@@ -11,8 +11,20 @@ public class FileMetaData {
 	private String fileOriginalName;
 	private String fileNewName;
 	private String filePath;
+	private String fileType;
 	private Long fileSize;
-	
+
+	public AttachmentVO toAttachmentVO() {
+		
+		return AttachmentVO.builder()
+						   .contentId(fileIdx)
+						   .fileExt(fileType)
+						   .fileName(fileNewName)
+						   .fileRealName(fileOriginalName)
+						   .fileSize(fileSize)
+						   .filePath(filePath)
+						   .build();
+	}
 }
 
 
