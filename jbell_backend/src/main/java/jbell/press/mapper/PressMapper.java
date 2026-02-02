@@ -1,5 +1,6 @@
 package jbell.press.mapper;
 
+import jbell.common.domain.AttachmentVO;
 import jbell.press.dto.PressDTO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -30,5 +31,8 @@ public interface PressMapper {
     int updateContent(PressDTO pressDto);
 	// 특정 ID들만 제외하고 삭제하는 기능
 	int deleteAttachmentsExcludeIds(@Param("contentId") Long contentId, @Param("existingIds") List<Long> existingIds);
+	
+	// 다중 파일 저장
+	int insertAttachmentList(List<AttachmentVO> uploadFileList);
 	
 }
