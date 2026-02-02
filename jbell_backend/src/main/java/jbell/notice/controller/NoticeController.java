@@ -1,24 +1,26 @@
 package jbell.notice.controller;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jbell.common.response.ApiResponse;
 import jbell.notice.dto.NoticeDTO;
 import jbell.notice.entity.Notice;
+import jbell.notice.entity.NoticeFile;
+import jbell.notice.service.NoticeFileService;
 import jbell.notice.service.NoticeService;
-
-// 공지사항 Controller
 
 @RestController
 @RequestMapping("/api/notice")
@@ -27,47 +29,95 @@ import jbell.notice.service.NoticeService;
     "https://www.jbell.com"
 })
 public class NoticeController {
-	
-	private final NoticeService noticeService;
+    
+    private final NoticeService noticeService;
+    private final NoticeFileService noticeFileService;
 
-    public NoticeController(NoticeService noticeService) {
+    public NoticeController(NoticeService noticeService, NoticeFileService noticeFileService) {
         this.noticeService = noticeService;
+        this.noticeFileService = noticeFileService;
     }
-	
-	@GetMapping
-    public List<NoticeDTO> getNoticeDTOList() {
-        return noticeService.getNoticeDTOList();
+
+    // 1. 공지사항 목록 (검색 및 타입 필터링)
+    @GetMapping
+    public List<NoticeDTO> getNoticeDTOList(
+            @RequestParam(value = "keyword", required = false) String keyword,
+            @RequestParam(value = "contentType", required = false) String contentType) {
+        return noticeService.getNoticeDTOList(keyword, contentType);
     }
-	
-	
-    // 2. 공지사항 상세
+
+    // 2. 공지사항 분류(타입) 목록 조회 - 추가됨
+    @GetMapping("/types")
+    public List<Map<String, Object>> getNoticeTypes() {
+        return noticeService.getNoticeTypes();
+    }
+    
+    // 3. 공지사항 상세
     @GetMapping("/{id}")
-    public NoticeDTO getNoticeDetail(@PathVariable("id") Long id) {
-        return noticeService.getNoticeDetail(id);
+    public NoticeDTO getNoticeDetail(
+            @PathVariable("id") Long id,
+            HttpServletRequest request,
+            HttpServletResponse response) {
+        return noticeService.getNoticeDetailAndIncreaseViews(id, request, response);
     }
 
-    // 등록
-    @PostMapping
-    public ResponseEntity<ApiResponse<?>> createNotice(@RequestBody Notice notice) {
-        noticeService.createNotice(notice);
-        return ResponseEntity.ok(ApiResponse.success("등록 성공!"));
-    }
-
-    // 수정
-    @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<?>> updateNotice(
-        @PathVariable("id") Long id,
-        @RequestBody Notice notice
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<?>> createNotice(
+            @RequestPart("notice") Notice notice,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files
     ) {
-        notice.setNoticeId(id);
-        noticeService.updateNotice(notice);
-        return ResponseEntity.ok(ApiResponse.success("수정 성공!"));
+        try {
+            noticeService.createNotice(notice, files);
+            return ResponseEntity.ok(ApiResponse.success("등록 성공!"));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(ApiResponse.error(500, e.getMessage()));
+        }
     }
 
-    // 삭제
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<?>> updateNotice(
+            @PathVariable("id") Long id,
+            @RequestPart("notice") Notice notice,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files,
+            @RequestPart(value = "deleteFileIds", required = false) List<Long> deleteFileIds
+    ) {
+        try {
+            notice.setNoticeId(id);
+            noticeService.updateNotice(notice, files, deleteFileIds);
+            return ResponseEntity.ok(ApiResponse.success("수정 성공!"));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(ApiResponse.error(500, e.getMessage()));
+        }
+    }
+
+    // 6. 삭제
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<?>> deleteNotice(@PathVariable("id") Long id) {
         noticeService.deleteNotice(id);
         return ResponseEntity.ok(ApiResponse.success("삭제 성공!"));
+    }
+
+    // 7. 첨부파일 다운로드
+    @GetMapping("/file/download/{fileId}")
+    public ResponseEntity<Resource> downloadFile(@PathVariable("fileId") Long fileId) {
+        try {
+            NoticeFile noticeFile = noticeFileService.getFileById(fileId);
+            if (noticeFile == null) return ResponseEntity.notFound().build();
+            
+            Path filePath = Paths.get(noticeFile.getFilePath());
+            Resource resource = new FileSystemResource(filePath);
+            
+            if (!resource.exists()) return ResponseEntity.notFound().build();
+            
+            String encodedFileName = java.net.URLEncoder.encode(noticeFile.getFileRealName(), "UTF-8")
+                    .replaceAll("\\+", "%20");
+            
+            return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + encodedFileName + "\"")
+                .body(resource);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
     }
 }
