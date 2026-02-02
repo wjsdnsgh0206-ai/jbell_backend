@@ -81,6 +81,14 @@ public class DisasterAccidentServiceImpl implements DisasterAccident {
 			null, e -> log.error("❌ 태풍 스케줄링 실패: {}", e.getMessage()),
 			() -> log.info("✅ 태풍 동기화 완료")
 		);
+		
+		// autoSyncAllDisasterData 메서드 내부에 추가
+		// 예: 마령교(4001605) 수위 데이터 동기화
+		fetchAndSaveWaterLevel("4001605").subscribe(
+		    null, 
+		    e -> log.error("❌ 댐 수위 스케줄링 실패: {}", e.getMessage()),
+		    () -> log.info("✅ 댐 수위 동기화 완료")
+		);
 	}
 
 	// =================================================
@@ -243,6 +251,14 @@ public class DisasterAccidentServiceImpl implements DisasterAccident {
 							}).then();
 				}).onErrorResume(e -> Mono.empty());
 	}
+	
+	@Override
+	public List<DisasterAccidentDTO> getTyphoonList() {
+	    return mapper.selectTyphoonList();
+	}
+	
+	
+	
 
 	private Mono<Void> fetchAndSaveTyphoonTrack(String yy, String typ) {
 		return apihubDataWebClient.get()
@@ -348,4 +364,60 @@ public class DisasterAccidentServiceImpl implements DisasterAccident {
 	public List<DisasterAccidentDTO> getWeatherListByType(int type) {
 		return mapper.selectKmaWeatherByType(type);
 	}
+	
+	
+	
+	// =================================================
+    // 댐 & 하천 수위 수집
+    // =================================================
+	@Override
+	public Mono<Void> fetchAndSaveWaterLevel(String obscd) { // 여기서 obscd는 사실 안 써도 됨 (전체 basin=4를 가져오니까)
+	    return Mono.defer(() -> {
+	        return publicDataWebClient.get()
+	            .uri(uriBuilder -> uriBuilder
+	                .scheme("http")
+	                .host("www.wamis.go.kr")
+	                .port(8080)
+	                .path("/wamis/openapi/wkw/wl_dubwlobs") // 네가 말한 그 주소!
+	                .queryParam("basin", "4")              // 전북 지역 고정
+	                .build())
+	            .retrieve()
+	            .bodyToMono(JsonNode.class)
+	            .flatMapIterable(node -> {
+	                // WAMIS API는 보통 'list'라는 키 안에 배열이 들어있어
+	                JsonNode list = node.path("list");
+	                return list.isArray() ? (Iterable<JsonNode>) list::elements : java.util.Collections.emptyList();
+	            })
+	            .doOnNext(item -> {
+	                try {
+	                    // API 응답 필드명을 소문자로 정확히 매칭하자!
+	                    DisasterAccidentDTO dto = DisasterAccidentDTO.builder()
+	                        .obsCd(item.path("obscd").asText())    // 관측소 코드
+	                        .obsNm(item.path("obsnm").asText())    // 관측소 이름
+	                        .bbsnNm(item.path("bbsnnm").asText())  // 하천명
+	                        .mngOrg(item.path("mngorg").asText())  // 관리기관
+	                        // 만약 이 API에서 수위와 시간을 준다면 아래 필드를 쓸 거야
+	                        // (필드명이 다를 수 있으니 로그로 꼭 확인해봐!)
+	                        .obsTime(item.path("ymdhm").asText(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmm"))))
+	                        .waterLevel(item.path("wl").asDouble(0.0)) 
+	                        .build();
+
+	                    log.info("📥 [전북 수위] 파싱 중: {} ({})", dto.getObsNm(), dto.getObsCd());
+
+	                    // 데이터가 유효하면 DB에 저장 (Duplicate Key Update 로직 작동)
+	                    if (dto.getObsCd() != null && !dto.getObsCd().isEmpty()) {
+	                        mapper.insertWaterLevel(dto);
+	                    }
+	                } catch (Exception e) {
+	                    log.error("❌ 데이터 파싱/저장 중 에러: {}", e.getMessage());
+	                }
+	            }).then();
+	    });
+	}
+	@Override
+	public List<DisasterAccidentDTO> getWaterLevelList() {
+	    return mapper.selectWaterLevelList();
+	}
+    
+    
 }
