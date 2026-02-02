@@ -114,4 +114,12 @@
     DELETE FROM attachment WHERE content_id = #{contentId}
 </delete>
 
+<delete id="deletePress" parameterType="list">
+    DELETE FROM content 
+    WHERE content_id IN 
+    <foreach item="id" collection="list" open="(" separator="," close=")">
+        #{id}
+    </foreach>
+</delete>
+
 </mapper>
