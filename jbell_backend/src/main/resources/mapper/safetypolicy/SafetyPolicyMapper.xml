@@ -14,21 +14,27 @@
 
     <select id="selectSafetyPolicyList" resultType="jbell.safetypolicy.dto.SafetyPolicyDTO">
         SELECT 
-            content_id, title, source, created_at, visible_yn, reg_type
+             content_id
+            ,title
+            ,source
+            ,created_at
+            ,last_update_date
+            ,visible_yn
+            ,reg_type
         FROM content
-        WHERE 1=1
+        WHERE content_type = 'SAFETY_POLICY'
         <include refid="searchCriteria"/>
-        ORDER BY created_at DESC
+        ORDER BY last_update_date DESC
         LIMIT #{limit} OFFSET #{offset}
     </select>
-
+    
     <select id="countSafetyPolicyList" resultType="long">
         SELECT count(*) FROM content WHERE 1=1 <include refid="searchCriteria"/>
     </select>
 
     <select id="selectSafetyPolicyDetail" resultType="jbell.safetypolicy.dto.SafetyPolicyDTO">
         SELECT 
-            content_id, title, body, source, content_link, visible_yn, created_at, reg_type, user_id
+            content_id, title, body, source, content_link, visible_yn, created_at, last_update_date, reg_type, user_id
         FROM content
         WHERE content_id = #{contentId} AND content_type = 'SAFETY_POLICY'
     </select>
