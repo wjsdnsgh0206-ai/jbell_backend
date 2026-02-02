@@ -46,13 +46,14 @@ public class FileService {
             file.transferTo(dest);
 
             // 3. DB 저장 (AttachmentVO)
-            AttachmentVO attachment = new AttachmentVO();
-            attachment.setFileExt(ext);
-            attachment.setFilePath("/uploads/" + uuidName); // 웹 접근용 상대경로
-            attachment.setFileName(uuidName);
-            attachment.setFileRealName(originalName);
-            attachment.setFileSize(file.getSize());
-            attachment.setFileType(fileType); // "INLINE"
+            AttachmentVO attachment = AttachmentVO.builder()
+            									  .fileExt(ext)
+            									  .filePath("/uploads/" + uuidName)
+            									  .fileName(uuidName)
+            									  .fileRealName(originalName)
+            									  .fileSize(file.getSize())
+            									  .fileType(fileType)
+            									  .build();
 
             attachmentMapper.insertAttachment(attachment);
 

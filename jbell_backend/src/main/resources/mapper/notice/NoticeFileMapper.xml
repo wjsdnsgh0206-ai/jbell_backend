@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="jbell.notice.mapper.NoticeFileMapper">
+
+    <insert id="insertFile" parameterType="jbell.notice.dto.NoticeFileDTO" useGeneratedKeys="true" keyProperty="fileId">
+        INSERT INTO attachment (
+            file_ext, 
+            file_path, 
+            file_name, 
+            file_real_name, 
+            file_size,
+            content_id
+        ) VALUES (
+            #{fileExt},
+            #{filePath},
+            #{fileName},
+            #{fileRealName},
+            #{fileSize},
+            #{contentId}
+        )
+    </insert>
+
+    <select id="selectFilesByNoticeId" resultType="jbell.notice.dto.NoticeFileDTO">
+        SELECT 
+            file_id AS fileId,
+            file_ext AS fileExt,
+            file_path AS filePath,
+            file_name AS fileName,
+            file_real_name AS fileRealName,
+            file_size AS fileSize,
+            content_id AS contentId,
+            created_at AS createdAt
+        FROM attachment
+        WHERE content_id = #{contentId}
+        ORDER BY created_at ASC
+    </select>
+
+    <select id="selectFileById" resultType="jbell.notice.dto.NoticeFileDTO">
+        SELECT 
+            file_id AS fileId,
+            file_ext AS fileExt,
+            file_path AS filePath,
+            file_name AS fileName,
+            file_real_name AS fileRealName,
+            file_size AS fileSize,
+            content_id AS contentId,
+            created_at AS createdAt
+        FROM attachment
+        WHERE file_id = #{fileId}
+    </select>
+
+    <delete id="deleteFile">
+        DELETE FROM attachment WHERE file_id = #{fileId}
+    </delete>
+
+    <delete id="deleteFilesByNoticeId">
+        DELETE FROM attachment WHERE content_id = #{contentId}
+    </delete>
+
+    <select id="countFilesByNoticeId" resultType="int">
+        SELECT COUNT(*) FROM attachment WHERE content_id = #{contentId}
+    </select>
+
+</mapper>

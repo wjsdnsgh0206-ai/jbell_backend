@@ -1,5 +1,7 @@
 package jbell.disasterAccident.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,6 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+//@JsonInclude(JsonInclude.Include.NON_NULL)
 public class DisasterAccidentDTO {
 	// 산불 (forest_fire_information)
 	private Long fireId; // fire_id 매핑
@@ -72,4 +75,17 @@ public class DisasterAccidentDTO {
 	private String startTime; // 특보발효시각
 	private String endTime; // 특보종료시각
 	private int type;
+	
+	
+	
+	// 댐 & 하천 수위 (wkw_wl_hrdata)
+	// http://www.wamis.go.kr:8080/wamis/openapi/wkw/wl_hrdata?obscd=4001605&startdt=20251225
+    private String obsNm;       // 관측소명 (obsnm)
+    private String obsCd;       // 관측소코드 (obscd)
+    private String bbsnNm;      // 하천명 (bbsnnm)
+    private String mngOrg;      // 관리기관 (mngorg)
+    private Double waterLevel;  // 현재수위 (wl) - API 리스트에는 없지만 상세 데이터에 포함됨
+    private String obsTime;     // 관측시각 (ymdhm)
+    
+    
 }
