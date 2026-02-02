@@ -10,7 +10,12 @@ import jbell.disasterAccident.dto.DisasterAccidentDTO;
 public interface DisasterAccidentMapper {
 
 
+	// 태풍
 	int insertTyphoonInfo(DisasterAccidentDTO dto);
+	List<DisasterAccidentDTO> selectTyphoonList();
+	
+	
+	
 
 	int insertTyphoonTrack(DisasterAccidentDTO dto);
 
@@ -34,4 +39,10 @@ public interface DisasterAccidentMapper {
 	int insertEarthquake(DisasterAccidentDTO dto);
 	List<DisasterAccidentDTO> selectEarthquakeList();
 //	int insertEarthquakeBatch(List<DisasterAccidentDTO> earthquakeList);
+	
+	
+	// 댐 및 하천 수위
+    int insertWaterLevel(DisasterAccidentDTO dto);
+    List<DisasterAccidentDTO> selectWaterLevelList();
+    
 }

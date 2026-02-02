@@ -151,6 +151,33 @@
 		VALUES(typhoon_name_desc);
 	</insert>
 
+<select id="selectTyphoonList" resultType="jbell.disasterAccident.dto.DisasterAccidentDTO">
+    SELECT 
+        i.typhoon_year AS typhoonYear,
+        i.typhoon_no AS typhoonNo,
+        i.typhoon_name AS typhoonName,
+        i.typhoon_active_yn AS typhoonActiveYn,
+        t.typhoon_analysis_datetime AS typhoonAnalysisDatetime,
+        t.typhoon_lat AS typhoonLat,
+        t.typhoon_lon AS typhoonLon,
+        t.typhoon_location AS typhoonLocation,
+        t.typhoon_max_wind_speed AS typhoonMaxWindSpeed
+    FROM typhoon_info i
+    LEFT JOIN (
+        SELECT * FROM typhoon_track 
+        WHERE (typhoon_year, typhoon_no, typhoon_report_no) IN (
+            SELECT typhoon_year, typhoon_no, MAX(typhoon_report_no)
+            FROM typhoon_track
+            GROUP BY typhoon_year, typhoon_no
+        )
+    ) t ON i.typhoon_year = t.typhoon_year AND i.typhoon_no = t.typhoon_no
+    ORDER BY i.typhoon_year DESC, i.typhoon_no DESC
+</select>
+
+
+
+
+
 	<insert id="insertTyphoonTrack"
 		parameterType="jbell.disasterAccident.dto.DisasterAccidentDTO">
 		INSERT INTO typhoon_track (
@@ -256,4 +283,32 @@
 		WHERE type = #{type} ORDER BY tm_fc DESC, tm_seq
 		DESC
 	</select>
+	
+	
+	<insert id="insertWaterLevel" parameterType="jbell.disasterAccident.dto.DisasterAccidentDTO">
+        INSERT INTO water_level_info (
+            obs_cd, obs_nm, bbsn_nm, mng_org, obs_time, reg_dt
+        ) VALUES (
+            #{obsCd}, #{obsNm}, #{bbsnNm}, #{mngOrg}, #{obsTime}, CURRENT_TIMESTAMP
+        )
+        ON DUPLICATE KEY UPDATE
+            obs_nm = VALUES(obs_nm),
+            bbsn_nm = VALUES(bbsn_nm),
+            mng_org = VALUES(mng_org)
+    </insert>
+
+
+    <select id="selectWaterLevelList" resultType="jbell.disasterAccident.dto.DisasterAccidentDTO">
+    SELECT 
+        obs_cd AS obsCd,
+        obs_nm AS obsNm,
+        bbsn_nm AS bbsnNm,
+        mng_org AS mngOrg,
+        obs_time AS obsTime,
+        water_level AS waterLevel
+    FROM water_level_info
+    ORDER BY obs_time DESC
+</select>
+
+    
 </mapper>
