@@ -14,7 +14,7 @@ public interface NoticeFileMapper {
     void insertFile(NoticeFile file);
     
     // 게시글의 파일 목록 조회
-    List<NoticeFile> selectFilesByNoticeId(@Param("noticeId") Long noticeId);
+    List<NoticeFileDTO> selectFilesByNoticeId(@Param("contentId") Long contentId);
     
     // 파일 개별 삭제
     void deleteFile(@Param("fileId") Long fileId);
@@ -26,5 +26,5 @@ public interface NoticeFileMapper {
     int countFilesByNoticeId(@Param("noticeId") Long noticeId);
     
     // 파일 ID로 파일 정보 조회 (다운로드용)
-    NoticeFile selectFileById(@Param("fileId") Long fileId);
+    NoticeFileDTO selectFileById(@Param("fileId") Long fileId);
 }

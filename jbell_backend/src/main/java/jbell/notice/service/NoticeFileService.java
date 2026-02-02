@@ -1,6 +1,7 @@
 package jbell.notice.service;
 
 import java.io.File;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,6 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import jbell.notice.dto.NoticeFileDTO;
 import jbell.notice.entity.NoticeFile;
 import jbell.notice.mapper.NoticeFileMapper;
 import lombok.RequiredArgsConstructor;
@@ -77,7 +79,7 @@ public class NoticeFileService {
      */
     public void deleteFile(Long fileId) throws IOException {
         // 1. DB에서 파일 정보 조회
-        NoticeFile file = fileMapper.selectFileById(fileId);
+        NoticeFileDTO file = fileMapper.selectFileById(fileId);
         
         if (file != null) {
             // 2. 실제 파일 삭제
@@ -94,14 +96,15 @@ public class NoticeFileService {
     /**
      * 게시글의 모든 파일 조회
      */
-    public List<NoticeFile> getFilesByNoticeId(Long noticeId) {
-        return fileMapper.selectFilesByNoticeId(noticeId);
+    public List<NoticeFileDTO> getFilesByNoticeId(Long noticeId) {
+        List<NoticeFileDTO> files = fileMapper.selectFilesByNoticeId(noticeId);
+        return files != null ? files : new ArrayList<>();
     }
     
     /**
      * 파일 ID로 파일 조회
      */
-    public NoticeFile getFileById(Long fileId) {
+    public NoticeFileDTO getFileById(Long fileId) {
         return fileMapper.selectFileById(fileId);
     }
 }
