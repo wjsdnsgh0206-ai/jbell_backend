@@ -35,6 +35,7 @@ jobs:
     - run : touch ./jbell_backend/src/main/resources/application.properties
     - run : echo "${{ secrets.APP_PROPERTIES }}" > ./jbell_backend/src/main/resources/application.properties
     - run : cat ./jbell_backend/src/main/resources/application.properties
+    - run : ls -lh ./jbell_backend/src/main/resources/application.properties
 
     # Configure Gradle for optimal use in GitHub Actions, including caching of downloaded dependencies.
     # See: https://github.com/gradle/actions/blob/main/setup-gradle/README.md
