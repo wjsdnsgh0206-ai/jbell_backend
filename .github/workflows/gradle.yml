@@ -51,7 +51,7 @@ jobs:
     - name: Build with Gradle # Gradle 빌드 실행
       run: | # 실패 즉시 중단
           set -e
-          ./gradlew clean bootJar -x test
+          gradlew clean bootJar -x test
       working-directory: ./jbell_backend
     
     - name: Check built JAR file
