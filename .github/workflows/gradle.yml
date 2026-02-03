@@ -44,9 +44,10 @@ jobs:
     # Configure Gradle for optimal use in GitHub Actions, including caching of downloaded dependencies.
     # See: https://github.com/gradle/actions/blob/main/setup-gradle/README.md
     - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v3 # v3.0.0
+      uses: gradle/actions/setup-gradle@v4 # v4.0.0
       with:
           cache-read-only: false # 캐시 읽기 및 쓰기 활성화
+          cache-disabled: true
 
     # working-directory 설정은 현재 팀프로젝트의 디렉토리가 존재하지 않을 시 생략가능
     - name: Grant Execute Permission For Gradlew # Gradlew 실행 권한 부여
