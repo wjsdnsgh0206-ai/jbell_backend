@@ -52,6 +52,7 @@
     </insert>
 
     <update id="updateSafetyPolicy">
+    	/* 주요안전정책 수정 */
         UPDATE content
         SET title = #{title},
             body = #{body},
