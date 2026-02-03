@@ -8,6 +8,8 @@
 name: Java CI with Gradle
 
 on:
+  push:
+    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
     types: [closed] #PR closed 되었을때
@@ -37,7 +39,7 @@ jobs:
     # Configure Gradle for optimal use in GitHub Actions, including caching of downloaded dependencies.
     # See: https://github.com/gradle/actions/blob/main/setup-gradle/README.md
     - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v4 # v4.0.0
+      uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
       with:
           cache-read-only: false # 캐시 읽기 및 쓰기 활성화
 
@@ -49,7 +51,7 @@ jobs:
     - name: Build with Gradle # Gradle 빌드 실행
       run: | # 실패 즉시 중단
           set -e
-          gradlew clean bootJar -x test
+          ./gradlew clean bootJar -x test
       working-directory: ./jbell_backend
     
     - name: Check built JAR file
