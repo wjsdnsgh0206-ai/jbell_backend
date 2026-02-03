@@ -16,6 +16,7 @@
         SELECT 
              content_id
             ,title
+            ,body
             ,source
             ,created_at
             ,last_update_date
