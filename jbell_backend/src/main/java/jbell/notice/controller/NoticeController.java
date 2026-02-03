@@ -1,5 +1,8 @@
 package jbell.notice.controller;
 
+import java.io.File;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -7,6 +10,7 @@ import java.util.Map;
 
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +21,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jbell.common.response.ApiResponse;
 import jbell.notice.dto.NoticeDTO;
+import jbell.notice.dto.NoticeFileDTO;
 import jbell.notice.entity.Notice;
 import jbell.notice.entity.NoticeFile;
 import jbell.notice.service.NoticeFileService;
@@ -54,12 +59,19 @@ public class NoticeController {
     
     // 3. 공지사항 상세
     @GetMapping("/{id}")
-    public NoticeDTO getNoticeDetail(
+    public ResponseEntity<?> getNoticeDetail(
             @PathVariable("id") Long id,
             HttpServletRequest request,
             HttpServletResponse response) {
-        return noticeService.getNoticeDetailAndIncreaseViews(id, request, response);
+        NoticeDTO notice =
+            noticeService.getNoticeDetailAndIncreaseViews(id, request, response);
+        if (notice == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(notice);
     }
+
+    
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<?>> createNotice(
@@ -74,12 +86,12 @@ public class NoticeController {
         }
     }
 
-    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PutMapping(value = "/{id}")
     public ResponseEntity<ApiResponse<?>> updateNotice(
             @PathVariable("id") Long id,
             @RequestPart("notice") Notice notice,
             @RequestPart(value = "files", required = false) List<MultipartFile> files,
-            @RequestPart(value = "deleteFileIds", required = false) List<Long> deleteFileIds
+            @RequestParam(value = "deleteFileIds", required = false) List<Long> deleteFileIds
     ) {
         try {
             notice.setNoticeId(id);
@@ -90,6 +102,8 @@ public class NoticeController {
         }
     }
 
+    
+    
     // 6. 삭제
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<?>> deleteNotice(@PathVariable("id") Long id) {
@@ -97,27 +111,24 @@ public class NoticeController {
         return ResponseEntity.ok(ApiResponse.success("삭제 성공!"));
     }
 
+    
+    
     // 7. 첨부파일 다운로드
     @GetMapping("/file/download/{fileId}")
-    public ResponseEntity<Resource> downloadFile(@PathVariable("fileId") Long fileId) {
-        try {
-            NoticeFile noticeFile = noticeFileService.getFileById(fileId);
-            if (noticeFile == null) return ResponseEntity.notFound().build();
-            
-            Path filePath = Paths.get(noticeFile.getFilePath());
-            Resource resource = new FileSystemResource(filePath);
-            
-            if (!resource.exists()) return ResponseEntity.notFound().build();
-            
-            String encodedFileName = java.net.URLEncoder.encode(noticeFile.getFileRealName(), "UTF-8")
-                    .replaceAll("\\+", "%20");
-            
-            return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + encodedFileName + "\"")
-                .body(resource);
-        } catch (Exception e) {
-            return ResponseEntity.status(500).build();
+    public ResponseEntity<Resource> downloadFile(
+        @PathVariable("fileId") Long fileId
+    ) throws Exception {
+        NoticeFileDTO file = noticeFileService.getFileById(fileId);
+        Path path = Paths.get(file.getFilePath());
+        Resource resource = new UrlResource(path.toUri());
+        if (!resource.exists()) {
+            return ResponseEntity.notFound().build();
         }
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION,
+                "attachment; filename=\"" +
+                URLEncoder.encode(file.getFileRealName(), StandardCharsets.UTF_8) +
+                "\"")
+            .body(resource);
     }
 }

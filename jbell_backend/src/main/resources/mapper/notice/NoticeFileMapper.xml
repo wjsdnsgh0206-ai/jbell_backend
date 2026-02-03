@@ -33,7 +33,7 @@
             content_id AS contentId,
             created_at AS createdAt
         FROM attachment
-        WHERE content_id = #{noticeId}
+        WHERE content_id = #{contentId}
         ORDER BY created_at ASC
     </select>
 
@@ -56,11 +56,11 @@
     </delete>
 
     <delete id="deleteFilesByNoticeId">
-        DELETE FROM attachment WHERE content_id = #{noticeId}
+        DELETE FROM attachment WHERE content_id = #{contentId}
     </delete>
 
     <select id="countFilesByNoticeId" resultType="int">
-        SELECT COUNT(*) FROM attachment WHERE content_id = #{noticeId}
+        SELECT COUNT(*) FROM attachment WHERE content_id = #{contentId}
     </select>
 
 </mapper>

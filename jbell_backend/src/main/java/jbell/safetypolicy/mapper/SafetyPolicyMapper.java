@@ -26,4 +26,10 @@ public interface SafetyPolicyMapper {
     int insertSafetyPolicy(SafetyPolicyDTO safetyPolicyDTO);
 
     int updateSafetyPolicy(SafetyPolicyDTO safetyPolicyDTO);
+    
+    // 수정 (노출여부 일괄)
+    int updateVisibility(@Param("ids") List<Long> ids, @Param("visibleYn") String visibleYn);
+
+    // 삭제 (일괄)
+    int deleteSafetyPolicies(@Param("ids") List<Long> ids);
 }
