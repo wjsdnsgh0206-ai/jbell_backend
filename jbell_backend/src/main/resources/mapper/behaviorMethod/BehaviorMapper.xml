@@ -127,6 +127,7 @@
         SET
              title = #{title}
             ,body = #{body}
+            ,content_link = #{contentLink}
             ,visible_yn = #{visibleYn}
             ,last_update_date = NOW()
         WHERE content_id = #{contentId}
