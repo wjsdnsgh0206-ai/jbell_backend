@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="jbell.safetypolicy.mapper.SafetyPolicyMapper">
+
+    <sql id="searchCriteria">
+        AND content_type = 'SAFETY_POLICY'
+        <if test="keyword != null and keyword != ''">
+            AND (title LIKE CONCAT('%', #{keyword}, '%') OR source LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="visibleYn != null and visibleYn != ''">
+            AND visible_yn = #{visibleYn}
+        </if>
+    </sql>
+
+    <select id="selectSafetyPolicyList" resultType="jbell.safetypolicy.dto.SafetyPolicyDTO">
+        SELECT 
+             content_id
+            ,title
+            ,body
+            ,source
+            ,created_at
+            ,last_update_date
+            ,visible_yn
+            ,reg_type
+        FROM content
+        WHERE content_type = 'SAFETY_POLICY'
+        <include refid="searchCriteria"/>
+        ORDER BY last_update_date DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+    
+    <select id="countSafetyPolicyList" resultType="long">
+        SELECT count(*) FROM content WHERE 1=1 <include refid="searchCriteria"/>
+    </select>
+
+    <select id="selectSafetyPolicyDetail" resultType="jbell.safetypolicy.dto.SafetyPolicyDTO">
+        SELECT 
+            content_id, title, body, source, content_link, visible_yn, created_at, last_update_date, reg_type, user_id
+        FROM content
+        WHERE content_id = #{contentId} AND content_type = 'SAFETY_POLICY'
+    </select>
+
+    <insert id="insertSafetyPolicy" parameterType="jbell.safetypolicy.dto.SafetyPolicyDTO" 
+            useGeneratedKeys="true" keyProperty="contentId">
+        INSERT INTO content (
+            title, body, source, content_link, visible_yn, 
+            content_type, reg_type, user_id, ordering, created_at
+        ) VALUES (
+            #{title}, #{body}, #{source}, #{contentLink}, #{visibleYn}, 
+            'SAFETY_POLICY', 'A', #{userId}, 0, NOW()
+        )
+    </insert>
+
+    <update id="updateSafetyPolicy">
+    	/* 주요안전정책 수정 */
+        UPDATE content
+        SET title = #{title},
+            body = #{body},
+            source = #{source},
+            content_link = #{contentLink},
+            visible_yn = #{visibleYn},
+            last_update_date = NOW()
+        WHERE content_id = #{contentId}
+    </update>
+
+    <update id="updateVisibility">
+        UPDATE content
+        SET visible_yn = #{visibleYn},
+            last_update_date = NOW()
+        WHERE content_id IN
+        <foreach item="id" collection="ids" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <delete id="deleteSafetyPolicies">
+        DELETE FROM content
+        WHERE content_id IN
+        <foreach item="id" collection="ids" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+</mapper>

@@ -1,6 +1,7 @@
 package jbell.notice.mapper;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -14,7 +15,7 @@ public interface NoticeMapper {
 	List<Notice> selectNoticeList();
 
 	// 목록
-    List<NoticeDTO> selectNoticeDTOList();
+	List<NoticeDTO> selectNoticeDTOList(@Param("keyword") String keyword, @Param("contentType") String contentType);
 
     // 상세
     NoticeDTO selectNoticeDTOById(Long id);
@@ -22,5 +23,10 @@ public interface NoticeMapper {
     void createNotice(Notice notice); // 등록
     void updateNotice(Notice notice); // 수정
     void deleteNotice(Long id);       // 삭제
+    void increaseViews(Long id);	  // 조회수
+    
+    // 공지사항 타입 목록 조회 (추가된 메서드)
+    List<Map<String, Object>> selectNoticeTypes();
+
 }
 

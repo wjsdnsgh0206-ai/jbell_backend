@@ -15,6 +15,7 @@
         <result property="visibleYn" column="visible_yn" />
         <result property="lastSyncYn" column="last_sync_yn" />
         <result property="regType" column="reg_type" />
+        <result property="createdAt" column="created_at" />
     </resultMap>
 
     <update id="updateOldSyncDataToN" parameterType="String">
@@ -126,9 +127,50 @@
         SET
              title = #{title}
             ,body = #{body}
+            ,content_link = #{contentLink}
             ,visible_yn = #{visibleYn}
             ,last_update_date = NOW()
         WHERE content_id = #{contentId}
+    </update>
+    
+    <insert id="insertManualBehaviorMethod" parameterType="jbell.behaviorMethod.domain.BehaviorMethodContentVO" useGeneratedKeys="true" keyProperty="contentId">
+	    INSERT INTO content (
+	         title
+	        ,body
+	        ,content_type
+	        ,visible_yn
+	        ,ordering
+	        ,content_link
+	        ,created_at
+	        ,last_sync_yn
+	        ,reg_type
+	    ) VALUES (
+	         #{title}
+	        ,#{body}
+	        ,#{contentType}
+	        ,#{visibleYn}
+	        ,IFNULL(#{ordering}, 1)
+	        ,#{contentLink}
+	        ,NOW()
+	        ,'N'  ,'MANUAL'
+	    )
+	</insert>
+	
+	<delete id="deleteBehaviorMethods">
+	    DELETE FROM content
+	    WHERE content_id IN
+	    <foreach collection="ids" item="id" open="(" separator="," close=")">
+	        #{id}
+	    </foreach>
+	</delete>
+	
+	<update id="updateVisibility">
+        UPDATE content
+        SET visible_yn = #{visibleYn}
+        WHERE content_id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
     </update>
 
 </mapper>

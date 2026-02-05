@@ -17,5 +17,6 @@ public class BehaviorMethodContentVO {
     private String visibleYn;       // visible_yn (노출 여부)
     private String lastSyncYn;      // 최신 동기화 여부 (Y/N)
     private String regType;         // 등록 방식 (API / MANUAL)
+    private String createdAt;       // 등록 일시
     private List<Long> fileIds; // 프론트에서 보내주는 업로드된 파일 ID 목록
 }

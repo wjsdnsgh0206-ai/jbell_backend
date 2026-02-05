@@ -75,29 +75,44 @@ public class PressServiceImpl implements PressService {
     @Transactional
     public void deletePress(List<Long> ids) {
         if (ids != null && !ids.isEmpty()) {
+            // 1. 자식 테이블(attachment) 데이터부터 먼저 삭제
+            // 외래키 제약 조건으로 인해 부모를 먼저 지우면 에러가 발생할 수 있습니다.
+            for (Long id : ids) {
+                pressMapper.deleteAttachmentsByContentId(id);
+            }
+            // 2. 부모 테이블(content) 데이터 삭제
             pressMapper.deletePress(ids);
         }
     }
-    
+
     @Override
     @Transactional
     public void updatePress(PressDTO dto, List<MultipartFile> files) throws Exception {
-        // 1. 게시글 텍스트 정보 업데이트
+        // 1. 게시글 본문 텍스트 정보 업데이트
         pressMapper.updateContent(dto);
 
-        // 2. 파일 정리: 유지 목록(existingFileIds)에 없는 파일 삭제
-        // 만약 existingFileIds가 비어있다면 해당 게시글의 모든 파일 삭제
-        pressMapper.deleteAttachmentsExcludeIds(dto.getContentId(), dto.getExistingFileIds());
-        if(files != null && !files.isEmpty()) {        	
-        	List<FileMetaData> fileList = filesUtils.uploadFiles(files);
-        	fileList.forEach(f -> f.setFileIdx(dto.getContentId()));
-        	var uploadFileList = fileList.stream()
-					        		     .map(FileMetaData :: toAttachmentVO)
-					        			 .collect(Collectors.toList());
-        	pressMapper.insertAttachmentList(uploadFileList);
-        }
+        // 2. 파일 정리: 기존 파일 중 유지할 목록(existingFileIds) 제외하고 삭제
+        // MyBatis XML에서 #{contentId}와 #{existingIds}를 인식할 수 있게 Map으로 전달합니다.
+        Map<String, Object> params = new HashMap<>();
+        params.put("contentId", dto.getContentId());
+        params.put("existingIds", dto.getExistingFileIds());
         
+        pressMapper.deleteAttachmentsExcludeIds(params);
+
+        // 3. 신규 추가된 파일 업로드 및 DB 등록
+        if (files != null && !files.isEmpty()) {
+            List<FileMetaData> fileList = filesUtils.uploadFiles(files);
+            fileList.forEach(f -> f.setFileIdx(dto.getContentId()));
+            
+            var uploadFileList = fileList.stream()
+                                         .map(FileMetaData::toAttachmentVO)
+                                         .collect(Collectors.toList());
+            
+            pressMapper.insertAttachmentList(uploadFileList);
+        }
     }
+    
+    
     
     
 }

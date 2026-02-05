@@ -3,6 +3,7 @@ package jbell.behaviorMethod.mapper;
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+
 import jbell.behaviorMethod.domain.BehaviorMethodContentVO;
 import jbell.behaviorMethod.dto.BehaviorMethod;
 
@@ -38,4 +39,21 @@ public interface BehaviorMethodMapper {
 
     // 단건 수정
     int updateBehaviorMethod(BehaviorMethodContentVO updateData);
+    
+    // 단건 등록 (관리자용)
+    int insertManualBehaviorMethod(BehaviorMethodContentVO vo);
+    
+    /**
+     * 행동요령 일괄 삭제
+     * @param ids 삭제할 ID 리스트
+     * @return 삭제된 행의 수
+     */
+    int deleteBehaviorMethods(@Param("ids") List<Long> ids);
+    
+    /**
+     * 노출 상태 일괄 업데이트
+     * @param ids ID 리스트
+     * @param visibleYn 상태값
+     */
+    int updateVisibility(@Param("ids") List<Long> ids, @Param("visibleYn") String visibleYn);
 }
