@@ -4,6 +4,7 @@ import jbell.disaster.dto.PredictionInfoResponse;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import java.util.List;
+import java.util.Map;
 
 @Mapper
 public interface DisasterMapper {
@@ -13,8 +14,8 @@ public interface DisasterMapper {
     int selectDisasterTotalCount(PredictionInfoResponse searchParams);
 
     PredictionInfoResponse selectDisasterDetail(Long id);
-
-    int updateDisasterVisibility(@Param("list") List<Long> ids, @Param("visibleYn") String visibleYn);
+    
+    int updateDisasterVisibility(@Param("visibleYn") String visibleYn, @Param("ids") List<Long> ids);
     int deleteDisasterLogical(@Param("list") List<Long> ids); 
 
     // 재난 문자 등록/수정
@@ -37,6 +38,13 @@ public interface DisasterMapper {
     PredictionInfoResponse selectWeatherDetail(@Param("prsntnSn") String key);
     int insertWeather(PredictionInfoResponse weather);
     int updateWeather(PredictionInfoResponse weather);
-    int updateWeatherVisibility(@Param("list") List<String> keys, @Param("visibleYn") String visibleYn);
+//    int updateWeatherVisibility(@Param("list") List<String> keys, @Param("visibleYn") String visibleYn);
+    
+    int updateWeatherVisibility(
+    	    @Param("ids") List<String> ids,
+    	    @Param("visibleYn") String visibleYn
+    	);
+    
+    
     int deleteWeatherLogical(@Param("list") List<String> keys);
 }

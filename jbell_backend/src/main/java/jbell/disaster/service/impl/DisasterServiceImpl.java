@@ -1,6 +1,8 @@
 package jbell.disaster.service.impl;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,11 +46,26 @@ public class DisasterServiceImpl implements DisasterService {
         return disasterMapper.selectDisasterDetail(id); 
     }
 
-    // 일괄 노출 변경 
-    public void updateDisasterVisibility(List<Long> ids, String visibleYn) {
-        disasterMapper.updateDisasterVisibility(ids, visibleYn);
-    }
 
+ // 재난 문자 노출 변경
+//    @Override
+//    public void updateDisasterVisibility(List<Long> ids, String visibleYn) {
+//        // 매퍼 인터페이스에 @Param이 붙어있으므로 Map 생성 없이 바로 전달!
+//        disasterMapper.updateDisasterVisibility(ids, visibleYn);
+//    }
+
+    @Override
+    public boolean updateDisasterVisibility(String visibleYn, List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            throw new IllegalArgumentException("변경할 대상이 없습니다.");
+        }
+
+        int updatedCount =
+            disasterMapper.updateDisasterVisibility(visibleYn, ids);
+
+        return updatedCount > 0;
+    }
+    
 
     
     // 일괄 삭제 
@@ -105,8 +122,10 @@ public class DisasterServiceImpl implements DisasterService {
     }
 
     @Transactional
-    public void updateWeatherVisibility(List<String> keys, String visibleYn) {
-        disasterMapper.updateWeatherVisibility(keys, visibleYn);
+    public boolean updateWeatherVisibility(List<String> ids, String visibleYn) {
+        disasterMapper.updateWeatherVisibility(ids, visibleYn);
+        boolean result = true;
+        return result;
     }
 
     @Transactional

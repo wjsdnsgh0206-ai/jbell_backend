@@ -6,6 +6,10 @@ import jbell.disaster.dto.PredictionInfoResponse;
 
 @Mapper
 public interface WeatherWarningMapper {
+	
+	// 최신 발표 시각 조회 추가
+    String selectLatestPrsntnTm();
+    
     
     /**
      * 기상 특보 데이터 일괄 저장 (중복 시 업데이트)

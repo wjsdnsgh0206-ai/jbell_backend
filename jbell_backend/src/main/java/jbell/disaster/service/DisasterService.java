@@ -2,9 +2,15 @@ package jbell.disaster.service;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
 import jbell.disaster.dto.PredictionInfoResponse;
+import jbell.disaster.mapper.DisasterMapper;
 
 public interface  DisasterService {
+//	
+//	@Autowired
+//    private DisasterMapper disasterMapper;
 
     // 리스트 조회
 	public List<PredictionInfoResponse> getSavedDisasterMessages(PredictionInfoResponse searchParams);
@@ -16,15 +22,24 @@ public interface  DisasterService {
     // 상세 조회
     public PredictionInfoResponse getDisasterDetail(Long id);
     
-    // 일괄 노출 변경
-    public void updateDisasterVisibility(List<Long> sns, String visibleYn);
-
-    // 일괄 삭제 (논리 삭제)
-    public void deleteDisasters(List<Long> sns);
     
-    public void saveDisaster(PredictionInfoResponse dto);
+    // 재난 문자 일괄 노출 변경
+//    void updateDisasterVisibility(List<Long> ids, String visibleYn);
+//    public boolean updateVisibility(String visibleYn, List<Long> ids) {
+//        return disasterMapper.updateDisasterVisibility(visibleYn, ids) > 0;
+//    }
 
-    public void modifyDisaster(PredictionInfoResponse dto);
+    public boolean updateDisasterVisibility(String visibleYn, List<Long> ids);
+
+
+    // 일괄 삭제 (sns -> ids로 명칭 변경)
+    void deleteDisasters(List<Long> ids);
+    
+    void saveDisaster(PredictionInfoResponse dto);
+    void modifyDisaster(PredictionInfoResponse dto);
+    
+    
+    
     
     
     // ===================== 기상 특보 =======================
@@ -43,8 +58,12 @@ public interface  DisasterService {
     public void saveWeather(PredictionInfoResponse dto);
 
     public void modifyWeather(PredictionInfoResponse dto);
+    
+ // 기상특보 노출여부 일괄 변경
+    public boolean updateWeatherVisibility( List<String> ids, String visibleYn);
 
-    public void updateWeatherVisibility(List<String> keys, String visibleYn);
+//    public void updateWeatherVisibility(List<String> keys, String visibleYn);
+    
 
     public void deleteWeatherWarnings(List<String> keys);
     

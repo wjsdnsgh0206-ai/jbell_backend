@@ -44,6 +44,7 @@ public class DisasterDashboardController {
 	private final PublicDataService publicDataService;
 	private final DisasterService disasterService;
 	
+	// =============== 재난 문자 ===============
 	// 1. 재난문자 리스트 (기존 유지)
 	@GetMapping("/disasterMessages")
 	public ResponseEntity<?> getDisasterMessages(PredictionInfoResponse searchParams) {
@@ -54,28 +55,33 @@ public class DisasterDashboardController {
 	    return ResponseEntity.ok(response);
 	}
 	
-	// 2. 재난문자 상세 조회 (sn 대신 id 권장)
+	// 2. 재난문자 상세 조회
 	@GetMapping("/disasterMessages/{id}")
 	public ResponseEntity<?> getDisasterDetail(@PathVariable("id") Long id) {
 	    return ResponseEntity.ok(disasterService.getDisasterDetail(id));
 	}
 
-	
-	
-	
-    // 3. 재난문자 일괄 노출/비노출 설정
-    @PostMapping("/disasterMessages/visibility")
-    public ResponseEntity<String> updateVisibility(@RequestBody DisasterBatchRequest request) {
-        disasterService.updateDisasterVisibility(request.getIds(), request.getVisibleYn());
-        return ResponseEntity.ok("상태가 변경되었습니다.");
-    }
 
+//    
+//    // 3. 일괄 노출/비노출 설정 (id 리스트 기준)
+//    @PostMapping("/disasterMessages/visibility")
+//    public ResponseEntity<String> updateVisibility(@RequestBody DisasterBatchRequest request) {
+//        disasterService.updateDisasterVisibility(request.getIds(), request.getVisibleYn());
+//        return ResponseEntity.ok("상태가 변경되었습니다.");
+//    }
+//    
+    
+    
     // 4. 재난문자 일괄 삭제 (논리 삭제)
     @PostMapping("/disasterMessages/delete")
     public ResponseEntity<String> deleteDisasters(@RequestBody List<Long> ids) { 
         disasterService.deleteDisasters(ids); 
         return ResponseEntity.ok("성공적으로 삭제되었습니다.");
     }
+    
+   
+    
+    
     
     // 5. 재난문자 수동 등록
     @PostMapping("/disasterMessages")
@@ -93,31 +99,73 @@ public class DisasterDashboardController {
     }
     
     
-    // ========== 기상특보 ========
-    // 기상특보 리스트 조회 (검색 파라미터 추가)
-    @GetMapping("/weatherWarnings")
-    public ResponseEntity<Map<String, Object>> getSavedWeatherWarnings(
-            @ModelAttribute PredictionInfoResponse searchParams) {
-        
-        Map<String, Object> result = new HashMap<>();
-        
-        // 리스트 데이터
-        List<PredictionInfoResponse> list = disasterService.getSavedWeatherWarnings(searchParams);
-        // 검색 조건에 따른 총 개수
-        int totalCount = disasterService.getWeatherTotalCount(searchParams);
-        
-        result.put("list", list);
-        result.put("totalCount", totalCount);
-        
+    // 재난문자 노출여부 설정
+    @PostMapping("/updateMessageVisibility")
+    public ResponseEntity<?> updateMessageVisibility(
+            @RequestBody DisasterBatchRequest request) {
+
+        log.info("노출 변경 요청 ids={}, visibleYn={}",
+                 request.getIds(), request.getVisibleYn());
+
+        boolean result =
+            disasterService.updateDisasterVisibility(
+                request.getVisibleYn(),
+                request.getIds()
+            );
+
         return ResponseEntity.ok(result);
     }
-    
+
+ // =============== 기상 특보 ===============
+ // 기상특보 리스트 조회 (검색 파라미터 적용)
+ @GetMapping("/weatherWarnings")
+ public ResponseEntity<Map<String, Object>> getSavedWeatherWarnings(
+         @ModelAttribute PredictionInfoResponse searchParams) {
+     
+     // ⭐ 프론트에서 limit이나 page를 안 보냈을 때를 위한 방어 코드
+     if (searchParams.getLimit() <= 0) {
+         searchParams.setLimit(100); // 기본 100개씩 조회
+     }
+     if (searchParams.getPage() <= 0) {
+         searchParams.setPage(1);
+     }
+     
+     Map<String, Object> result = new HashMap<>();
+     
+     // 1. 리스트 데이터 조회
+     List<PredictionInfoResponse> list = disasterService.getSavedWeatherWarnings(searchParams);
+     // 2. 전체 개수 조회
+     int totalCount = disasterService.getWeatherTotalCount(searchParams);
+     
+     result.put("list", list);
+     result.put("totalCount", totalCount);
+     
+     return ResponseEntity.ok(result);
+ }
     
     // 1. 기상특보 상세 조회
     @GetMapping("/weatherWarnings/{key}")
     public ResponseEntity<PredictionInfoResponse> getWeatherDetail(@PathVariable("key") String key) {
         return ResponseEntity.ok(disasterService.getWeatherDetail(key));
     }
+    
+    
+    
+//    @GetMapping("/weatherWarnings")
+//    public ResponseEntity<Map<String, Object>> getSavedWeatherWarnings(
+//            @ModelAttribute PredictionInfoResponse searchParams) {
+//        
+//        // 프론트에서 limit을 안 보냈을 때를 대비해 기본값 강제 세팅
+//        if (searchParams.getLimit() <= 10) { 
+//            searchParams.setLimit(100); 
+//        }
+//
+//        Map<String, Object> result = new HashMap<>();
+//        // ... 이하 로직 동일
+//    }
+//    
+    
+    
 
     // 2. 기상특보 수동 등록
     @PostMapping("/weatherWarnings")
@@ -136,13 +184,31 @@ public class DisasterDashboardController {
 
     // 4. 기상특보 일괄 노출 변경
     @PostMapping("/weatherWarnings/visibility")
-    public ResponseEntity<String> updateWeatherVisibility(@RequestBody DisasterBatchRequest request) {
-        List<String> keys = request.getIds().stream()
-                                   .map(String::valueOf)
-                                   .toList();
-        disasterService.updateWeatherVisibility(keys, request.getVisibleYn());
+    public ResponseEntity<String> updateWeatherVisibility(
+            @RequestBody DisasterBatchRequest request) {
+
+        log.info("기상특보 노출 변경 요청 ids={}, visibleYn={}",
+                 request.getIds(), request.getVisibleYn());
+
+        // DisasterBatchRequest.getIds() → List<Long> 라면 변환
+        List<String> ids = request.getIds().stream()
+                                  .map(String::valueOf)
+                                  .toList();
+
+        boolean result = disasterService.updateWeatherVisibility(
+        		ids,
+                request.getVisibleYn()
+        );
+        
+//        boolean updateWeatherVisibility( List<String> ids, String visibleYn);
+
+        if (!result) {
+            return ResponseEntity.badRequest().body("노출 상태 변경 실패");
+        }
+
         return ResponseEntity.ok("노출 상태가 변경되었습니다.");
     }
+
 
     // 5. 기상특보 일괄 삭제 (논리 삭제)
     @PostMapping("/weatherWarnings/delete")
@@ -296,16 +362,7 @@ public class DisasterDashboardController {
                                             ErrorCode.EXTERNAL_API_ERROR.message()
                                     ));
                                 });
-    }
-
-   
-    
-    
-    
-    
-    
-    
-    
+    } 
 }
 
 

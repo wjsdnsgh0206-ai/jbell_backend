@@ -32,7 +32,7 @@
 
     <insert id="insertDisasterMessages" parameterType="java.util.List">
         INSERT INTO disaster_text_history (
-            id, sn, crt_dt, msg_cn, rcptn_rgn_nm, emrg_step_nm, dst_type, reg_ymd, mdfcn_ymd, visible_yn
+            sn, crt_dt, msg_cn, rcptn_rgn_nm, emrg_step_nm, dst_type, reg_ymd, mdfcn_ymd, visible_yn
         ) VALUES
         <foreach collection="list" item="msg" separator=",">
             (#{msg.sn}, #{msg.crtDt}, #{msg.msgCn}, #{msg.rcptnRgnNm}, #{msg.emrgStepNm},

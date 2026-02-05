@@ -15,10 +15,8 @@ public class PublicDataScheduler {
 
     private final PublicDataService publicDataService;
 
-    /**
-     * 테스트를 위해 1분(60000ms) 단위로 실행
-     */
-    @Scheduled(fixedDelay = 60000) 
+    // 재난문자 5분단위 스케줄링 
+    @Scheduled(cron = "0 0/5 * * * *")
     public void collectDisasterMessages() {
         log.info("▶ [스케줄러] 1분 단위 재난 문자 자동 수집 시작");
 
@@ -37,8 +35,8 @@ public class PublicDataScheduler {
             );
     }
 
-    // 2. 기상특보 수집 (매 30분마다 - 필요하다면 추가!)
-    @Scheduled(cron = "0 30 * * * *")
+    // 기상특보 5분단위 스케줄링
+    @Scheduled(cron = "0 0/5 * * * *")
     public void collectWeatherWarnings() {
         log.info("▶ [스케줄러] 기상 특보 자동 수집 시작");
         DisasterExternApiRequest request = new DisasterExternApiRequest();
