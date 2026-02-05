@@ -200,6 +200,7 @@
 		rlvt_zone AS rlvtZone,
 		time_txt AS timeTxt,
 		ttl AS ttl,
+		warning_type AS warningType,
 		content AS
 		content,
 		maas_obnt_dt AS maasObntDt,
