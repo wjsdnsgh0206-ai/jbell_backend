@@ -1,6 +1,8 @@
 package jbell.disaster.service.impl;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +26,13 @@ public class DisasterServiceImpl implements DisasterService {
     public List<PredictionInfoResponse> getSavedDisasterMessages(PredictionInfoResponse searchParams) {
         return disasterMapper.selectDisasterList(searchParams);
     }
+	
+	@Override
+	@Transactional(readOnly = true)
+	public List<PredictionInfoResponse> getDisasterMessages(PredictionInfoResponse searchParams) {
+	    return disasterMapper.selectDisasterList(searchParams);
+	}
+	
 
     // [추가] 전체 개수 조회 구현
     @Override
@@ -32,19 +41,36 @@ public class DisasterServiceImpl implements DisasterService {
         return disasterMapper.selectDisasterTotalCount(searchParams);
     }
 
-    // 상세 조회
-    public PredictionInfoResponse getDisasterDetail(Long sn) {
-        return disasterMapper.selectDisasterDetail(sn);
+    // 상세 조회 
+    public PredictionInfoResponse getDisasterDetail(Long id) {
+        return disasterMapper.selectDisasterDetail(id); 
     }
 
-    // 일괄 노출 변경
-    public void updateDisasterVisibility(List<Long> sns, String visibleYn) {
-        disasterMapper.updateDisasterVisibility(sns, visibleYn);
-    }
 
-    // 일괄 삭제 (논리 삭제)
-    public void deleteDisasters(List<Long> sns) {
-        disasterMapper.deleteDisasterLogical(sns);
+ // 재난 문자 노출 변경
+//    @Override
+//    public void updateDisasterVisibility(List<Long> ids, String visibleYn) {
+//        // 매퍼 인터페이스에 @Param이 붙어있으므로 Map 생성 없이 바로 전달!
+//        disasterMapper.updateDisasterVisibility(ids, visibleYn);
+//    }
+
+    @Override
+    public boolean updateDisasterVisibility(String visibleYn, List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            throw new IllegalArgumentException("변경할 대상이 없습니다.");
+        }
+
+        int updatedCount =
+            disasterMapper.updateDisasterVisibility(visibleYn, ids);
+
+        return updatedCount > 0;
+    }
+    
+
+    
+    // 일괄 삭제 
+    public void deleteDisasters(List<Long> ids) {
+        disasterMapper.deleteDisasterLogical(ids);
     }
     
     @Transactional
@@ -60,7 +86,7 @@ public class DisasterServiceImpl implements DisasterService {
     
     // ===============================  기상 특보 ========================
     
- // 기상특보 리스트 (검색 조건 적용)
+    // 기상특보 리스트 (검색 조건 적용)
     @Override
     @Transactional(readOnly = true)
     public List<PredictionInfoResponse> getSavedWeatherWarnings(PredictionInfoResponse searchParams) {
@@ -96,8 +122,10 @@ public class DisasterServiceImpl implements DisasterService {
     }
 
     @Transactional
-    public void updateWeatherVisibility(List<String> keys, String visibleYn) {
-        disasterMapper.updateWeatherVisibility(keys, visibleYn);
+    public boolean updateWeatherVisibility(List<String> ids, String visibleYn) {
+        disasterMapper.updateWeatherVisibility(ids, visibleYn);
+        boolean result = true;
+        return result;
     }
 
     @Transactional

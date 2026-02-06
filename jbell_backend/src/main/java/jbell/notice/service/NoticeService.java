@@ -1,6 +1,7 @@
 package jbell.notice.service;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -24,7 +25,7 @@ import lombok.RequiredArgsConstructor;
 public class NoticeService {
 
     private final NoticeMapper noticeMapper;
-    private final NoticeFileMapper noticeFileMapper;
+    // private final NoticeFileMapper noticeFileMapper;
     private final NoticeFileService noticeFileService;
 
     public List<Map<String, Object>> getNoticeTypes() {
@@ -36,18 +37,30 @@ public class NoticeService {
         return noticeMapper.selectNoticeDTOList(keyword, contentType);
     }
 
+    
+    
     @Transactional
-    public NoticeDTO getNoticeDetailAndIncreaseViews(Long id, HttpServletRequest request, HttpServletResponse response) {
-        NoticeDTO notice = noticeMapper.selectNoticeDTOById(id);
-        if (notice == null) throw new IllegalArgumentException("게시글이 없습니다.");
+    public NoticeDTO getNoticeDetailAndIncreaseViews(Long id,
+            HttpServletRequest request, HttpServletResponse response) {
 
-        List<NoticeFile> files = noticeFileMapper.selectFilesByNoticeId(id);
+        NoticeDTO notice = noticeMapper.selectNoticeDTOById(id);
+        if (notice == null) {
+            return null;
+        }
+
+        List<NoticeFileDTO> files = noticeFileService.getFilesByNoticeId(id);
+        if (files == null) {
+            files = new ArrayList<>();
+        }
+
         notice.setFiles(convertToFileDTO(files));
         notice.setFileCount(files.size());
-        
+
         return notice;
     }
 
+
+    
     // throws IOException을 유지하거나, Controller에서 처리해야 합니다.
     @Transactional
     public void createNotice(Notice notice, List<MultipartFile> files) throws IOException {
@@ -70,7 +83,7 @@ public class NoticeService {
         }
     }
 
-    private List<NoticeFileDTO> convertToFileDTO(List<NoticeFile> files) {
+    private List<NoticeFileDTO> convertToFileDTO(List<NoticeFileDTO> files) {
         return files.stream().map(f -> {
             NoticeFileDTO dto = new NoticeFileDTO();
             dto.setFileId(f.getFileId());

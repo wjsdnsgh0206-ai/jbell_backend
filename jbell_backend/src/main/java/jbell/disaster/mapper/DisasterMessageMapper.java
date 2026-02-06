@@ -9,4 +9,7 @@ public interface DisasterMessageMapper {
     int insertDisasterMessages(List<PredictionInfoResponse> messages);
     
     List<PredictionInfoResponse> selectDisasterMessageList();
+
+    Long selectMaxSn();
+    
 }
