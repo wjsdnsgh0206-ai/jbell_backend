@@ -25,7 +25,6 @@ public class AdminPressController {
             @RequestPart("data") PressDTO pressDto,
             @RequestPart(value = "files", required = false) List<MultipartFile> files) throws Exception {
         
-        // regType은 Service에서 "직접등록"으로 들어가게 설정해두었으니 여기선 데이터만 넘깁니다.
         Long contentId = pressService.savePress(pressDto, files);
         
         return ResponseEntity.status(HttpStatus.CREATED).body(contentId);
@@ -36,11 +35,11 @@ public class AdminPressController {
      */
     @PutMapping("/{id}")
     public ResponseEntity<Void> updatePress(
-    		@PathVariable("id") Long id,  // ("id")를 명시적으로 추가
+    		@PathVariable("id") Long id,
             @RequestPart("data") PressDTO pressDto,
             @RequestPart(value = "files", required = false) List<MultipartFile> files) throws Exception {
         
-        pressDto.setContentId(id); // 경로상의 ID를 DTO에 세팅
+        pressDto.setContentId(id);
         pressService.updatePress(pressDto, files);
         
         return ResponseEntity.ok().build();

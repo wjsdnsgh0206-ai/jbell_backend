@@ -10,29 +10,27 @@ import java.util.Map;
 @Mapper
 public interface PressMapper {
 
-    // 1. 관리자용: 보도자료 글 등록 (DB content 테이블)
+    // 관리자용: 보도자료 글 등록 (DB content 테이블)
     int insertContent(PressDTO pressDto);
 
-    // 2. 관리자용: 첨부파일 정보 등록 (DB attachment 테이블)
+    //  관리자용: 첨부파일 정보 등록 (DB attachment 테이블)
     int insertAttachment(Map<String, Object> fileInfo);
 
-    // 3. 사용자/관리자 공용: 목록 조회 (페이징 처리를 위해 limit, offset 사용)
-    List<PressDTO> getPressList(@Param("offset") int offset, @Param("limit") int limit);
+    // 사용자/관리자 공용: 목록 조회 (페이징 처리를 위해 limit, offset 사용)
+    List<PressDTO> getPressList(@Param("offset") int offset, @Param("limit") int limit, @Param("roleType") String roleType);
     
-    // 4. 사용자/관리자 공용: 상세 조회
+    // 사용자/관리자 공용: 상세 조회
     PressDTO getPressById(@Param("contentId") Long contentId);
 
-    // 5. 관리자용: 선택 삭제 (다건 삭제를 위해 List로 받음)
+    // 관리자용: 선택 삭제 (다건 삭제를 위해 List로 받음)
     int deletePress(@Param("list") List<Long> ids);
     
     List<Map<String, Object>> getFileList(Long contentId);
     
     int updateContent(PressDTO pressDto);
     
-    // ★ 수정 포인트 1: 서비스에서 Map을 던지므로 파라미터 타입을 Map으로 변경
     int deleteAttachmentsExcludeIds(Map<String, Object> params);
     
-    // ★ 수정 포인트 2: 서비스에서 호출하는 deleteAttachmentsByContentId 메서드 추가
     int deleteAttachmentsByContentId(@Param("contentId") Long contentId);
 
     
