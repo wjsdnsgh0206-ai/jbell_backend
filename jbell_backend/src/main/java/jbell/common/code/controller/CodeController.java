@@ -97,8 +97,8 @@ public class CodeController {
     public List<CodeItemDTO> getCodeItems(@PathVariable("codeGroupId") String codeGroupId) {
         return codeService.getCodeItemList(codeGroupId);
     }
+    
     // 특정 상세 코드(아이템) 하나만 조회
-    // 호출 주소: GET /api/common/code/groups/{groupId}/items/{itemId}
     @GetMapping("/groups/{groupId}/items/{itemId}")
     public CodeItemDTO getCodeItem(
             @PathVariable("groupId") String groupId, 
@@ -109,7 +109,7 @@ public class CodeController {
     
     // 상세 코드 등록
     @PostMapping("/groups/{groupId}/items")
-    public void addItem(@PathVariable("groupId") String groupId, @Valid @RequestBody CodeItemDTO dto) { // @Valid 추가
+    public void addItem(@PathVariable("groupId") String groupId, @Valid @RequestBody CodeItemDTO dto) {
         dto.setGroupCode(groupId);
         codeService.registerItem(dto);
     }
@@ -129,8 +129,8 @@ public class CodeController {
     // 상세 코드 삭제
     @DeleteMapping("/groups/{groupId}/items/{itemId}")
     public void deleteItem(
-        @PathVariable("groupId") String groupId, // 이름을 직접 지정
-        @PathVariable("itemId") String itemId    // 이름을 직접 지정
+        @PathVariable("groupId") String groupId,
+        @PathVariable("itemId") String itemId
     ) {
         codeService.removeItem(groupId, itemId);
     }

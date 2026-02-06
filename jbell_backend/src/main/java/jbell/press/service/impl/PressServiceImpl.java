@@ -33,36 +33,39 @@ public class PressServiceImpl implements PressService {
     @Override
     @Transactional
     public Long savePress(PressDTO dto, List<MultipartFile> files) throws Exception {
-        // 1. 기본값 세팅
+
         dto.setContentType("PR01");
         dto.setRegType("직접등록");
         
-        // 2. 글 등록
+        // 글 등록
         pressMapper.insertContent(dto);
         Long contentId = dto.getContentId();
         
-        List<FileMetaData> fileList = filesUtils.uploadFiles(files);
-        fileList.forEach(f -> f.setFileIdx(contentId));
-        var uploadFileList = fileList.stream()
-				        			  .map(FileMetaData :: toAttachmentVO)
-				        			  .collect(Collectors.toList());
-        
-        pressMapper.insertAttachmentList(uploadFileList);
+        // 첨부파일이 존재할 경우 등록
+        if(files != null && files.size() > 0) {
+        	List<FileMetaData> fileList = filesUtils.uploadFiles(files);
+        	fileList.forEach(f -> f.setFileIdx(contentId));
+        	var uploadFileList = fileList.stream()
+        			.map(FileMetaData :: toAttachmentVO)
+        			.collect(Collectors.toList());
+        	
+        	pressMapper.insertAttachmentList(uploadFileList);
+        }
         
         return contentId;
     }
 
     @Override
-    public List<PressDTO> getPressList(int offset, int limit) {
-        return pressMapper.getPressList(offset, limit);
+    public List<PressDTO> getPressList(int offset, int limit, String roalType) {
+        return pressMapper.getPressList(offset, limit, roalType);
     }
 
     @Override
     public PressDTO getPressDetail(Long contentId) {
-        // 1. 게시글 정보 가져오기
+        // 게시글 정보
         PressDTO detail = pressMapper.getPressById(contentId);
         
-        // 2. 해당 게시글에 딸린 파일 목록 가져와서 DTO에 쏙 넣기
+
         if (detail != null) {
             List<Map<String, Object>> files = pressMapper.getFileList(contentId);
             detail.setFileList(files);
@@ -75,12 +78,11 @@ public class PressServiceImpl implements PressService {
     @Transactional
     public void deletePress(List<Long> ids) {
         if (ids != null && !ids.isEmpty()) {
-            // 1. 자식 테이블(attachment) 데이터부터 먼저 삭제
-            // 외래키 제약 조건으로 인해 부모를 먼저 지우면 에러가 발생할 수 있습니다.
+            // 자식 테이블(attachment) 데이터부터 먼저 삭제
             for (Long id : ids) {
                 pressMapper.deleteAttachmentsByContentId(id);
             }
-            // 2. 부모 테이블(content) 데이터 삭제
+            // 부모 테이블(content) 데이터 삭제
             pressMapper.deletePress(ids);
         }
     }
@@ -88,18 +90,17 @@ public class PressServiceImpl implements PressService {
     @Override
     @Transactional
     public void updatePress(PressDTO dto, List<MultipartFile> files) throws Exception {
-        // 1. 게시글 본문 텍스트 정보 업데이트
+        // 게시글 본문 텍스트 정보 업데이트
         pressMapper.updateContent(dto);
 
-        // 2. 파일 정리: 기존 파일 중 유지할 목록(existingFileIds) 제외하고 삭제
-        // MyBatis XML에서 #{contentId}와 #{existingIds}를 인식할 수 있게 Map으로 전달합니다.
+        // 파일 정리: 기존 파일 중 유지할 목록(existingFileIds) 제외하고 삭제
         Map<String, Object> params = new HashMap<>();
         params.put("contentId", dto.getContentId());
         params.put("existingIds", dto.getExistingFileIds());
         
         pressMapper.deleteAttachmentsExcludeIds(params);
 
-        // 3. 신규 추가된 파일 업로드 및 DB 등록
+        // 신규 추가된 파일 업로드 및 DB 등록
         if (files != null && !files.isEmpty()) {
             List<FileMetaData> fileList = filesUtils.uploadFiles(files);
             fileList.forEach(f -> f.setFileIdx(dto.getContentId()));

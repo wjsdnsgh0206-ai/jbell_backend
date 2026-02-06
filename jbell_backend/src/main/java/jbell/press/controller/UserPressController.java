@@ -30,9 +30,10 @@ public class UserPressController {
     @GetMapping
     public ResponseEntity<List<PressDTO>> getPressList(
             @RequestParam(value = "offset", defaultValue = "0") int offset,
-            @RequestParam(value = "limit", defaultValue = "10") int limit) {
+            @RequestParam(value = "limit", defaultValue = "10") int limit,
+            @RequestParam(value="roleType", defaultValue="user") String roleType) {
         
-        List<PressDTO> list = pressService.getPressList(offset, limit);
+        List<PressDTO> list = pressService.getPressList(offset, limit, roleType);
         return ResponseEntity.ok(list);
     }
 
@@ -56,16 +57,16 @@ public class UserPressController {
             @PathVariable String fileName,
             @RequestParam String originName) throws Exception {
 
-        // 1. 파일이 저장된 실제 경로 찾기
+        // 파일이 저장된 실제 경로 찾기
         Path filePath = Paths.get("C:/upload/press/").resolve(fileName);
         Resource resource = new UrlResource(filePath.toUri());
 
-        // 2. 파일이 존재하는지 확인
+        // 파일이 존재하는지 확인
         if (!resource.exists()) {
             return ResponseEntity.notFound().build();
         }
 
-        // 3. 한글 파일명 깨짐 방지 설정
+        // 한글 파일명 깨짐 방지 설정
         String encodedOriginName = UriUtils.encode(originName, StandardCharsets.UTF_8);
         String contentDisposition = "attachment; filename=\"" + encodedOriginName + "\"";
 

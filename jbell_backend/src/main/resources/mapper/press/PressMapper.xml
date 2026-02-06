@@ -59,11 +59,15 @@
 	        COUNT(a.file_id) as fileCount
 	    FROM content c
 	    LEFT JOIN attachment a ON c.content_id = a.content_id
-	    WHERE c.content_type = 'PR01'
+	    WHERE 
+	    	c.content_type = 'PR01'
+	    	<if test="roleType != null and roleType == 'user'">
+	    		AND c.visible_yn = 'Y'
+	    	</if>
 	    GROUP BY 
 	        c.content_id, c.title, c.body, c.visible_yn, 
 	        c.user_id, c.source, c.reg_type, c.created_at
-	    ORDER BY c.content_id DESC
+	    ORDER BY createdAt DESC
 	    <if test="limit != null and limit > 0">
 	        LIMIT #{limit} OFFSET #{offset}
 	    </if>
@@ -76,50 +80,50 @@
     </select>
 
 	<select id="getFileList" resultType="map">
-    SELECT 
-        file_id AS id,           
-        file_name AS name,       
-        file_real_name AS realName,   
-        file_path AS url,   
-        file_ext AS type,   
-        file_size AS size
-    FROM attachment
-    WHERE content_id = #{contentId}
-</select>
-
-<update id="updateContent" parameterType="jbell.press.dto.PressDTO">
-    UPDATE content
-    SET 
-        title = #{title},
-        body = #{body},
-        visible_yn = #{visibleYn},
-        source = #{source},
-        content_link = #{contentLink},
-        last_update_date = NOW()
-    WHERE content_id = #{contentId}
-</update>
-
-<delete id="deleteAttachmentsExcludeIds">
-    DELETE FROM attachment 
-    WHERE content_id = #{contentId}
-    <if test="existingIds != null and existingIds.size() > 0">
-        AND file_id NOT IN 
-        <foreach item="id" collection="existingIds" open="(" separator="," close=")">
-            #{id}
-        </foreach>
-    </if>
-</delete>
-
-<delete id="deleteAttachmentsByContentId" parameterType="long">
-    DELETE FROM attachment WHERE content_id = #{contentId}
-</delete>
-
-<delete id="deletePress" parameterType="list">
-    DELETE FROM content 
-    WHERE content_id IN 
-    <foreach item="id" collection="list" open="(" separator="," close=")">
-        #{id}
-    </foreach>
-</delete>
+	    SELECT 
+	        file_id AS id,           
+	        file_name AS name,       
+	        file_real_name AS realName,   
+	        file_path AS url,   
+	        file_ext AS type,   
+	        file_size AS size
+	    FROM attachment
+	    WHERE content_id = #{contentId}
+	</select>
+	
+	<update id="updateContent" parameterType="jbell.press.dto.PressDTO">
+	    UPDATE content
+	    SET 
+	        title = #{title},
+	        body = #{body},
+	        visible_yn = #{visibleYn},
+	        source = #{source},
+	        content_link = #{contentLink},
+	        last_update_date = NOW()
+	    WHERE content_id = #{contentId}
+	</update>
+	
+	<delete id="deleteAttachmentsExcludeIds">
+	    DELETE FROM attachment 
+	    WHERE content_id = #{contentId}
+	    <if test="existingIds != null and existingIds.size() > 0">
+	        AND file_id NOT IN 
+	        <foreach item="id" collection="existingIds" open="(" separator="," close=")">
+	            #{id}
+	        </foreach>
+	    </if>
+	</delete>
+	
+	<delete id="deleteAttachmentsByContentId" parameterType="long">
+	    DELETE FROM attachment WHERE content_id = #{contentId}
+	</delete>
+	
+	<delete id="deletePress" parameterType="list">
+	    DELETE FROM content 
+	    WHERE content_id IN 
+	    <foreach item="id" collection="list" open="(" separator="," close=")">
+	        #{id}
+	    </foreach>
+	</delete>
 
 </mapper>
