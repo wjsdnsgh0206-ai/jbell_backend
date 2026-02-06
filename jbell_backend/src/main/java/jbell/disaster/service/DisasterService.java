@@ -7,65 +7,47 @@ import org.springframework.beans.factory.annotation.Autowired;
 import jbell.disaster.dto.PredictionInfoResponse;
 import jbell.disaster.mapper.DisasterMapper;
 
-public interface  DisasterService {
-//	
-//	@Autowired
-//    private DisasterMapper disasterMapper;
+public interface DisasterService {
 
-    // 리스트 조회
+	// 리스트 조회
 	public List<PredictionInfoResponse> getSavedDisasterMessages(PredictionInfoResponse searchParams);
-    // 검색 조건에 맞는 전체 데이터 개수 (페이지네이션용)
-    int getTotalCount(PredictionInfoResponse searchParams);
+
+	// 검색 조건에 맞는 전체 데이터 개수 (페이지네이션용)
+	int getTotalCount(PredictionInfoResponse searchParams);
+
 	List<PredictionInfoResponse> getDisasterMessages(PredictionInfoResponse searchParams);
-	
-    
-    // 상세 조회
-    public PredictionInfoResponse getDisasterDetail(Long id);
-    
-    
-    // 재난 문자 일괄 노출 변경
-//    void updateDisasterVisibility(List<Long> ids, String visibleYn);
-//    public boolean updateVisibility(String visibleYn, List<Long> ids) {
-//        return disasterMapper.updateDisasterVisibility(visibleYn, ids) > 0;
-//    }
 
-    public boolean updateDisasterVisibility(String visibleYn, List<Long> ids);
+	// 상세 조회
+	public PredictionInfoResponse getDisasterDetail(Long id);
 
+	// 재난 문자 일괄 노출 변경
+	public boolean updateDisasterVisibility(String visibleYn, List<Long> ids);
 
-    // 일괄 삭제 (sns -> ids로 명칭 변경)
-    void deleteDisasters(List<Long> ids);
-    
-    void saveDisaster(PredictionInfoResponse dto);
-    void modifyDisaster(PredictionInfoResponse dto);
-    
-    
-    
-    
-    
-    // ===================== 기상 특보 =======================
-    // 기상특보 리스트 (검색 조건 적용)
-    public List<PredictionInfoResponse> getSavedWeatherWarnings(PredictionInfoResponse searchParams);
+	// 일괄 삭제 (sns -> ids로 명칭 변경)
+	void deleteDisasters(List<Long> ids);
 
-    public int getWeatherTotalCount(PredictionInfoResponse searchParams);
-    
-    
-    
-    // 기상특보 리스트
-    public List<PredictionInfoResponse> getSavedWeatherWarnings();
+	void saveDisaster(PredictionInfoResponse dto);
 
-    public PredictionInfoResponse getWeatherDetail(String key);
+	void modifyDisaster(PredictionInfoResponse dto);
 
-    public void saveWeather(PredictionInfoResponse dto);
+	// ===================== 기상 특보 =======================
+	// 기상특보 리스트 (검색 조건 적용)
+	public List<PredictionInfoResponse> getSavedWeatherWarnings(PredictionInfoResponse searchParams);
 
-    public void modifyWeather(PredictionInfoResponse dto);
-    
- // 기상특보 노출여부 일괄 변경
-    public boolean updateWeatherVisibility( List<String> ids, String visibleYn);
+	public int getWeatherTotalCount(PredictionInfoResponse searchParams);
 
-//    public void updateWeatherVisibility(List<String> keys, String visibleYn);
-    
+	// 기상특보 리스트
+	public List<PredictionInfoResponse> getSavedWeatherWarnings();
 
-    public void deleteWeatherWarnings(List<String> keys);
-    
+	public PredictionInfoResponse getWeatherDetail(String key);
+
+	public void saveWeather(PredictionInfoResponse dto);
+
+	public void modifyWeather(PredictionInfoResponse dto);
+
+	// 기상특보 노출여부 일괄 변경
+	public boolean updateWeatherVisibility(List<String> ids, String visibleYn);
+
+	public void deleteWeatherWarnings(List<String> keys);
 
 }

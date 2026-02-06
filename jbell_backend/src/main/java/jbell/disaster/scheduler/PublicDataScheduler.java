@@ -1,5 +1,8 @@
 package jbell.disaster.scheduler;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -38,10 +41,16 @@ public class PublicDataScheduler {
     // 기상특보 5분단위 스케줄링
     @Scheduled(cron = "0 0/5 * * * *")
     public void collectWeatherWarnings() {
+    	// 1주일 전 날짜
+    	LocalDate daysAgo = LocalDate.now().minusDays(7);
+    	DateTimeFormatter customFormatter = DateTimeFormatter.ofPattern("yyyyMMdd");
+        String inqDt = daysAgo.format(customFormatter);
+        
         log.info("▶ [스케줄러] 기상 특보 자동 수집 시작");
         DisasterExternApiRequest request = new DisasterExternApiRequest();
         request.setPageNo(1);
         request.setNumOfRows(50);
+        request.setInqDt(inqDt);
         // 날짜 계산 로직이 필요할 수 있음
         publicDataService.getAndSaveWeatherWarnings(request).subscribe();
     }

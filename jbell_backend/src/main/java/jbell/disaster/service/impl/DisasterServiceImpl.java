@@ -47,13 +47,6 @@ public class DisasterServiceImpl implements DisasterService {
     }
 
 
- // 재난 문자 노출 변경
-//    @Override
-//    public void updateDisasterVisibility(List<Long> ids, String visibleYn) {
-//        // 매퍼 인터페이스에 @Param이 붙어있으므로 Map 생성 없이 바로 전달!
-//        disasterMapper.updateDisasterVisibility(ids, visibleYn);
-//    }
-
     @Override
     public boolean updateDisasterVisibility(String visibleYn, List<Long> ids) {
         if (ids == null || ids.isEmpty()) {

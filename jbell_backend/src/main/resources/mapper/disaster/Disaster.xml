@@ -36,7 +36,7 @@
 
 		ORDER BY crt_dt DESC
 		/* 페이징 처리 추가 */
-		LIMIT #{limit} OFFSET #{offset}
+		LIMIT #{numOfRows} OFFSET #{offset}
 	</select>
 
 

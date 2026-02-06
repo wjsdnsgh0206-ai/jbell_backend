@@ -46,7 +46,7 @@ public class DisasterAccidentServiceImpl implements DisasterAccident {
 	// =================================================
 	// ⏰ 통합 스케줄러 (5분 주기)
 	// =================================================
-	@Scheduled(cron = "0 0/5 * * * ?") // 5분마다 실행
+	@Scheduled(cron = "0/5 0 * * * ?") // 5분마다 실행
 	public void autoSyncAllDisasterData() {
 		log.info("⏰ [Scheduler] 5분 주기 재난 데이터 통합 동기화 시작: {}", LocalDateTime.now());
 
@@ -262,8 +262,12 @@ public class DisasterAccidentServiceImpl implements DisasterAccident {
 
 	private Mono<Void> fetchAndSaveTyphoonTrack(String yy, String typ) {
 		return apihubDataWebClient.get()
-				.uri(uriBuilder -> uriBuilder.path("/typ01/url/typ_data.php").queryParam("YY", yy)
-						.queryParam("mode", "1").queryParam("authKey", apiHubKey).build())
+				.uri(uriBuilder -> uriBuilder.path("/typ01/url/typ_data.php")
+						.queryParam("YY", yy)
+						.queryParam("mode", "1")
+						.queryParam("TYP", typ)
+						.queryParam("authKey", apiHubKey)
+						.build())
 				.retrieve().bodyToMono(String.class).timeout(java.time.Duration.ofSeconds(30)).doOnNext(data -> {
 					String[] lines = data.split("\n");
 					for (String line : lines) {
