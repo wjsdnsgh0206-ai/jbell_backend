@@ -31,9 +31,12 @@ public class UserPressController {
     public ResponseEntity<List<PressDTO>> getPressList(
             @RequestParam(value = "offset", defaultValue = "0") int offset,
             @RequestParam(value = "limit", defaultValue = "10") int limit,
-            @RequestParam(value="roleType", defaultValue="user") String roleType) {
+            @RequestParam(value = "roleType", defaultValue = "user") String roleType,
+            @RequestParam(value = "searchCategory", required = false) String searchCategory, // 추가
+            @RequestParam(value = "searchTerm", required = false) String searchTerm) {      // 추가
         
-        List<PressDTO> list = pressService.getPressList(offset, limit, roleType);
+        // 이미 관리자 페이지에서 사용 중인 Service 메서드에 인자만 추가해서 호출하세요.
+        List<PressDTO> list = pressService.getPressList(offset, limit, roleType, searchCategory, searchTerm);
         return ResponseEntity.ok(list);
     }
 

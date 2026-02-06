@@ -17,7 +17,8 @@ public interface PressMapper {
     int insertAttachment(Map<String, Object> fileInfo);
 
     // 사용자/관리자 공용: 목록 조회 (페이징 처리를 위해 limit, offset 사용)
-    List<PressDTO> getPressList(@Param("offset") int offset, @Param("limit") int limit, @Param("roleType") String roleType);
+    List<PressDTO> getPressList(@Param("offset") int offset, @Param("limit") int limit, @Param("roleType") String roleType, @Param("searchCategory") String searchCategory, 
+    							@Param("searchTerm") String searchTerm);
     
     // 사용자/관리자 공용: 상세 조회
     PressDTO getPressById(@Param("contentId") Long contentId);

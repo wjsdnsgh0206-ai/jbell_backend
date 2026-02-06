@@ -10,7 +10,7 @@ public interface PressService {
     Long savePress(PressDTO dto, List<MultipartFile> files) throws Exception;
     
     // 목록 조회
-    List<PressDTO> getPressList(int offset, int limit, String roleType);
+    List<PressDTO> getPressList(int offset, int limit, String roleType, String searchCategory, String searchTerm);
     
     // 상세 조회
     PressDTO getPressDetail(Long contentId);
