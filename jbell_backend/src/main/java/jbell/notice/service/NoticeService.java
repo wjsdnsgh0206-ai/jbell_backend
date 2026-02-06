@@ -36,6 +36,11 @@ public class NoticeService {
     public List<NoticeDTO> getNoticeDTOList(String keyword, String contentType) {
         return noticeMapper.selectNoticeDTOList(keyword, contentType);
     }
+    
+    // 관리자 공지사항 조회 페이지에서는 사용, 미사용 게시물을 모두 조회할 수 있도록 관리자 전용으로 새로 추가
+    public List<NoticeDTO> getAdminNoticeDTOList(String keyword, String contentType) {
+        return noticeMapper.selectAdminNoticeDTOList(keyword, contentType);
+    }
 
     
     
