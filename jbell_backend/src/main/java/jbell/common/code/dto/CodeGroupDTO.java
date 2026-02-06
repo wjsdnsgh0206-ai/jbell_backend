@@ -13,14 +13,14 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 public class CodeGroupDTO {
-	@NotBlank(message = "그룹 코드 ID는 필수입니다.") // 리액트의 (필수)와 매칭
+	@NotBlank(message = "그룹 코드 ID는 필수입니다.")
     private String groupCode;
 	
-	@NotBlank(message = "그룹 코드명은 필수입니다.") // 리액트의 (필수)와 매칭
+	@NotBlank(message = "그룹 코드명은 필수입니다.")
     private String groupName;    
     private String desc;         
     private Integer order;       
     private boolean visible;     
-    private String createdAt;    // LocalDateTime -> String 변경
-    private String updatedAt;    // LocalDateTime -> String 변경
+    private String createdAt;
+    private String updatedAt;
 }

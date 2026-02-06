@@ -5,11 +5,12 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 public interface PressService {
+	
     // 보도자료 등록
     Long savePress(PressDTO dto, List<MultipartFile> files) throws Exception;
     
     // 목록 조회
-    List<PressDTO> getPressList(int offset, int limit);
+    List<PressDTO> getPressList(int offset, int limit, String roleType, String searchCategory, String searchTerm);
     
     // 상세 조회
     PressDTO getPressDetail(Long contentId);
