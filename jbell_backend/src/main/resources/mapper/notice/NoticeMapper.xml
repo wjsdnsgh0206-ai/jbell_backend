@@ -15,15 +15,19 @@
             (SELECT COUNT(*) FROM attachment WHERE content_id = c.content_id) as fileCount
         from content c join code_item ci 
 		on c.content_type = ci.code_item_id 
-        <where>
-		 	ci.code_group_id = 'NOTICE'
-            <if test="contentType != null and contentType != ''">
-                AND c.content_type = #{contentType}
-            </if>
-            <if test="keyword != null and keyword != ''">
-                AND (c.title LIKE CONCAT('%', #{keyword}, '%') OR c.user_id LIKE CONCAT('%', #{keyword}, '%'))
-            </if>
-        </where>
+       <where>
+		    ci.code_group_id = 'NOTICE'
+		    AND c.visible_yn = 'Y'
+		    <if test="contentType != null and contentType != ''">
+		        AND c.content_type = #{contentType}
+		    </if>
+		    <if test="keyword != null and keyword != ''">
+		        AND (
+		            c.title LIKE CONCAT('%', #{keyword}, '%')
+		            OR c.user_id LIKE CONCAT('%', #{keyword}, '%')
+		        )
+		    </if>
+		</where>
         ORDER BY c.created_at DESC
     </select>
 
