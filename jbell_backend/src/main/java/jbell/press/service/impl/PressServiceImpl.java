@@ -56,8 +56,9 @@ public class PressServiceImpl implements PressService {
     }
 
     @Override
-    public List<PressDTO> getPressList(int offset, int limit, String roalType) {
-        return pressMapper.getPressList(offset, limit, roalType);
+    public List<PressDTO> getPressList(int offset, int limit, String roleType, String searchCategory, String searchTerm) {
+    	
+        return pressMapper.getPressList(offset, limit, roleType, searchCategory, searchTerm);
     }
 
     @Override

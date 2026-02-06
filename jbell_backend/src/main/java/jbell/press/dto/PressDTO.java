@@ -26,7 +26,9 @@ public class PressDTO {
 
     private String contentLink; // 출처 원본 링크
 
-    private String userId; // 등록인 '관리자'
+    private String userId; // 등록인 ID '관리자'
+    
+    private String userName; // 등록인 이름 '관리자'
 
     private String regType; // 등록방식 '직접등록'
 
