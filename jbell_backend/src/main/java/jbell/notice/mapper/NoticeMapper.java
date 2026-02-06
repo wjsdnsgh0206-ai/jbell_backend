@@ -28,5 +28,11 @@ public interface NoticeMapper {
     // 공지사항 타입 목록 조회 (추가된 메서드)
     List<Map<String, Object>> selectNoticeTypes();
 
+    // 관리자 공지사항 조회 페이지에서는 사용, 미사용 게시물을 모두 조회할 수 있도록 관리자 전용으로 새로 추가
+    List<NoticeDTO> selectAdminNoticeDTOList(
+    	    @Param("keyword") String keyword,
+    	    @Param("contentType") String contentType
+    );
+
 }
 
