@@ -30,6 +30,38 @@
 		</where>
         ORDER BY c.created_at DESC
     </select>
+    
+    <!-- 관리자 공지사항 조회에서는 사용, 미사용 게시물을 모두 볼 수 있도록 설정 -->
+    <select id="selectAdminNoticeDTOList" resultType="jbell.notice.dto.NoticeDTO">
+	    SELECT
+	        c.content_id        AS id,
+	        c.title,
+	        c.body              AS content,
+	        c.user_id           AS author,
+	        c.visible_yn        AS isPublic,
+	        c.created_at        AS createdAt,
+	        c.last_update_date  AS updatedAt,
+	        c.content_type      AS contentType,
+	        (SELECT COUNT(*) FROM attachment WHERE content_id = c.content_id) as fileCount
+	    FROM content c
+	    JOIN code_item ci ON c.content_type = ci.code_item_id
+	    <where>
+	        ci.code_group_id = 'NOTICE'
+	        <!-- ❌ visible_yn 조건 없음 -->
+	        <if test="contentType != null and contentType != ''">
+	            AND c.content_type = #{contentType}
+	        </if>
+	        <if test="keyword != null and keyword != ''">
+	            AND (
+	                c.title LIKE CONCAT('%', #{keyword}, '%')
+	                OR c.user_id LIKE CONCAT('%', #{keyword}, '%')
+	            )
+	        </if>
+	    </where>
+	    ORDER BY c.created_at DESC
+	</select>
+    
+    
 
    <select id="selectNoticeDTOById" resultType="jbell.notice.dto.NoticeDTO">
 	    SELECT
