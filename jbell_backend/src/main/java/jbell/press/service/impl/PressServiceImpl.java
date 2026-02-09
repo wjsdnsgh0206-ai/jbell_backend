@@ -56,9 +56,18 @@ public class PressServiceImpl implements PressService {
     }
 
     @Override
-    public List<PressDTO> getPressList(int offset, int limit, String roleType, String searchCategory, String searchTerm) {
-    	
-        return pressMapper.getPressList(offset, limit, roleType, searchCategory, searchTerm);
+    public Map<String, Object> getPressList(int offset, int limit, String roleType, String searchCategory, String searchTerm, String startDate, String endDate, String visibleYn) {
+        // 목록 조회
+        List<PressDTO> list = pressMapper.getPressList(offset, limit, roleType, searchCategory, searchTerm, startDate, endDate, visibleYn);
+
+        // 전체 개수 조회
+        int totalCount = pressMapper.getPressListCount(roleType, searchCategory, searchTerm, startDate, endDate, visibleYn);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("list", list);
+        result.put("totalCount", totalCount);
+        
+        return result;
     }
 
     @Override
@@ -85,6 +94,15 @@ public class PressServiceImpl implements PressService {
             }
             // 부모 테이블(content) 데이터 삭제
             pressMapper.deletePress(ids);
+        }
+    }
+    
+    @Override
+    @Transactional
+    public void updateVisibleStatus(List<Long> ids, String visibleYn) {
+    	// 노출 비노출
+        if (ids != null && !ids.isEmpty()) {
+            pressMapper.updateVisibleStatus(ids, visibleYn);
         }
     }
 
