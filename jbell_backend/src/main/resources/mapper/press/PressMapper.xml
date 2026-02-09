@@ -95,8 +95,11 @@
 			            u.user_name LIKE CONCAT('%', #{searchTerm}, '%')
 			        </when>
 			        <otherwise>
-			            (c.title LIKE CONCAT('%', #{searchTerm}, '%') OR c.body LIKE CONCAT('%', #{searchTerm}, '%'))
-			        </otherwise>
+					    c.title LIKE CONCAT('%', #{searchTerm}, '%') 
+					    OR c.body LIKE CONCAT('%', #{searchTerm}, '%')
+					    OR u.user_name LIKE CONCAT('%', #{searchTerm}, '%')
+					    OR c.source LIKE CONCAT('%', #{searchTerm}, '%')
+					</otherwise>
 			    </choose> )
 			</if>
         
@@ -173,8 +176,11 @@
 		                u.user_name LIKE CONCAT('%', #{searchTerm}, '%')
 		            </when>
 		            <otherwise>
-		                (c.title LIKE CONCAT('%', #{searchTerm}, '%') OR c.body LIKE CONCAT('%', #{searchTerm}, '%'))
-		            </otherwise>
+					    c.title LIKE CONCAT('%', #{searchTerm}, '%') 
+					    OR c.body LIKE CONCAT('%', #{searchTerm}, '%')
+					    OR u.user_name LIKE CONCAT('%', #{searchTerm}, '%')
+					    OR c.source LIKE CONCAT('%', #{searchTerm}, '%')
+					</otherwise>
 		        </choose> )
 		</if>
 	</select>
