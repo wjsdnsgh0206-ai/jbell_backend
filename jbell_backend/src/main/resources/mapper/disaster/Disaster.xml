@@ -17,7 +17,8 @@
 		rcptnRgnNm,
 		emrg_step_nm as emrgStepNm,
 		dst_type as dstType,
-		visible_yn as visibleYn
+		visible_yn
+		as visibleYn
 		FROM
 		disaster_text_history
 		WHERE 1=1
@@ -73,7 +74,8 @@
 		rcptnRgnNm,
 		emrg_step_nm AS emrgStepNm,
 		dst_type AS dstType,
-		visible_yn AS visibleYn
+		visible_yn
+		AS visibleYn
 		FROM disaster_text_history
 		WHERE id = #{id}
 	</select>
@@ -90,7 +92,8 @@
 	<update id="updateDisasterVisibility">
 		UPDATE disaster_text_history
 		SET visible_yn = #{visibleYn},
-		mdfcn_ymd = CURDATE()
+		mdfcn_ymd =
+		CURDATE()
 		WHERE id IN
 		<foreach collection="ids" item="id" open="(" separator=","
 			close=")">
@@ -148,25 +151,27 @@
 
 	<!-- ================== 기상특보 =================== -->
 	<select id="selectWeatherList"
-        parameterType="jbell.disaster.dto.PredictionInfoResponse"
-        resultType="jbell.disaster.dto.PredictionInfoResponse">
+		parameterType="jbell.disaster.dto.PredictionInfoResponse"
+		resultType="jbell.disaster.dto.PredictionInfoResponse">
 
-    SELECT
-        prsntn_sn AS prsntnSn,
-        prsntn_tm AS prsntnTm,
-        rlvt_zone AS rlvtZone,
-        time_txt AS timeTxt,
-        ttl AS ttl,
-        warning_type AS warningType,
-        content AS content,
-        visible_yn AS visibleYn,
-        maas_obnt_dt AS maasObntDt,
-        is_manual AS isManual,
-        lvl AS level
-    FROM weather_warning_info
-    ORDER BY prsntn_sn DESC
-    LIMIT #{numOfRows} OFFSET #{offset}
-</select>
+		SELECT
+		prsntn_sn AS prsntnSn,
+		prsntn_tm AS prsntnTm,
+		rlvt_zone AS rlvtZone,
+		time_txt AS timeTxt,
+		ttl AS ttl,
+		warning_type AS
+		warningType,
+		content AS content,
+		visible_yn AS visibleYn,
+		maas_obnt_dt AS
+		maasObntDt,
+		is_manual AS isManual,
+		lvl AS level
+		FROM weather_warning_info
+		ORDER BY prsntn_sn DESC
+		LIMIT #{numOfRows} OFFSET #{offset}
+	</select>
 
 	<select id="selectWeatherTotalCount"
 		parameterType="jbell.disaster.dto.PredictionInfoResponse"
@@ -181,10 +186,11 @@
 			AND ttl LIKE CONCAT('%', #{newsType}, '%')
 		</if>
 		<if test="region != null and region != ''">
-		  AND (
-		    is_manual = 'Y'
-		    OR rlvt_zone LIKE CONCAT('%', #{region}, '%')
-		  )
+			AND (
+			is_manual = 'Y'
+			OR rlvt_zone LIKE CONCAT('%',
+			#{region}, '%')
+			)
 		</if>
 		<if test="keyword != null and keyword != ''">
 			AND (ttl LIKE CONCAT('%', #{keyword}, '%') OR content LIKE
@@ -200,11 +206,13 @@
 		rlvt_zone AS rlvtZone,
 		time_txt AS timeTxt,
 		ttl AS ttl,
-		warning_type AS warningType,
+		warning_type AS
+		warningType,
 		content AS
 		content,
 		maas_obnt_dt AS maasObntDt,
-		visible_yn AS visibleYn,
+		visible_yn AS
+		visibleYn,
 		is_manual AS isManual,
 		lvl AS level
 		FROM
@@ -212,63 +220,66 @@
 		WHERE prsntn_sn = #{prsntnSn}
 	</select>
 
-<insert id="insertWeather"
-    parameterType="jbell.disaster.dto.PredictionInfoResponse">
-  INSERT INTO weather_warning_info (
-    ttl,
-    warning_type,
-    prsntn_tm,
-    rlvt_zone,
-    content,
-    time_txt,
-    maas_obnt_dt,
-    visible_yn,
-    is_manual,
-    lvl
-  )
-  VALUES (
-    #{ttl},
-    #{warningType},
-    #{prsntnTm},
-    #{rlvtZone},
-    #{content},
-    #{timeTxt},
-    #{maasObntDt},
-    IFNULL(#{visibleYn}, 'Y'),
-    #{isManual},
-    #{level}
-  )
-</insert>
+	<insert id="insertWeather"
+		parameterType="jbell.disaster.dto.PredictionInfoResponse">
+		INSERT INTO weather_warning_info (
+		ttl,
+		warning_type,
+		prsntn_tm,
+		rlvt_zone,
+		content,
+		time_txt,
+		maas_obnt_dt,
+		visible_yn,
+		is_manual,
+		lvl
+		)
+		VALUES (
+		#{ttl},
+		#{warningType},
+		#{prsntnTm},
+		#{rlvtZone},
+		#{content},
+		#{timeTxt},
+		#{maasObntDt},
+		IFNULL(#{visibleYn}, 'Y'),
+		#{isManual},
+		#{level}
+		)
+	</insert>
 
 
 
-<update id="updateWeather"
-    parameterType="jbell.disaster.dto.PredictionInfoResponse">
-  UPDATE weather_warning_info
-  SET
-    ttl = #{ttl},
-    warning_type = #{warningType},
-    prsntn_tm = #{prsntnTm},
-    rlvt_zone = #{rlvtZone},
-    content = #{content},
-    lvl = #{level},
-    time_txt = #{timeTxt},
-    visible_yn = #{visibleYn}
-  WHERE prsntn_sn = #{prsntnSn}
-</update>
+	<update id="updateWeather"
+		parameterType="jbell.disaster.dto.PredictionInfoResponse">
+		UPDATE weather_warning_info
+		SET
+		ttl = #{ttl},
+		warning_type
+		= #{warningType},
+		prsntn_tm = #{prsntnTm},
+		rlvt_zone = #{rlvtZone},
+		content = #{content},
+		lvl = #{level},
+		time_txt = #{timeTxt},
+		visible_yn =
+		#{visibleYn}
+		WHERE prsntn_sn = #{prsntnSn}
+	</update>
 
-	
-	
+
+
 	<update id="updateWeatherVisibility">
 		UPDATE weather_warning_info
 		SET visible_yn = #{visibleYn}
-		WHERE prsntn_sn IN
+		WHERE
+		prsntn_sn IN
 		<foreach collection="ids" item="id" open="(" separator=","
 			close=")">
 			#{id}
 		</foreach>
 	</update>
-	
+
 
 
 
@@ -280,6 +291,55 @@
 			#{item}
 		</foreach>
 	</delete>
+
+
+
+
+	<select id="getCombinedDisasterList"
+		resultType="jbell.disaster.dto.MainDisasterResponse">
+		SELECT
+		'기상경보' AS category,
+		ttl COLLATE utf8mb4_general_ci AS title,
+		DATE_FORMAT(STR_TO_DATE(LEFT(prsntn_tm, 12), '%Y%m%d%H%i'), '%Y-%m-%d
+		%H:%i:%s') AS eventDate,
+		visible_yn COLLATE utf8mb4_general_ci AS displayYn
+		FROM weather_warning_info
+		WHERE visible_yn = 'Y'
+
+		UNION ALL
+
+		SELECT
+		'재난문자' AS category,
+		msg_cn AS title,
+		DATE_FORMAT(crt_dt, '%Y-%m-%d %H:%i:%s') AS eventDate,
+		visible_yn AS displayYn
+		FROM disaster_text_history
+		WHERE visible_yn = 'Y'
+
+		UNION ALL
+
+		SELECT
+		'지진' AS category,
+		CONCAT(loc, ' 규모 ', mt) AS title,
+		DATE_FORMAT(STR_TO_DATE(LEFT(tm_fc, 14), '%Y%m%d%H%i%s'), '%Y-%m-%d %H:%i:%s') AS eventDate,
+		expose_yn AS displayYn
+		FROM earthquake_event
+		WHERE expose_yn = 'Y'
+
+		UNION ALL
+
+		SELECT
+		'산불' AS category,
+		CONCAT(fire_loc_village, ' ', fire_cause) AS title,
+		DATE_FORMAT(fire_start_time, '%Y-%m-%d %H:%i:%s') AS eventDate,
+		fire_expose_yn AS displayYn
+		FROM forest_fire_information
+		WHERE fire_expose_yn = 'Y'
+
+		ORDER BY eventDate DESC
+		LIMIT 6
+	</select>
+
 
 
 </mapper>

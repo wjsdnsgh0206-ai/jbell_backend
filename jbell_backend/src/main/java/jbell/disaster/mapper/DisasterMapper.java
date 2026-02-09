@@ -1,10 +1,12 @@
 package jbell.disaster.mapper;
 
-import jbell.disaster.dto.PredictionInfoResponse;
+import java.util.List;
+
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import java.util.List;
-import java.util.Map;
+
+import jbell.disaster.dto.MainDisasterResponse;
+import jbell.disaster.dto.PredictionInfoResponse;
 
 @Mapper
 public interface DisasterMapper {
@@ -47,4 +49,9 @@ public interface DisasterMapper {
     
     
     int deleteWeatherLogical(@Param("list") List<String> keys);
+    
+    
+    
+	// 메인화면 재난사고속보 mapper ===========
+    List<MainDisasterResponse> getCombinedDisasterList();
 }

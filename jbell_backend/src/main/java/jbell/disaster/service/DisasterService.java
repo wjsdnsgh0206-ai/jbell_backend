@@ -2,10 +2,8 @@ package jbell.disaster.service;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
-
+import jbell.disaster.dto.MainDisasterResponse;
 import jbell.disaster.dto.PredictionInfoResponse;
-import jbell.disaster.mapper.DisasterMapper;
 
 public interface DisasterService {
 
@@ -49,5 +47,10 @@ public interface DisasterService {
 	public boolean updateWeatherVisibility(List<String> ids, String visibleYn);
 
 	public void deleteWeatherWarnings(List<String> keys);
+	
+	
+	
+	// 메인화면 재난사고속보 service ===========
+	List<MainDisasterResponse> getRecentDisasters();
 
 }

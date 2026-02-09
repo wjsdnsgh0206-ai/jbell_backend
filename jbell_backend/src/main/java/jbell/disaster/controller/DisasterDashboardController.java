@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -23,6 +24,7 @@ import jakarta.validation.Valid;
 import jbell.common.response.ApiResponse;
 import jbell.disaster.dto.DisasterBatchRequest;
 import jbell.disaster.dto.DisasterExternApiRequest;
+import jbell.disaster.dto.MainDisasterResponse;
 import jbell.disaster.dto.PredictionInfoResponse;
 import jbell.disaster.service.DisasterService;
 import jbell.exception.ErrorCode;
@@ -248,5 +250,24 @@ public class DisasterDashboardController {
 			return Mono.just(
 					ApiResponse.error(ErrorCode.EXTERNAL_API_ERROR.code(), ErrorCode.EXTERNAL_API_ERROR.message()));
 		});
+	}
+	
+	
+	
+	
+	// 메인화면 재난사고속보 controller ===========
+	@GetMapping("/fetch/combined-list")
+	public ResponseEntity<?> getCombinedDisasterList() {
+	    try {
+	        System.out.println("=== 통합 재난 목록 조회 시작 ===");
+	        List<MainDisasterResponse> list = disasterService.getRecentDisasters();
+	        System.out.println("조회된 데이터 개수: " + list.size());
+	        return ResponseEntity.ok(list);
+	    } catch (Exception e) {
+	        System.err.println("!!! 에러 발생 !!!");
+	        e.printStackTrace(); // 전체 스택 트레이스 출력
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body("서버 쿼리 실행 중 오류 발생: " + e.getMessage());
+	    }
 	}
 }

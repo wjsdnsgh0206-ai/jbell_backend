@@ -107,5 +107,9 @@ public class PredictionInfoResponse {
 	
 	@JsonProperty("level")
 	private String level;
+	
+	
+	
+	
 
 }

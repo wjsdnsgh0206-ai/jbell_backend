@@ -1,12 +1,11 @@
 package jbell.disaster.service.impl;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jbell.disaster.dto.MainDisasterResponse;
 import jbell.disaster.dto.PredictionInfoResponse;
 import jbell.disaster.mapper.DisasterMapper;
 import jbell.disaster.service.DisasterService;
@@ -125,5 +124,12 @@ public class DisasterServiceImpl implements DisasterService {
     public void deleteWeatherWarnings(List<String> keys) {
         disasterMapper.deleteWeatherLogical(keys);
     }
-
+    
+    
+    
+	// 메인화면 재난사고속보 serviceImpl ===========
+    @Override
+    public List<MainDisasterResponse> getRecentDisasters() {
+        return disasterMapper.getCombinedDisasterList();
+    }
 }
