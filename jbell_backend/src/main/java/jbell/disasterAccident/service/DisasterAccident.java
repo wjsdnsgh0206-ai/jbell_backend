@@ -26,12 +26,6 @@ public interface DisasterAccident {
 	Mono<Void> fetchAndSaveTyphoon(String year);
     List<DisasterAccidentDTO> getTyphoonList();
     
-    // 태풍
-    
-
-    // 호우홍수
-    
-    
     // 산사태
     Mono<Void> fetchAndSaveLandslide();
     List<DisasterAccidentDTO> getLandslideList();
