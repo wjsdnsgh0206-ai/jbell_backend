@@ -151,32 +151,28 @@
 		VALUES(typhoon_name_desc);
 	</insert>
 
-<select id="selectTyphoonList" resultType="jbell.disasterAccident.dto.DisasterAccidentDTO">
-    SELECT 
-        i.typhoon_year AS typhoonYear,
-        i.typhoon_no AS typhoonNo,
-        i.typhoon_name AS typhoonName,
-        i.typhoon_active_yn AS typhoonActiveYn,
-        t.typhoon_analysis_datetime AS typhoonAnalysisDatetime,
-        t.typhoon_lat AS typhoonLat,
-        t.typhoon_lon AS typhoonLon,
-        t.typhoon_location AS typhoonLocation,
-        t.typhoon_max_wind_speed AS typhoonMaxWindSpeed
-    FROM typhoon_info i
-    LEFT JOIN (
-        SELECT * FROM typhoon_track 
-        WHERE (typhoon_year, typhoon_no, typhoon_report_no) IN (
-            SELECT typhoon_year, typhoon_no, MAX(typhoon_report_no)
-            FROM typhoon_track
-            GROUP BY typhoon_year, typhoon_no
-        )
-    ) t ON i.typhoon_year = t.typhoon_year AND i.typhoon_no = t.typhoon_no
-    ORDER BY i.typhoon_year DESC, i.typhoon_no DESC
-</select>
-
-
-
-
+	<select id="selectTyphoonList" resultType="jbell.disasterAccident.dto.DisasterAccidentDTO">
+	    SELECT 
+	        i.typhoon_year AS typhoonYear,
+	        i.typhoon_no AS typhoonNo,
+	        i.typhoon_name AS typhoonName,
+	        i.typhoon_active_yn AS typhoonActiveYn,
+	        t.typhoon_analysis_datetime AS typhoonAnalysisDatetime,
+	        t.typhoon_lat AS typhoonLat,
+	        t.typhoon_lon AS typhoonLon,
+	        t.typhoon_location AS typhoonLocation,
+	        t.typhoon_max_wind_speed AS typhoonMaxWindSpeed
+	    FROM typhoon_info i
+	    LEFT JOIN (
+	        SELECT * FROM typhoon_track 
+	        WHERE (typhoon_year, typhoon_no, typhoon_report_no) IN (
+	            SELECT typhoon_year, typhoon_no, MAX(typhoon_report_no)
+	            FROM typhoon_track
+	            GROUP BY typhoon_year, typhoon_no
+	        )
+	    ) t ON i.typhoon_year = t.typhoon_year AND i.typhoon_no = t.typhoon_no
+	    ORDER BY i.typhoon_year DESC, i.typhoon_no DESC
+	</select>
 
 	<insert id="insertTyphoonTrack"
 		parameterType="jbell.disasterAccident.dto.DisasterAccidentDTO">
@@ -265,6 +261,8 @@
 		VALUES(type),
 		warn_var = VALUES(warn_var)
 	</insert>
+	
+	<!-- 재난발생 관리 -->
 	<select id="selectKmaWeatherByType"
 		resultType="jbell.disasterAccident.dto.DisasterAccidentDTO">
 		SELECT
@@ -284,6 +282,28 @@
 		DESC
 	</select>
 	
+    <!-- 산불 노출여부 수정 -->
+	<update id="updateForestFireStatus">
+        UPDATE forest_fire_information
+        SET fire_expose_yn = #{status}
+        WHERE fire_id = #{id}
+    </update>
+
+    <!-- 지진 노출여부 수정 -->
+    <update id="updateEarthquakeStatus">
+        UPDATE earthquake_event
+        SET expose_yn = #{status}
+        WHERE seq = #{seq}
+    </update>
+    
+    <!-- 기상 노출여부 수정 -->
+    <update id="updateKmaWeatherStatus">
+        UPDATE kma_weather_report
+        SET expose_yn = #{status} WHERE tm_seq = #{tmSeq} AND stn_id = #{stnId}
+    </update>
+    <!--  -->
+	
+	
 	
 	<insert id="insertWaterLevel" parameterType="jbell.disasterAccident.dto.DisasterAccidentDTO">
         INSERT INTO water_level_info (
@@ -295,7 +315,7 @@
             obs_nm = VALUES(obs_nm),
             bbsn_nm = VALUES(bbsn_nm),
             mng_org = VALUES(mng_org)
-    </insert>
+    </insert>	
 
 
     <select id="selectWaterLevelList" resultType="jbell.disasterAccident.dto.DisasterAccidentDTO">

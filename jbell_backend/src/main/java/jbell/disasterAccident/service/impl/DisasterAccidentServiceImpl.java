@@ -17,6 +17,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import jbell.disasterAccident.dto.DisasterAccidentDTO;
 import jbell.disasterAccident.mapper.DisasterAccidentMapper;
 import jbell.disasterAccident.service.DisasterAccident;
+import jbell.exception.CustomException;
+import jbell.exception.ErrorCode;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -419,5 +421,42 @@ public class DisasterAccidentServiceImpl implements DisasterAccident {
 	    return mapper.selectWaterLevelList();
 	}
     
-    
+	// 재난 발생 관리 상태 변경
+	@Override
+    @Transactional
+    public Mono<Void> updateDisasterStatus(DisasterAccidentDTO disasterAccidentDTO) {
+        String status = disasterAccidentDTO.isVisible() ? "Y" : "N";
+        
+        return Mono.fromRunnable(() -> {
+            for (String compositeId : disasterAccidentDTO.getIds()) {
+                try {
+                    String[] parts = compositeId.split("_");
+                    String type = parts[0]; // FIRE, EQK, WTH
+
+                    switch (type) {
+                        case "FIRE": // FIRE_{fireId}_{idx}
+                            long fireId = Long.parseLong(parts[1]);
+                            mapper.updateForestFireStatus(fireId, status);
+                            break;
+                        case "EQK": // EQK_{seq}_{idx}
+                            long seq = Long.parseLong(parts[1]);
+                            mapper.updateEarthquakeStatus(seq, status);
+                            break;
+                        case "WTH": // WTH_{type}_{tmSeq}_{stnId}_{idx}
+                            // parts[1]: type, parts[2]: tmSeq, parts[3]: stnId
+                            int tmSeq = Integer.parseInt(parts[2]);
+                            String stnId = parts[3];
+                            mapper.updateKmaWeatherStatus(tmSeq, stnId, status);
+                            break;
+                        default:
+                            log.warn("Unknown Disaster Type ID: {}", compositeId);
+                    }
+                } catch (Exception e) {
+                    log.error("Failed to update status for ID: {}", compositeId, e);
+                    // 하나 실패해도 나머지는 진행하거나, 여기서 CustomException 던져서 롤백 가능
+                    throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR); 
+                }
+            }
+        });
+    }
 }

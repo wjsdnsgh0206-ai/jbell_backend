@@ -1,6 +1,6 @@
 package jbell.disasterAccident.dto;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
+import java.util.List;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -87,5 +87,8 @@ public class DisasterAccidentDTO {
     private Double waterLevel;  // 현재수위 (wl) - API 리스트에는 없지만 상세 데이터에 포함됨
     private String obsTime;     // 관측시각 (ymdhm)
     
+    // 재난 발생 관리 상태 변경
+    private List<String> ids; // 프론트에서 보낸 복합 ID 목록 (예: ["FIRE_123", "WTH_3_10_108"])
+    private boolean isVisible; // true: 노출(Y), false: 비노출(N)
     
 }
