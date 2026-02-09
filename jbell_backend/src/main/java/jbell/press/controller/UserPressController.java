@@ -16,6 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -28,16 +29,19 @@ public class UserPressController {
      * 보도자료 목록 조회 (사용자용)
      */
     @GetMapping
-    public ResponseEntity<List<PressDTO>> getPressList(
+    public ResponseEntity<Map<String, Object>> getPressList(
             @RequestParam(value = "offset", defaultValue = "0") int offset,
             @RequestParam(value = "limit", defaultValue = "10") int limit,
             @RequestParam(value = "roleType", defaultValue = "user") String roleType,
-            @RequestParam(value = "searchCategory", required = false) String searchCategory, // 추가
-            @RequestParam(value = "searchTerm", required = false) String searchTerm) {      // 추가
+            @RequestParam(value = "searchCategory", required = false) String searchCategory,
+            @RequestParam(value = "searchTerm", required = false) String searchTerm,
+            @RequestParam(value = "startDate", required = false) String startDate,
+            @RequestParam(value = "endDate", required = false) String endDate,
+            @RequestParam(value = "visibleYn", required = false) String visibleYn) {
         
-        // 이미 관리자 페이지에서 사용 중인 Service 메서드에 인자만 추가해서 호출하세요.
-        List<PressDTO> list = pressService.getPressList(offset, limit, roleType, searchCategory, searchTerm);
-        return ResponseEntity.ok(list);
+          Map<String, Object> result = pressService.getPressList(offset, limit, roleType, searchCategory, searchTerm, startDate, endDate, visibleYn);
+          
+        return ResponseEntity.ok(result);
     }
 
     /**
