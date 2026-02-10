@@ -442,11 +442,9 @@ public class DisasterAccidentServiceImpl implements DisasterAccident {
                             long seq = Long.parseLong(parts[1]);
                             mapper.updateEarthquakeStatus(seq, status);
                             break;
-                        case "WTH": // WTH_{type}_{tmSeq}_{stnId}_{idx}
-                            // parts[1]: type, parts[2]: tmSeq, parts[3]: stnId
-                            int tmSeq = Integer.parseInt(parts[2]);
-                            String stnId = parts[3];
-                            mapper.updateKmaWeatherStatus(tmSeq, stnId, status);
+                        case "WTH": // WTH_{id} 형태라고 가정
+                            long wthId = Long.parseLong(parts[1]); 
+                            mapper.updateKmaWeatherStatus(wthId, status);
                             break;
                         default:
                             log.warn("Unknown Disaster Type ID: {}", compositeId);

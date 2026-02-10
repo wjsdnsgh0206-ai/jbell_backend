@@ -9,17 +9,18 @@
 	<select id="selectForestFireList"
 		resultType="jbell.disasterAccident.dto.DisasterAccidentDTO">
 		SELECT
-		fire_id AS fireId,
-		fire_damage_area AS fireDamageArea,
-		fire_end_time AS fireEndTime,
-		fire_cause AS fireCause,
-		fire_loc_village
-		AS fireLocVillage,
-		fire_start_time AS fireStartTime
+			fire_id AS fireId,
+			fire_damage_area AS fireDamageArea,
+			fire_end_time AS fireEndTime,
+			fire_cause AS fireCause,
+			fire_loc_village
+			AS fireLocVillage,
+			fire_start_time AS fireStartTime,
+			IF(fire_expose_yn = 'Y', 1, 0) AS isVisible
 		FROM
-		forest_fire_information
-		WHERE fire_start_time >= DATE_SUB(NOW(),
-		INTERVAL 7 DAY)
+			forest_fire_information
+		WHERE 
+		fire_start_time >= DATE_SUB(NOW(),INTERVAL 7 DAY)
 		ORDER BY fire_start_time DESC
 	</select>
 
@@ -111,25 +112,25 @@
 		rem = VALUES(rem);
 	</insert>
 
-	<select id="selectEarthquakeList"
-		resultType="jbell.disasterAccident.dto.DisasterAccidentDTO">
-		SELECT
-		seq,
-		lat,
-		lon,
-		loc,
-		rem,
-		tm_fc AS tmFc,
-		mt,
-		msc
-		FROM
-		earthquake_event
-		WHERE STR_TO_DATE(tm_fc, '%Y%m%d%H%i') >=
-		DATE_SUB(NOW(), INTERVAL 1 YEAR)
-		ORDER BY tm_fc DESC
+	<!-- 지진 정보 조회 -->
+	<select id="selectEarthquakeList" resultType="jbell.disasterAccident.dto.DisasterAccidentDTO">
+	    SELECT
+	        seq,
+	        lat,
+	        lon,
+	        loc,
+	        rem,
+	        tm_fc AS tmFc,
+	        mt,
+	        msc,
+	        
+	        IF(expose_yn = 'Y', 1, 0) AS isVisible
+	    FROM
+	        earthquake_event
+	    WHERE STR_TO_DATE(tm_fc, '%Y%m%d%H%i') >= DATE_SUB(NOW(), INTERVAL 1 YEAR)
+	    ORDER BY tm_fc DESC
 	</select>
-
-	<!-- =========================================== -->
+	
 	<!-- 태풍 -->
 	<insert id="insertTyphoonInfo"
 		parameterType="jbell.disasterAccident.dto.DisasterAccidentDTO">
@@ -263,25 +264,27 @@
 	</insert>
 	
 	<!-- 재난발생 관리 -->
-	<select id="selectKmaWeatherByType"
-		resultType="jbell.disasterAccident.dto.DisasterAccidentDTO">
-		SELECT
-		tm_fc AS tmFc,
-		tm_seq AS tmSeq,
-		area_code AS areaCode,
-		warn_var AS warnVar,
-		stn_id AS stnId,
-		area_name AS areaName,
-		warn_stress
-		AS warnStress,
-		start_time AS startTime,
-		end_time AS endTime,
-		type FROM
-		kma_weather_report
-		WHERE type = #{type} ORDER BY tm_fc DESC, tm_seq
-		DESC
+	<select id="selectKmaWeatherByType" resultType="jbell.disasterAccident.dto.DisasterAccidentDTO">
+	    SELECT
+	    	id,
+	        tm_fc AS tmFc,
+	        tm_seq AS tmSeq,
+	        area_code AS areaCode,
+	        warn_var AS warnVar,
+	        stn_id AS stnId,
+	        area_name AS areaName,
+	        warn_stress AS warnStress,
+	        start_time AS startTime,
+	        end_time AS endTime,
+	        type,
+	        
+	        IF(expose_yn = 'Y', 1, 0) AS isVisible
+	    FROM
+	        kma_weather_report
+	    WHERE type = #{type} 
+	    ORDER BY tm_fc DESC, tm_seq DESC
 	</select>
-	
+		
     <!-- 산불 노출여부 수정 -->
 	<update id="updateForestFireStatus">
         UPDATE forest_fire_information
@@ -297,10 +300,12 @@
     </update>
     
     <!-- 기상 노출여부 수정 -->
-    <update id="updateKmaWeatherStatus">
-        UPDATE kma_weather_report
-        SET expose_yn = #{status} WHERE tm_seq = #{tmSeq} AND stn_id = #{stnId}
-    </update>
+	<update id="updateKmaWeatherStatus">
+	    UPDATE kma_weather_report
+	    SET expose_yn = #{status}
+	    WHERE id = #{id}
+	</update>
+	
     <!--  -->
 	
 	
