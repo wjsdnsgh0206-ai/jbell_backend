@@ -18,7 +18,7 @@ public interface PressMapper {
 
     // 사용자/관리자 공용: 목록 조회 (페이징 처리를 위해 limit, offset 사용)
     List<PressDTO> getPressList(@Param("offset") int offset, @Param("limit") int limit, @Param("roleType") String roleType, @Param("searchCategory") String searchCategory, 
-    							@Param("searchTerm") String searchTerm);
+    							@Param("searchTerm") String searchTerm, @Param("startDate") String startDate, @Param("endDate") String endDate, @Param("visibleYn") String visibleYn);
     
     // 사용자/관리자 공용: 상세 조회
     PressDTO getPressById(@Param("contentId") Long contentId);
@@ -28,7 +28,13 @@ public interface PressMapper {
     
     List<Map<String, Object>> getFileList(Long contentId);
     
+    int getPressListCount(@Param("roleType") String roleType, @Param("searchCategory") String searchCategory, @Param("searchTerm") String searchTerm, @Param("startDate") String startDate,
+    					  @Param("endDate") String endDate, @Param("visibleYn") String visibleYn);
+    
     int updateContent(PressDTO pressDto);
+    
+    // 노출 비노출 수정
+    int updateVisibleStatus(@Param("ids") List<Long> ids, @Param("visibleYn") String visibleYn);
     
     int deleteAttachmentsExcludeIds(Map<String, Object> params);
     

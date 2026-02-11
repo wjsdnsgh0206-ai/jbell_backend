@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
@@ -51,6 +53,21 @@ public class AdminPressController {
     @DeleteMapping
     public ResponseEntity<Void> deletePress(@RequestBody List<Long> ids) {
         pressService.deletePress(ids);
+        return ResponseEntity.ok().build();
+    }
+    
+    /**
+     * 보도자료 일괄 노출, 비노출
+     */
+    @PatchMapping("/visible-status")
+    public ResponseEntity<Void> updateVisibleStatus(@RequestBody Map<String, Object> params) {
+        List<Integer> intIds = (List<Integer>) params.get("ids");
+        List<Long> ids = intIds.stream()
+                               .map(Integer::longValue)
+                               .collect(Collectors.toList());
+        String visibleYn = (String) params.get("visibleYn");
+
+        pressService.updateVisibleStatus(ids, visibleYn);
         return ResponseEntity.ok().build();
     }
 }

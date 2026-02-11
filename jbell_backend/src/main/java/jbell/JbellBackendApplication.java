@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableScheduling; 
 
 @MapperScan("jbell.**.mapper")
+@EnableScheduling
 @SpringBootApplication
 public class JbellBackendApplication {
 

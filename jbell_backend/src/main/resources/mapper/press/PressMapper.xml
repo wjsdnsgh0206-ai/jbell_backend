@@ -64,27 +64,43 @@
 	    LEFT JOIN user u ON c.user_id = u.user_id 
 	    WHERE 
 	    	c.content_type = 'PR01'
+	    	<if test="visibleYn != null and visibleYn != '' and visibleYn != 'all'">
+		        AND c.visible_yn = #{visibleYn}
+		    </if>
+		    
 	    	<if test="roleType != null and roleType == 'user'">
 	    		AND c.visible_yn = 'Y'
 	    	</if>
 	    	
+	    	<if test="startDate != null and startDate != ''">
+        		AND c.created_at &gt;= #{startDate}
+		    </if>
+		    <if test="endDate != null and endDate != ''">
+		      
+		        AND c.created_at &lt;= CONCAT(#{endDate}, ' 23:59:59')
+		    </if>
+	    	
 	    	<if test="searchTerm != null and searchTerm != ''">
-	    AND (
-		        <choose>
-		            <when test="searchCategory == '제목'">
-		                c.title LIKE CONCAT('%', #{searchTerm}, '%')
-		            </when>
-		            <when test="searchCategory == '내용'">
-		                c.body LIKE CONCAT('%', #{searchTerm}, '%')
-		            </when>
-		            <when test="searchCategory == '등록인'">
-		                u.user_name LIKE CONCAT('%', #{searchTerm}, '%')
-		            </when>
-		            <otherwise>
-		                (c.title LIKE CONCAT('%', #{searchTerm}, '%') OR c.body LIKE CONCAT('%', #{searchTerm}, '%'))
-		            </otherwise>
-		        </choose>
-			    )
+			    AND (
+			    <choose> <when test="searchCategory == 'title' or searchCategory == '제목'">
+			            c.title LIKE CONCAT('%', #{searchTerm}, '%')
+			        </when>
+			        <when test="searchCategory == 'content' or searchCategory == '내용'">
+			            c.body LIKE CONCAT('%', #{searchTerm}, '%')
+			        </when>
+			        <when test="searchCategory == 'source' or searchCategory == '출처'">
+			            c.source LIKE CONCAT('%', #{searchTerm}, '%')
+			        </when>
+			        <when test="searchCategory == 'userName' or searchCategory == '등록인'">
+			            u.user_name LIKE CONCAT('%', #{searchTerm}, '%')
+			        </when>
+			        <otherwise>
+					    c.title LIKE CONCAT('%', #{searchTerm}, '%') 
+					    OR c.body LIKE CONCAT('%', #{searchTerm}, '%')
+					    OR u.user_name LIKE CONCAT('%', #{searchTerm}, '%')
+					    OR c.source LIKE CONCAT('%', #{searchTerm}, '%')
+					</otherwise>
+			    </choose> )
 			</if>
         
 	    GROUP BY 
@@ -104,8 +120,10 @@
 	        c.user_id as userId,
 	        u.user_name as userName,
 	        c.source,
+	        c.content_link as contentLink,
 	        c.reg_type as regType,
 	        c.created_at as createdAt,
+	        c.last_update_date as lastUpdateDate,
 	        COUNT(a.file_id) as fileCount
 	    FROM content c
 	    LEFT JOIN attachment a ON c.content_id = a.content_id
@@ -128,6 +146,45 @@
 	    WHERE content_id = #{contentId}
 	</select>
 	
+	<select id="getPressListCount" resultType="int">
+	    SELECT COUNT(*)
+	    FROM content c
+	    LEFT JOIN user u ON c.user_id = u.user_id 
+	    WHERE c.content_type = 'PR01'
+	    <if test="roleType != null and roleType == 'user'">
+	        AND c.visible_yn = 'Y'
+	    </if>
+	    
+	    <if test="startDate != null and startDate != ''">
+        AND c.created_at &gt;= #{startDate}
+    </if>
+    <if test="endDate != null and endDate != ''">
+        AND c.created_at &lt;= CONCAT(#{endDate}, ' 23:59:59')
+    </if>
+	    <if test="searchTerm != null and searchTerm != ''">
+		    AND (
+		        <choose> <when test="searchCategory == 'title' or searchCategory == '제목'">
+		                c.title LIKE CONCAT('%', #{searchTerm}, '%')
+		            </when>
+		            <when test="searchCategory == 'content' or searchCategory == '내용'">
+		                c.body LIKE CONCAT('%', #{searchTerm}, '%')
+		            </when>
+		            <when test="searchCategory == 'source' or searchCategory == '출처'">
+		                c.source LIKE CONCAT('%', #{searchTerm}, '%')
+		            </when>
+		            <when test="searchCategory == 'userName' or searchCategory == '등록인'">
+		                u.user_name LIKE CONCAT('%', #{searchTerm}, '%')
+		            </when>
+		            <otherwise>
+					    c.title LIKE CONCAT('%', #{searchTerm}, '%') 
+					    OR c.body LIKE CONCAT('%', #{searchTerm}, '%')
+					    OR u.user_name LIKE CONCAT('%', #{searchTerm}, '%')
+					    OR c.source LIKE CONCAT('%', #{searchTerm}, '%')
+					</otherwise>
+		        </choose> )
+		</if>
+	</select>
+	
 	<update id="updateContent" parameterType="jbell.press.dto.PressDTO">
 	    UPDATE content
 	    SET 
@@ -138,6 +195,17 @@
 	        content_link = #{contentLink},
 	        last_update_date = NOW()
 	    WHERE content_id = #{contentId}
+	</update>
+	
+	<update id="updateVisibleStatus">
+	    UPDATE content
+	    SET 
+	        visible_yn = #{visibleYn},
+	        last_update_date = NOW()
+	    WHERE content_id IN 
+	    <foreach item="id" collection="ids" open="(" separator="," close=")">
+	        #{id}
+	    </foreach>
 	</update>
 	
 	<delete id="deleteAttachmentsExcludeIds">
