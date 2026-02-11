@@ -192,11 +192,10 @@
 
 
 <!-- =========================================== -->
-<!-- 태풍 경로 (여기가 핵심 수정 포인트 🔥) -->
+<!-- 태풍 경로 (여기가 핵심 수정 포인트) -->
 <!-- INSERT → UPSERT -->
 <!-- =========================================== -->
-<insert id="insertTyphoonTrack"
-        parameterType="jbell.disasterAccident.dto.DisasterAccidentDTO">
+<insert id="insertTyphoonTrack" parameterType="jbell.disasterAccident.dto.DisasterAccidentDTO">
     INSERT INTO typhoon_track (
         typhoon_year,
         typhoon_no,
