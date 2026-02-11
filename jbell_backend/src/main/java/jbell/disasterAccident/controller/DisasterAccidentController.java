@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -131,6 +132,13 @@ public class DisasterAccidentController {
     public ApiResponse<List<DisasterAccidentDTO>> getWaterLevelList() {
         List<DisasterAccidentDTO> list = disasterAccidentService.getWaterLevelList();
         return ApiResponse.success(list);
+    }
+    
+    // [추가] 재난 노출 상태 일괄 변경
+    @PostMapping("/manage/status") // fetch가 아닌 관리 기능이므로 manage 경로 권장
+    public Mono<ApiResponse<String>> updateStatus(@RequestBody DisasterAccidentDTO disasterAccidentDTO) {
+        return disasterAccidentService.updateDisasterStatus(disasterAccidentDTO)
+                .then(Mono.just(ApiResponse.success("상태가 성공적으로 변경되었습니다.")));
     }
 
 }

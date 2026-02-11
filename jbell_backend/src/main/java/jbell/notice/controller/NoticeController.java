@@ -43,6 +43,7 @@ public class NoticeController {
         this.noticeFileService = noticeFileService;
     }
 
+    
     // 1. 공지사항 목록 (검색 및 타입 필터링)
     @GetMapping
     public List<NoticeDTO> getNoticeDTOList(
@@ -50,12 +51,21 @@ public class NoticeController {
             @RequestParam(value = "contentType", required = false) String contentType) {
         return noticeService.getNoticeDTOList(keyword, contentType);
     }
+    // 1-2. 관리자 공지사항 조회 페이지에서는 사용, 미사용 게시물을 모두 조회할 수 있도록 관리자 전용으로 새로 추가
+    @GetMapping("/admin")
+    public List<NoticeDTO> getAdminNoticeList(
+            @RequestParam(value = "keyword", required = false) String keyword,
+            @RequestParam(value = "contentType", required = false) String contentType) {
+        return noticeService.getAdminNoticeDTOList(keyword, contentType);
+    }
+    
 
     // 2. 공지사항 분류(타입) 목록 조회 - 추가됨
     @GetMapping("/types")
     public List<Map<String, Object>> getNoticeTypes() {
         return noticeService.getNoticeTypes();
     }
+    
     
     // 3. 공지사항 상세
     @GetMapping("/{id}")
@@ -72,7 +82,7 @@ public class NoticeController {
     }
 
     
-
+    // 4. 공지사항 등록
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<?>> createNotice(
             @RequestPart("notice") Notice notice,
@@ -86,6 +96,8 @@ public class NoticeController {
         }
     }
 
+    
+    // 5. 공지사항 수정
     @PutMapping(value = "/{id}")
     public ResponseEntity<ApiResponse<?>> updateNotice(
             @PathVariable("id") Long id,
@@ -103,15 +115,13 @@ public class NoticeController {
     }
 
     
-    
-    // 6. 삭제
+    // 6. 공지사항 삭제
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<?>> deleteNotice(@PathVariable("id") Long id) {
         noticeService.deleteNotice(id);
         return ResponseEntity.ok(ApiResponse.success("삭제 성공!"));
     }
 
-    
     
     // 7. 첨부파일 다운로드
     @GetMapping("/file/download/{fileId}")
@@ -131,4 +141,7 @@ public class NoticeController {
                 "\"")
             .body(resource);
     }
+    
+  
+    
 }

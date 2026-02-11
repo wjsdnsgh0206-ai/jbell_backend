@@ -1,26 +1,35 @@
 package jbell.disaster.mapper;
 
-import jbell.disaster.dto.PredictionInfoResponse;
+import java.util.List;
+
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import java.util.List;
+
+import jbell.disaster.dto.MainDisasterResponse;
+import jbell.disaster.dto.PredictionInfoResponse;
 
 @Mapper
 public interface DisasterMapper {
     
-    // --- 재난 문자 (disaster_text_history) ---
-	List<PredictionInfoResponse> selectDisasterList(PredictionInfoResponse searchParams);
-    // 전체 카운트 쿼리와 연결
+	// 재난 문자 (disaster_text_history) ============================
+    List<PredictionInfoResponse> selectDisasterList(PredictionInfoResponse searchParams);
     int selectDisasterTotalCount(PredictionInfoResponse searchParams);
-    PredictionInfoResponse selectDisasterDetail(Long sn);
-    int updateDisasterVisibility(@Param("list") List<Long> sns, @Param("visibleYn") String visibleYn);
-    int deleteDisasterLogical(@Param("list") List<Long> sns); // 논리 삭제 (visible_yn = 'N')
-    // 재난 문자 등록
-    int insertDisaster(PredictionInfoResponse disaster);
-    // 재난 문자 수정 (메시지 내용, 긴급단계 등)
-    int updateDisaster(PredictionInfoResponse disaster);
+
+    PredictionInfoResponse selectDisasterDetail(Long id);
     
-    // --- 기상 특보 (weather_warning_info) ---
+    int updateDisasterVisibility(@Param("visibleYn") String visibleYn, @Param("ids") List<Long> ids);
+    int deleteDisasterLogical(@Param("list") List<Long> ids); 
+
+    // 재난 문자 등록/수정
+    int insertDisaster(PredictionInfoResponse disaster);
+    int updateDisaster(PredictionInfoResponse disaster);
+
+    // 중복 방지를 위해 DB의 가장 큰 SN 값을 가져오는 메서드
+    Long selectMaxSn();
+
+    
+
+    // 기상 특보 (weather_warning_info)  ============================
     List<PredictionInfoResponse> selectWeatherList(PredictionInfoResponse searchParams);
     // 기상특보 총 검색 결과
     int selectWeatherTotalCount(PredictionInfoResponse searchParams);
@@ -31,6 +40,18 @@ public interface DisasterMapper {
     PredictionInfoResponse selectWeatherDetail(@Param("prsntnSn") String key);
     int insertWeather(PredictionInfoResponse weather);
     int updateWeather(PredictionInfoResponse weather);
-    int updateWeatherVisibility(@Param("list") List<String> keys, @Param("visibleYn") String visibleYn);
+//    int updateWeatherVisibility(@Param("list") List<String> keys, @Param("visibleYn") String visibleYn);
+    
+    int updateWeatherVisibility(
+    	    @Param("ids") List<String> ids,
+    	    @Param("visibleYn") String visibleYn
+    	);
+    
+    
     int deleteWeatherLogical(@Param("list") List<String> keys);
+    
+    
+    
+	// 메인화면 재난사고속보 mapper ===========
+    List<MainDisasterResponse> getCombinedDisasterList();
 }

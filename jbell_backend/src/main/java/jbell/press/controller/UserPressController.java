@@ -16,6 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -28,12 +29,19 @@ public class UserPressController {
      * 보도자료 목록 조회 (사용자용)
      */
     @GetMapping
-    public ResponseEntity<List<PressDTO>> getPressList(
+    public ResponseEntity<Map<String, Object>> getPressList(
             @RequestParam(value = "offset", defaultValue = "0") int offset,
-            @RequestParam(value = "limit", defaultValue = "10") int limit) {
+            @RequestParam(value = "limit", defaultValue = "10") int limit,
+            @RequestParam(value = "roleType", defaultValue = "user") String roleType,
+            @RequestParam(value = "searchCategory", required = false) String searchCategory,
+            @RequestParam(value = "searchTerm", required = false) String searchTerm,
+            @RequestParam(value = "startDate", required = false) String startDate,
+            @RequestParam(value = "endDate", required = false) String endDate,
+            @RequestParam(value = "visibleYn", required = false) String visibleYn) {
         
-        List<PressDTO> list = pressService.getPressList(offset, limit);
-        return ResponseEntity.ok(list);
+          Map<String, Object> result = pressService.getPressList(offset, limit, roleType, searchCategory, searchTerm, startDate, endDate, visibleYn);
+          
+        return ResponseEntity.ok(result);
     }
 
     /**
@@ -56,16 +64,16 @@ public class UserPressController {
             @PathVariable String fileName,
             @RequestParam String originName) throws Exception {
 
-        // 1. 파일이 저장된 실제 경로 찾기
+        // 파일이 저장된 실제 경로 찾기
         Path filePath = Paths.get("C:/upload/press/").resolve(fileName);
         Resource resource = new UrlResource(filePath.toUri());
 
-        // 2. 파일이 존재하는지 확인
+        // 파일이 존재하는지 확인
         if (!resource.exists()) {
             return ResponseEntity.notFound().build();
         }
 
-        // 3. 한글 파일명 깨짐 방지 설정
+        // 한글 파일명 깨짐 방지 설정
         String encodedOriginName = UriUtils.encode(originName, StandardCharsets.UTF_8);
         String contentDisposition = "attachment; filename=\"" + encodedOriginName + "\"";
 

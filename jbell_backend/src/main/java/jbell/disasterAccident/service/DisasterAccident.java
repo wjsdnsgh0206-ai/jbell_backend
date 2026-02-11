@@ -26,12 +26,6 @@ public interface DisasterAccident {
 	Mono<Void> fetchAndSaveTyphoon(String year);
     List<DisasterAccidentDTO> getTyphoonList();
     
-    // 태풍
-    
-
-    // 호우홍수
-    
-    
     // 산사태
     Mono<Void> fetchAndSaveLandslide();
     List<DisasterAccidentDTO> getLandslideList();
@@ -45,5 +39,7 @@ public interface DisasterAccident {
     Mono<Void> fetchAndSaveWaterLevel(String obscd);
     List<DisasterAccidentDTO> getWaterLevelList();
     
+    // 재난 발생 관리 상태 변경
+    Mono<Void> updateDisasterStatus(DisasterAccidentDTO disasterAccidentDTO);
     
 }

@@ -22,38 +22,44 @@
     </select>
 
     <select id="selectCodeIntegratedList" resultType="jbell.common.code.dto.CodeItemDTO">
-        /* 1. 그룹 정보 행 */
-        SELECT 
-            g.code_group_id   AS groupCode,
-            g.code_group_name AS groupName,
-            '-'               AS subCode,
-            ''                AS subName,
-            g.code_desc       AS `desc`,
-            g.sort_order      AS `order`,
-            IF(g.visible_yn = 'Y', 1, 0) AS visible,
-            DATE_FORMAT(g.created_at, '%Y-%m-%d %H:%i:%s') AS createdAt,
-            DATE_FORMAT(g.updated_at, '%Y-%m-%d %H:%i:%s') AS updatedAt
-        FROM code_group g
-    
-        UNION ALL
-    
-        /* 2. 상세 정보 행 */
-        SELECT 
-            i.code_group_id   AS groupCode,
-            g.code_group_name AS groupName,
-            i.code_item_id    AS subCode,
-            i.code_item_name  AS subName,
-            i.description     AS `desc`,
-            i.sort_order      AS `order`,
-            IF(i.visible_yn = 'Y', 1, 0) AS visible,
-            DATE_FORMAT(i.created_at, '%Y-%m-%d %H:%i:%s') AS createdAt,
-            DATE_FORMAT(i.updated_at, '%Y-%m-%d %H:%i:%s') AS updatedAt
-        FROM code_item i
-        JOIN code_group g ON i.code_group_id = g.code_group_id
-    
-        /* [수정 포인트] order가 같을 경우 createdAt(등록일) 순으로 보조 정렬 */
-        ORDER BY groupCode ASC, `order` ASC, createdAt ASC, subCode ASC
-    </select>
+	    /* 1. 그룹 정보  */
+	    SELECT 
+	        g.code_group_id   AS groupCode,
+	        g.code_group_name AS groupName,
+	        '-'               AS subCode,
+	        ''                AS subName,
+	        g.code_desc       AS `desc`,
+	        g.sort_order      AS `order`,
+	        IF(g.visible_yn = 'Y', 1, 0) AS visible,
+	        DATE_FORMAT(g.created_at, '%Y-%m-%d %H:%i:%s') AS createdAt,
+	        DATE_FORMAT(g.updated_at, '%Y-%m-%d %H:%i:%s') AS updatedAt
+	    FROM code_group g
+	
+	    UNION ALL
+	
+	    /* 2. 상세 정보 행 (그룹이 미사용이면 상세도 미사용으로 간주하거나 논리적으로 처리) */
+	    SELECT 
+	        i.code_group_id   AS groupCode,
+	        g.code_group_name AS groupName,
+	        i.code_item_id    AS subCode,
+	        i.code_item_name  AS subName,
+	        i.description     AS `desc`,
+	        i.sort_order      AS `order`,
+	        /* 그룹이 'N'이면 상세가 'Y'여도 'N(0)'으로 표시되게 하려면 아래처럼 수정 */
+	        IF(g.visible_yn = 'Y' AND i.visible_yn = 'Y', 1, 0) AS visible,
+	        DATE_FORMAT(i.created_at, '%Y-%m-%d %H:%i:%s') AS createdAt,
+	        DATE_FORMAT(i.updated_at, '%Y-%m-%d %H:%i:%s') AS updatedAt
+	    FROM code_item i
+	    JOIN code_group g ON i.code_group_id = g.code_group_id
+	
+	    ORDER BY groupCode ASC, `order` ASC, createdAt ASC, subCode ASC
+	</select>
+	
+	<update id="updateItemsStatusByGroupId">
+	    UPDATE code_item 
+	    SET visible_yn = #{visibleYn}, updated_at = NOW()
+	    WHERE code_group_id = #{groupId}
+	</update>
 
     <select id="selectCodeGroupList" resultType="jbell.common.code.domain.CodeGroup">
         SELECT 
@@ -104,7 +110,7 @@
             i.code_item_name  AS subName,
             i.description     AS `desc`,
             i.sort_order      AS `order`,
-            IF(i.visible_yn = 'Y', 1, 0) AS visible, /* boolean 매핑을 위해 1,0으로 변환 */
+            IF(i.visible_yn = 'Y', 1, 0) AS visible,
             DATE_FORMAT(i.created_at, '%Y-%m-%d %H:%i:%s') AS createdAt,
             DATE_FORMAT(i.updated_at, '%Y-%m-%d %H:%i:%s') AS updatedAt
         FROM code_item i
@@ -176,22 +182,22 @@
     
     <select id="selectMaxGroupOrder" resultType="int">
     SELECT IFNULL(MAX(sort_order), 0) FROM code_group
-</select>
-
-<select id="selectMaxItemOrder" parameterType="String" resultType="int">
-    SELECT IFNULL(MAX(sort_order), 0) FROM code_item 
-    WHERE code_group_id = #{groupCode}
-</select>
-
-<delete id="deleteCodeItemsByGroupId" parameterType="string">
-    DELETE FROM code_item 
-    WHERE code_group_id = #{groupId}
-</delete>
-
-<delete id="deleteCodeGroup" parameterType="string">
-    DELETE FROM code_group 
-    WHERE code_group_id = #{codeGroupId}
-</delete>
+	</select>
+	
+	<select id="selectMaxItemOrder" parameterType="String" resultType="int">
+	    SELECT IFNULL(MAX(sort_order), 0) FROM code_item 
+	    WHERE code_group_id = #{groupCode}
+	</select>
+	
+	<delete id="deleteCodeItemsByGroupId" parameterType="string">
+	    DELETE FROM code_item 
+	    WHERE code_group_id = #{groupId}
+	</delete>
+	
+	<delete id="deleteCodeGroup" parameterType="string">
+	    DELETE FROM code_group 
+	    WHERE code_group_id = #{codeGroupId}
+	</delete>
 
 
 

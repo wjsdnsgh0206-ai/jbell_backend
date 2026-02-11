@@ -22,7 +22,7 @@ public class CodeServiceImpl implements CodeService {
     
     @Override
     public List<CodeItemDTO> getIntegratedList() {
-        // XML에서 IF(visible_yn='Y', 1, 0) 처리를 했으므로 그대로 반환하면 DTO의 boolean visible 필드에 자동 매핑됩니다.
+
         return codeMapper.selectCodeIntegratedList();
     }
 
@@ -63,7 +63,6 @@ public class CodeServiceImpl implements CodeService {
         if (codeMapper.countGroupCode(dto.getGroupCode()) > 0) throw new RuntimeException("이미 존재하는 그룹코드입니다.");
         if (codeMapper.countGroupName(dto.getGroupName()) > 0) throw new RuntimeException("이미 존재하는 그룹명입니다.");
 
-        // [중요] 이 부분이 들어가 있는지 확인해 주세요!
         if (dto.getOrder() == null || dto.getOrder() == 0) {
             int maxOrder = codeMapper.selectMaxGroupOrder();
             dto.setOrder(maxOrder + 1);
@@ -81,7 +80,7 @@ public class CodeServiceImpl implements CodeService {
     }
 
     @Override
-    @Transactional // 1. 트랜잭션 추가
+    @Transactional
     public void modifyGroup(CodeGroupDTO dto) {
         CodeGroup existing = codeMapper.selectCodeGroupById(dto.getGroupCode());
         if (existing == null) throw new RuntimeException("수정하려는 그룹코드가 존재하지 않습니다.");
@@ -90,7 +89,6 @@ public class CodeServiceImpl implements CodeService {
             if (codeMapper.countGroupName(dto.getGroupName()) > 0) throw new RuntimeException("이미 사용 중인 그룹명입니다.");
         }
 
-        // 2. 순서값이 누락되었을 경우 기존 값을 유지하도록 보완
         Integer order = (dto.getOrder() == null || dto.getOrder() == 0) 
                         ? existing.getSortOrder() 
                         : dto.getOrder();
@@ -99,19 +97,25 @@ public class CodeServiceImpl implements CodeService {
                 .codeGroupId(dto.getGroupCode())
                 .codeGroupName(dto.getGroupName())
                 .codeDesc(dto.getDesc())
-                .sortOrder(order) // 보완된 order 사용
+                .sortOrder(order)
                 .visibleYn(dto.isVisible() ? "Y" : "N")
                 .build();
 
         codeMapper.updateCodeGroup(group);
+       
+        // 그룹이 미사용(N)으로 변경된 경우, 해당 그룹의 모든 상세코드도 미사용(N) 처리
+        if (!dto.isVisible()) { 
+            codeMapper.updateItemsStatusByGroupId(dto.getGroupCode(), "N");
+        }
+
     }
 
     @Override
     @Transactional
     public void removeGroup(String id) {
+    	
         // 1. 해당 그룹에 속한 상세코드(자식)들을 먼저 모두 삭제
-        // Mapper에 상세코드 일괄 삭제 메서드가 없다면 아래처럼 작성하거나 Mapper에 추가해야 합니다.
-       // codeMapper.deleteCodeItemsByGroupId(id); 
+       codeMapper.deleteCodeItemsByGroupId(id); 
 
         // 2. 그 다음 그룹코드(부모) 삭제
         codeMapper.deleteCodeGroup(id);
@@ -137,19 +141,19 @@ public class CodeServiceImpl implements CodeService {
     public CodeItemDTO getCodeItem(String groupId, String itemId) {
         CodeItemDTO dto = codeMapper.selectCodeItemById(groupId, itemId);
         if (dto == null) throw new RuntimeException("해당 상세 코드를 찾을 수 없습니다.");
-        // XML에서 IF 처리를 통해 DTO의 boolean visible 필드에 이미 true/false가 잘 들어온 상태입니다.
+
         return dto;
     }
 
     @Override
     @Transactional
     public void modifyItem(CodeItemDTO dto) {
-        // [수정 포인트] 이미 CodeItemDTO를 반환하도록 매퍼를 수정하셨으므로 그대로 사용합니다.
+
         CodeItemDTO existing = codeMapper.selectCodeItemById(dto.getGroupCode(), dto.getSubCode());
         
         if (existing == null) throw new RuntimeException("수정하려는 상세코드가 존재하지 않습니다.");
 
-        // [중요] 상세코드명이 변경되었을 때만 중복 체크
+        // 상세코드명이 변경되었을 때만 중복 체크
         if (!existing.getSubName().equals(dto.getSubName())) {
             if (codeMapper.countSubName(dto.getGroupCode(), dto.getSubName()) > 0) {
                 throw new RuntimeException("해당 그룹 내에 이미 존재하는 상세코드명입니다.");
@@ -162,26 +166,25 @@ public class CodeServiceImpl implements CodeService {
                 .codeItemName(dto.getSubName())
                 .description(dto.getDesc())
                 .sortOrder(dto.getOrder())
-                .visibleYn(dto.isVisible() ? "Y" : "N") // 화면의 boolean을 DB의 Y/N으로 변환
+                .visibleYn(dto.isVisible() ? "Y" : "N")
                 .build();
 
         codeMapper.updateCodeItem(item);
     }
 
-    /* 중복 체크 메서드들 */
+    /* 중복 체크 */
     @Override public boolean isGroupCodeDuplicate(String code) { return codeMapper.countGroupCode(code) > 0; }
     @Override public boolean isGroupNameDuplicate(String name) { return codeMapper.countGroupName(name) > 0; }
     @Override public boolean isSubCodeDuplicate(String groupCode, String subCode) { return codeMapper.countSubCode(groupCode, subCode) > 0; }
     @Override public boolean isSubNameDuplicate(String groupCode, String subName) { return codeMapper.countSubName(groupCode, subName) > 0; }
     
     @Override
-    @Transactional // 데이터 정합성을 위해 추가 권장
+    @Transactional
     public void registerItem(CodeItemDTO dto) {
         if (codeMapper.selectCodeGroupById(dto.getGroupCode()) == null) throw new RuntimeException("존재하지 않는 상위 그룹 코드입니다.");
         if (codeMapper.countSubCode(dto.getGroupCode(), dto.getSubCode()) > 0) throw new RuntimeException("중복 코드 ID");
         if (codeMapper.countSubName(dto.getGroupCode(), dto.getSubName()) > 0) throw new RuntimeException("중복 코드명");
 
-        // [추가] 해당 그룹 내에서 다음 순서 자동 할당
         if (dto.getOrder() == null || dto.getOrder() == 0) {
             int maxOrder = codeMapper.selectMaxItemOrder(dto.getGroupCode());
             dto.setOrder(maxOrder + 1);
@@ -192,7 +195,7 @@ public class CodeServiceImpl implements CodeService {
                 .codeGroupId(dto.getGroupCode())
                 .codeItemName(dto.getSubName())
                 .description(dto.getDesc())
-                .sortOrder(dto.getOrder()) // 결정된 순서값 세팅
+                .sortOrder(dto.getOrder())
                 .visibleYn(dto.isVisible() ? "Y" : "N")
                 .build();
         codeMapper.insertCodeItem(item);

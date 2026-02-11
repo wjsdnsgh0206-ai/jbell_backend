@@ -17,6 +17,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import jbell.disasterAccident.dto.DisasterAccidentDTO;
 import jbell.disasterAccident.mapper.DisasterAccidentMapper;
 import jbell.disasterAccident.service.DisasterAccident;
+import jbell.exception.CustomException;
+import jbell.exception.ErrorCode;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -46,7 +48,7 @@ public class DisasterAccidentServiceImpl implements DisasterAccident {
 	// =================================================
 	// ⏰ 통합 스케줄러 (5분 주기)
 	// =================================================
-	@Scheduled(cron = "0 0/5 * * * ?") // 5분마다 실행
+	@Scheduled(cron = "0/5 0 * * * ?") // 5분마다 실행
 	public void autoSyncAllDisasterData() {
 		log.info("⏰ [Scheduler] 5분 주기 재난 데이터 통합 동기화 시작: {}", LocalDateTime.now());
 
@@ -262,8 +264,12 @@ public class DisasterAccidentServiceImpl implements DisasterAccident {
 
 	private Mono<Void> fetchAndSaveTyphoonTrack(String yy, String typ) {
 		return apihubDataWebClient.get()
-				.uri(uriBuilder -> uriBuilder.path("/typ01/url/typ_data.php").queryParam("YY", yy)
-						.queryParam("mode", "1").queryParam("authKey", apiHubKey).build())
+				.uri(uriBuilder -> uriBuilder.path("/typ01/url/typ_data.php")
+						.queryParam("YY", yy)
+						.queryParam("mode", "1")
+						.queryParam("TYP", typ)
+						.queryParam("authKey", apiHubKey)
+						.build())
 				.retrieve().bodyToMono(String.class).timeout(java.time.Duration.ofSeconds(30)).doOnNext(data -> {
 					String[] lines = data.split("\n");
 					for (String line : lines) {
@@ -419,5 +425,40 @@ public class DisasterAccidentServiceImpl implements DisasterAccident {
 	    return mapper.selectWaterLevelList();
 	}
     
-    
+	// 재난 발생 관리 상태 변경
+	@Override
+    @Transactional
+    public Mono<Void> updateDisasterStatus(DisasterAccidentDTO disasterAccidentDTO) {
+        String status = disasterAccidentDTO.isVisible() ? "Y" : "N";
+        
+        return Mono.fromRunnable(() -> {
+            for (String compositeId : disasterAccidentDTO.getIds()) {
+                try {
+                    String[] parts = compositeId.split("_");
+                    String type = parts[0]; // FIRE, EQK, WTH
+
+                    switch (type) {
+                        case "FIRE": // FIRE_{fireId}_{idx}
+                            long fireId = Long.parseLong(parts[1]);
+                            mapper.updateForestFireStatus(fireId, status);
+                            break;
+                        case "EQK": // EQK_{seq}_{idx}
+                            long seq = Long.parseLong(parts[1]);
+                            mapper.updateEarthquakeStatus(seq, status);
+                            break;
+                        case "WTH": // WTH_{id} 형태라고 가정
+                            long wthId = Long.parseLong(parts[1]); 
+                            mapper.updateKmaWeatherStatus(wthId, status);
+                            break;
+                        default:
+                            log.warn("Unknown Disaster Type ID: {}", compositeId);
+                    }
+                } catch (Exception e) {
+                    log.error("Failed to update status for ID: {}", compositeId, e);
+                    // 하나 실패해도 나머지는 진행하거나, 여기서 CustomException 던져서 롤백 가능
+                    throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR); 
+                }
+            }
+        });
+    }
 }

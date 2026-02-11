@@ -44,7 +44,7 @@ public class DisasterExternApiRequest {
     
     
     // 재난문자이력관리 =================
-   // @NotNull(message = "조회시작일은 필수입니다") 
+    // @NotNull(message = "조회시작일은 필수입니다") 
     @DateTimeFormat(pattern = "yyyy/MM/dd HH:mm:ss") // 이건 폼 데이터용
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy/MM/dd HH:mm:ss") // ⭐ 이게 JSON 파싱용 핵심!
     private LocalDateTime crtDt;
