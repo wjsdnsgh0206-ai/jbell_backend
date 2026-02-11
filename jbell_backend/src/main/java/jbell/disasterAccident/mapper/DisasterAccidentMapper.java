@@ -3,6 +3,7 @@ package jbell.disasterAccident.mapper;
 import java.util.List;
 
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import jbell.disasterAccident.dto.DisasterAccidentDTO;
 
@@ -44,5 +45,10 @@ public interface DisasterAccidentMapper {
 	// 댐 및 하천 수위
     int insertWaterLevel(DisasterAccidentDTO dto);
     List<DisasterAccidentDTO> selectWaterLevelList();
-    
+
+    // 상태 변경 메서드
+    int updateForestFireStatus(@Param("id") Long id, @Param("status") String status);
+    int updateEarthquakeStatus(@Param("seq") Long seq, @Param("status") String status);
+	// 파라미터가 id 하나로 단순해집니다.
+    int updateKmaWeatherStatus(@Param("id") Long id, @Param("status") String status);
 }
