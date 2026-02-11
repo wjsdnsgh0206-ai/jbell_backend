@@ -123,7 +123,6 @@
 	        tm_fc AS tmFc,
 	        mt,
 	        msc,
-	        
 	        IF(expose_yn = 'Y', 1, 0) AS isVisible
 	    FROM
 	        earthquake_event
